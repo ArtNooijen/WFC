@@ -314,8 +314,109 @@ function clamp(value, minimum, maximum) {
   return Math.max(minimum, Math.min(maximum, value));
 }
 
+const CLASS_HIT_DIE = {
+  Barbarian: 12,
+  Fighter: 10,
+  Paladin: 10,
+  Ranger: 10,
+  Bard: 8,
+  Cleric: 8,
+  Druid: 8,
+  Monk: 8,
+  Rogue: 8,
+  Warlock: 8,
+  Sorcerer: 6,
+  Wizard: 6,
+};
+
+export function hitDiceState(member) {
+  const maximum = Math.max(1, Number(member.level || 1));
+  const size = CLASS_HIT_DIE[member.class] ?? 8;
+  return {
+    current: clamp(Number(member.hitDice?.current ?? maximum), 0, maximum),
+    maximum,
+    size,
+  };
+}
+
+function syncResourceTotals(member) {
+  if (!member.resources?.length) return member;
+  return {
+    ...member,
+    resource: member.resources.reduce((sum, pool) => sum + Number(pool.current), 0),
+    maxResource: member.resources.reduce((sum, pool) => sum + Number(pool.maximum), 0),
+  };
+}
+
+export function takeLongRest(party) {
+  return party.map((original) => {
+    if (original.dead) return { ...original, hp: 0 };
+    const hitDice = hitDiceState(original);
+    const member = {
+      ...original,
+      hp: Number(original.maxHp),
+      resource: Number(original.maxResource),
+      hitDice: { ...hitDice, current: hitDice.maximum },
+      resources: original.resources?.map((pool) => ({
+        ...pool,
+        current: Number(pool.maximum),
+      })),
+    };
+    return syncResourceTotals(member);
+  });
+}
+
+export function takeShortRest(party, selections = {}, rng = Math.random) {
+  const healing = [];
+  let resourcesRecovered = 0;
+  const restedParty = party.map((original) => {
+    const hitDice = hitDiceState(original);
+    const key = original.id ?? original.name;
+    if (original.dead) {
+      healing.push({
+        id: key,
+        name: original.name,
+        spent: 0,
+        rolls: [],
+        restored: 0,
+        rolled: 0,
+      });
+      return { ...original, hp: 0 };
+    }
+    const spent = clamp(Math.floor(Number(selections[key] ?? 0)), 0, hitDice.current);
+    const constitution = clamp(Number(original.conModifier ?? 0), -5, 10);
+    const rolls = Array.from(
+      { length: spent },
+      () => Math.floor(clamp(Number(rng()), 0, .999999) * hitDice.size) + 1,
+    );
+    const restoredHp = rolls.reduce((sum, roll) => sum + Math.max(0, roll + constitution), 0);
+    const beforeHp = Number(original.hp);
+    const hp = Math.min(Number(original.maxHp), beforeHp + restoredHp);
+    const resources = original.resources?.map((pool) => {
+      if (!String(pool.recharge ?? "").toLowerCase().includes("short rest")) return { ...pool };
+      resourcesRecovered += Math.max(0, Number(pool.maximum) - Number(pool.current));
+      return { ...pool, current: Number(pool.maximum) };
+    });
+    healing.push({
+      id: key,
+      name: original.name,
+      spent,
+      rolls,
+      restored: hp - beforeHp,
+      rolled: restoredHp,
+    });
+    return syncResourceTotals({
+      ...original,
+      hp,
+      resources,
+      hitDice: { ...hitDice, current: hitDice.current - spent },
+    });
+  });
+  return { party: restedParty, healing, resourcesRecovered };
+}
+
 export function analyzeParty(party) {
-  const members = party.filter((member) => member.name.trim());
+  const members = party.filter((member) => member.name.trim() && !member.dead);
   if (!members.length) throw new Error("Add at least one adventurer");
 
   const levelWeight = members.reduce((sum, member) => sum + Number(member.level || 1), 0);

@@ -77,7 +77,7 @@ function classIndex(name: string): string {
 }
 
 export function partyThresholds(party: Array<{ level: number }>) {
-  return party.reduce((total, member) => {
+  return party.filter((member: any) => !member.dead).reduce((total, member) => {
     const row = XP_THRESHOLDS[Math.max(1, Math.min(20, Number(member.level)))]!;
     total.easy += row.easy;
     total.medium += row.medium;
@@ -125,24 +125,55 @@ function desiredDifficulty(rating: string): Difficulty {
     : "easy";
 }
 
-function budgetBand(difficulty: Difficulty, thresholds: ReturnType<typeof partyThresholds>) {
+type PartyCondition = {
+  readiness?: number;
+  hpRatio?: number;
+  criticalMembers?: number;
+};
+
+function clamp(value: number, minimum: number, maximum: number) {
+  return Math.max(minimum, Math.min(maximum, value));
+}
+
+export function conditionBudgetBand(
+  difficulty: Difficulty,
+  thresholds: ReturnType<typeof partyThresholds>,
+  condition: PartyCondition = {},
+) {
   const order: Difficulty[] = ["easy", "medium", "hard", "deadly"];
   const index = order.indexOf(difficulty);
   const lower = thresholds[difficulty];
   const upper = index === order.length - 1
     ? Math.round(lower * 1.25)
     : thresholds[order[index + 1]] - 1;
-  return { lower, upper, target: Math.round(lower + (upper - lower) * 0.55) };
+  const readiness = clamp(Number(condition.readiness ?? .6), 0, 1);
+  const hpRatio = clamp(Number(condition.hpRatio ?? readiness), 0, 1);
+  const conditionScore = hpRatio * .7 + readiness * .3;
+  let percentile = .12 + conditionScore * .72;
+  if (Number(condition.criticalMembers ?? 0) > 0) percentile = Math.min(percentile, .22);
+  percentile = clamp(percentile, .12, .84);
+  return {
+    lower,
+    upper,
+    target: Math.round(lower + (upper - lower) * percentile),
+    percentile,
+    conditionScore,
+  };
 }
 
-function chooseComposition(
+export function chooseComposition(
   difficulty: Difficulty,
   thresholds: ReturnType<typeof partyThresholds>,
   partySize: number,
   maximumCr: number,
   seed: string,
+  condition: PartyCondition = {},
 ) {
-  const band = budgetBand(difficulty, thresholds);
+  const band = conditionBudgetBand(difficulty, thresholds, condition);
+  const desiredCount = Math.max(
+    1,
+    Math.floor(1 + band.conditionScore * (Math.min(6, partySize + 1) - 1)),
+  );
   const options = [];
   for (let count = 1; count <= 8; count++) {
     const multiplier = encounterMultiplier(count, partySize);
@@ -157,6 +188,13 @@ function chooseComposition(
           adjustedXp,
           multiplier,
           error: Math.abs(adjustedXp - band.target),
+          countError: Math.abs(count - desiredCount),
+          score: Math.abs(adjustedXp - band.target) / Math.max(1, band.upper - band.lower) +
+            Math.abs(count - desiredCount) * .2 +
+            (band.conditionScore < .62 && adjustedXp > band.target
+              ? Math.abs(adjustedXp - band.target) /
+                Math.max(1, band.upper - band.lower) * 1.25
+              : 0),
         });
       }
     }
@@ -166,11 +204,31 @@ function chooseComposition(
     const nearest = eligible.reduce((best, row) =>
       Math.abs(row.xp - band.target) < Math.abs(best.xp - band.target) ? row : best
     );
-    return { count: 1, cr: nearest.cr, baseXp: nearest.xp, adjustedXp: nearest.xp, multiplier: 1 };
+    return {
+      count: 1,
+      cr: nearest.cr,
+      baseXp: nearest.xp,
+      adjustedXp: nearest.xp,
+      multiplier: 1,
+      band,
+      desiredCount,
+    };
   }
-  options.sort((a, b) => a.error - b.error || a.count - b.count);
+  options.sort((a, b) =>
+    a.score - b.score || a.error - b.error || a.countError - b.countError || a.count - b.count ||
+    a.cr - b.cr
+  );
   const rng = createRng(seed);
-  return options[Math.floor(rng() * Math.min(5, options.length))];
+  const bestScore = options[0].score;
+  const equallyClose = options.filter((option) => Math.abs(option.score - bestScore) < .0001).slice(
+    0,
+    3,
+  );
+  return {
+    ...equallyClose[Math.floor(rng() * equallyClose.length)],
+    band,
+    desiredCount,
+  };
 }
 
 function totalSlots(spellcasting: Record<string, number> | undefined) {
@@ -365,6 +423,7 @@ async function buildMonsterEncounter(
   encounter: any,
   thresholds: ReturnType<typeof partyThresholds>,
   seed: string,
+  condition: PartyCondition,
 ) {
   const difficulty = desiredDifficulty(encounter.rating);
   const averageLevel = party.reduce((sum, member) => sum + Number(member.level), 0) /
@@ -376,6 +435,7 @@ async function buildMonsterEncounter(
     party.length,
     maximumCr,
     seed,
+    condition,
   );
   const monster = await getMonsterForCr(composition.cr, seed, encounter.title);
   const baseXp = monster.xp * composition.count;
@@ -389,9 +449,16 @@ async function buildMonsterEncounter(
     adjustedXp,
     multiplier: composition.multiplier,
     thresholds,
+    conditionTargetXp: composition.band.target,
+    conditionPercentile: composition.band.percentile,
+    conditionScore: composition.band.conditionScore,
+    desiredCount: composition.desiredCount,
     rule: `${composition.count} creature${
       composition.count === 1 ? "" : "s"
     } × ${composition.multiplier} encounter multiplier`,
+    scaling: `${Math.round(composition.band.conditionScore * 100)}% party condition targets the ${
+      Math.round(composition.band.percentile * 100)
+    }% point of the ${difficulty} XP band`,
     safety: `CR ${monster.cr} checked against party average level ${averageLevel.toFixed(1)} (cap ${
       maximumCr.toFixed(1)
     })`,
@@ -485,8 +552,10 @@ export async function enrichWithSrd(
   seed: string,
   suppliedClassProfiles?: any[],
 ) {
-  const thresholds = partyThresholds(party);
-  const averageLevel = party.reduce((sum, member) => sum + Number(member.level), 0) / party.length;
+  const activeParty = party.filter((member) => !member.dead);
+  const thresholds = partyThresholds(activeParty);
+  const averageLevel = activeParty.reduce((sum, member) => sum + Number(member.level), 0) /
+    activeParty.length;
   const classProfilesPromise = suppliedClassProfiles
     ? Promise.resolve(suppliedClassProfiles)
     : Promise.all(
@@ -501,10 +570,15 @@ export async function enrichWithSrd(
       return { ...encounter, officialDifficulty: desiredDifficulty(encounter.rating), thresholds };
     }
     const combat = await buildMonsterEncounter(
-      party,
+      activeParty,
       encounter,
       thresholds,
       `${seed}:${index}:${hashSeed(encounter.title)}`,
+      {
+        readiness: forecast.profile?.readiness,
+        hpRatio: forecast.profile?.hpRatio,
+        criticalMembers: forecast.profile?.critical,
+      },
     );
     return {
       ...encounter,

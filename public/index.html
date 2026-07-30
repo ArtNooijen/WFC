@@ -45,6 +45,12 @@
           </div>
           <div id="party-list" class="party-list"></div>
           <button id="add-member-wide" class="wide-add"><span>＋</span> Add adventurer</button>
+          <div class="party-rest-actions">
+            <button
+              id="short-rest"><span>☕</span><b>Short rest</b><small>Spend Hit Dice</small></button>
+            <button
+              id="long-rest"><span>☾</span><b>Long rest</b><small>Restore the company</small></button>
+          </div>
           <div
             class="panel-note"><span>✦</span><p>Changes reshape what waits ahead—not the dungeon beneath your feet.</p></div>
         </aside>
@@ -160,6 +166,7 @@
           <label>Current HP<input name="hp" type="number" min="0" max="999" required /></label>
           <label>Maximum HP<input name="maxHp" type="number" min="1" max="999" required /></label>
           <label>Armor class<input name="ac" type="number" min="1" max="40" required /></label>
+          <label>CON modifier<input name="conModifier" type="number" min="-5" max="10" value="0" required /></label>
           <label
             class="legacy-resource">Fallback resources<input name="resource" type="number" min="0" max="99" required /></label>
           <label
@@ -175,6 +182,26 @@
         </section>
         <div
           class="dialog-actions"><button value="cancel" class="ghost-button">Cancel</button><button value="default" id="save-member" class="primary-button">Save adventurer</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="short-rest-dialog">
+      <form method="dialog" id="short-rest-form">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow">Make camp</p>
+            <h2>Take a short rest</h2>
+          </div>
+          <button value="cancel" class="icon-button" aria-label="Close">×</button>
+        </div>
+        <p
+          class="rest-dialog-copy">Choose how many Hit Dice each adventurer spends. Short-rest class resources recover automatically.</p>
+        <div id="short-rest-members" class="short-rest-members"></div>
+        <div class="dialog-actions">
+          <button value="cancel" class="ghost-button">Cancel</button>
+          <button value="default" id="apply-short-rest"
+            class="primary-button">Roll Hit Dice</button>
+        </div>
       </form>
     </dialog>
 

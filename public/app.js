@@ -2,7 +2,10 @@ import {
   analyzeParty,
   buildEncounterForecast,
   generateDungeon,
+  hitDiceState,
   placeEncounters,
+  takeLongRest,
+  takeShortRest,
   TILE_INFO,
 } from "./lib/adventure.js";
 
@@ -63,6 +66,7 @@ let zoom = 1;
 let dialogClassProfile = null;
 let classProfileTimer = null;
 let classProfileRequest = 0;
+let quickForecastTimer = null;
 
 function loadState() {
   try {
@@ -88,6 +92,7 @@ function initials(name) {
 }
 
 function healthClass(member) {
+  if (member.dead) return "dead";
   const ratio = member.hp / member.maxHp;
   return ratio < 0.3 ? "critical" : ratio < 0.65 ? "wounded" : "";
 }
@@ -100,31 +105,131 @@ function resourceSummary(member) {
 }
 
 function renderParty() {
-  const profile = analyzeParty(state.party);
-  $("#party-level").textContent = profile.averageLevel.toFixed(1);
-  $("#party-hp").textContent = `${Math.round(profile.hpRatio * 100)}%`;
-  $("#party-size").textContent = profile.members;
+  const living = state.party.filter((member) => !member.dead);
+  const profile = living.length ? analyzeParty(state.party) : null;
+  $("#party-level").textContent = profile ? profile.averageLevel.toFixed(1) : "—";
+  $("#party-hp").textContent = profile ? `${Math.round(profile.hpRatio * 100)}%` : "0%";
+  $("#party-size").textContent = living.length;
   $("#party-list").innerHTML = state.party.map((member) => `
     <article class="member-card ${
     healthClass(member)
   }" data-member-id="${member.id}" tabindex="0" aria-label="Edit ${member.name}">
       <div class="member-main">
-        <div class="avatar">${initials(member.name)}</div>
-        <div class="member-identity"><strong>${
-    escapeHtml(member.name)
-  }</strong><span>LV ${member.level} · ${escapeHtml(member.class)}</span></div>
+        <div class="avatar">${member.dead ? "☠" : initials(member.name)}</div>
+        <div class="member-identity"><strong>${escapeHtml(member.name)}</strong><span>${
+    member.dead
+      ? "FALLEN · EXCLUDED FROM FORECAST"
+      : `LV ${member.level} · ${escapeHtml(member.class)}`
+  }</span></div>
         <div class="hp-number"><b>${member.hp}</b><span> / ${member.maxHp}</span></div>
+        <button class="remove-member" data-remove-member="${member.id}" type="button" aria-label="Remove ${
+    escapeHtml(member.name)
+  }" title="Remove party member">×</button>
       </div>
       <div class="stat-bars"><div class="hp-bar"><i style="width:${
     Math.min(100, member.hp / member.maxHp * 100)
-  }%"></i></div><span>AC ${member.ac} · ${resourceSummary(member)}</span></div>
+  }%"></i></div><span>AC ${member.ac} · HD ${hitDiceState(member).current}/${
+    hitDiceState(member).maximum
+  } · ${resourceSummary(member)}</span></div>
+      <div class="quick-member-actions" aria-label="Quick updates for ${escapeHtml(member.name)}">
+        <button type="button" data-quick-action="hp" data-member-id="${member.id}" ${
+    member.dead || member.hp <= 0 ? "disabled" : ""
+  }>−1 HP</button>
+        <button type="button" data-quick-action="resource" data-member-id="${member.id}" ${
+    member.dead ? "disabled" : ""
+  }>−1 RES</button>
+        <button class="kill-member ${
+    member.dead ? "revive-member" : ""
+  }" type="button" data-quick-action="kill" data-member-id="${member.id}" aria-label="${
+    member.dead ? "Revive" : "Mark"
+  } ${escapeHtml(member.name)}${member.dead ? "" : " dead"}" title="${
+    member.dead
+      ? "Revive at 1 HP and include in difficulty"
+      : "Mark dead and exclude from difficulty"
+  }">☠</button>
+      </div>
     </article>`).join("");
   document.querySelectorAll(".member-card").forEach((card) => {
     card.addEventListener("click", () => openMemberDialog(card.dataset.memberId));
     card.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") openMemberDialog(card.dataset.memberId);
+      if (event.target === card && event.key === "Enter") openMemberDialog(card.dataset.memberId);
     });
   });
+  document.querySelectorAll(".remove-member").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      removeMember(button.dataset.removeMember);
+    });
+  });
+  document.querySelectorAll("[data-quick-action]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      quickUpdateMember(button.dataset.memberId, button.dataset.quickAction);
+    });
+  });
+}
+
+function queueQuickForecast(message) {
+  clearTimeout(quickForecastTimer);
+  quickForecastTimer = setTimeout(() => updateForecast(message), 280);
+}
+
+function quickUpdateMember(id, action) {
+  const member = state.party.find((item) => item.id === id);
+  if (!member || (member.dead && action !== "kill")) return;
+  let message = `${member.name} updated`;
+  if (action === "hp") {
+    member.hp = Math.max(0, Number(member.hp) - 1);
+    message = `${member.name} loses 1 HP`;
+  } else if (action === "resource") {
+    if (member.resources?.length) {
+      const pool = member.resources.find((candidate) => Number(candidate.current) > 0);
+      if (!pool) {
+        showToast(`${member.name} has no resource uses left`);
+        return;
+      }
+      pool.current = Number(pool.current) - 1;
+      member.resource = member.resources.reduce(
+        (sum, candidate) => sum + Number(candidate.current),
+        0,
+      );
+      message = `${member.name} spends 1 ${pool.label}`;
+    } else {
+      if (Number(member.resource) <= 0) {
+        showToast(`${member.name} has no resource uses left`);
+        return;
+      }
+      member.resource = Number(member.resource) - 1;
+      message = `${member.name} spends 1 resource use`;
+    }
+  } else if (action === "kill") {
+    if (member.dead) {
+      member.dead = false;
+      member.hp = Math.max(1, Number(member.hp));
+      message = `${member.name} returns at 1 HP · included in encounter difficulty`;
+    } else {
+      member.hp = 0;
+      member.dead = true;
+      message = `${member.name} has fallen · excluded from encounter difficulty`;
+    }
+  }
+  saveState();
+  renderParty();
+  queueQuickForecast(message);
+}
+
+function removeMember(id) {
+  const member = state.party.find((item) => item.id === id);
+  if (!member) return;
+  if (state.party.length === 1) {
+    showToast("A party needs at least one adventurer");
+    return;
+  }
+  if (!globalThis.confirm(`Remove ${member.name} from the party?`)) return;
+  state.party = state.party.filter((item) => item.id !== id);
+  saveState();
+  renderParty();
+  updateForecast("Party member removed · encounters rebalanced");
 }
 
 function escapeHtml(value) {
@@ -230,6 +335,19 @@ function playCollapse() {
 
 async function updateForecast(message = "Forecast updated") {
   const button = $("#refresh-forecast");
+  if (!state.party.some((member) => !member.dead)) {
+    forecast = {
+      profile: { readiness: 0 },
+      encounters: [],
+      plan: "No survivors",
+      floor: state.floor,
+      dataSource: "fallback",
+      warning: "No living party members remain. Edit a fallen adventurer to revive them.",
+    };
+    renderForecast();
+    if (message) showToast(message);
+    return;
+  }
   button.disabled = true;
   try {
     const response = await fetch("/api/forecast", {
@@ -290,7 +408,11 @@ function renderForecast() {
         escapeHtml(combat.monster.actions.join(" · ") || "See stat block")
       }</p>
           <div class="xp-proof"><span>${combat.baseXp.toLocaleString()} base XP</span><b>× ${combat.multiplier}</b><span>${combat.adjustedXp.toLocaleString()} adjusted XP</span></div>
-          <small>${escapeHtml(combat.rule)} · ${displayedRating} threshold ${
+          <small>${
+        escapeHtml(combat.scaling)
+      } · target ${combat.conditionTargetXp.toLocaleString()} XP<br>${
+        escapeHtml(combat.rule)
+      } · ${displayedRating} threshold ${
         combat.thresholds[combat.difficulty].toLocaleString()
       } XP<br>${escapeHtml(combat.safety)} · <a href="${
         escapeHtml(combat.monster.source)
@@ -366,18 +488,18 @@ function openMemberDialog(id = null) {
   form.reset();
   const member = state.party.find((item) => item.id === id);
   $("#dialog-title").textContent = member ? `Update ${member.name}` : "Add adventurer";
-  const defaults = member ??
-    {
-      memberId: "",
-      name: "",
-      class: "Fighter",
-      level: 1,
-      hp: 10,
-      maxHp: 10,
-      ac: 14,
-      resource: 1,
-      maxResource: 1,
-    };
+  const defaults = member ? { ...member, conModifier: member.conModifier ?? 0 } : {
+    memberId: "",
+    name: "",
+    class: "Fighter",
+    level: 1,
+    hp: 10,
+    maxHp: 10,
+    ac: 14,
+    conModifier: 0,
+    resource: 1,
+    maxResource: 1,
+  };
   for (const [key, value] of Object.entries(defaults)) {
     if (form.elements[key]) form.elements[key].value = value;
   }
@@ -467,6 +589,7 @@ function saveMember(event) {
     hp: Number(data.hp),
     maxHp: Number(data.maxHp),
     ac: Number(data.ac),
+    conModifier: Number(data.conModifier),
     resource: Number(data.resource),
     maxResource: Number(data.maxResource),
   };
@@ -483,8 +606,13 @@ function saveMember(event) {
   member.hp = Math.min(member.hp, member.maxHp);
   member.resource = Math.min(member.resource, member.maxResource);
   const index = state.party.findIndex((item) => item.id === member.id);
-  if (index >= 0) state.party[index] = member;
-  else state.party.push(member);
+  if (index >= 0) {
+    member.hitDice = hitDiceState({
+      ...member,
+      hitDice: state.party[index].hitDice,
+    });
+    state.party[index] = member;
+  } else state.party.push(member);
   saveState();
   dialogClose();
   renderParty();
@@ -493,6 +621,59 @@ function saveMember(event) {
 
 function dialogClose() {
   $("#member-dialog").close();
+}
+
+function openShortRestDialog() {
+  const living = state.party.filter((member) => !member.dead);
+  $("#short-rest-members").innerHTML = living.length
+    ? living.map((member) => {
+      const dice = hitDiceState(member);
+      const shortResources = (member.resources ?? []).filter((pool) =>
+        String(pool.recharge ?? "").toLowerCase().includes("short rest") &&
+        Number(pool.current) < Number(pool.maximum)
+      );
+      const resourceCopy = shortResources.length
+        ? shortResources.map((pool) => `${escapeHtml(pool.label)} ${pool.current}/${pool.maximum}`)
+          .join(
+            " · ",
+          )
+        : "No depleted short-rest resources";
+      return `<label class="short-rest-member">
+      <span><b>${
+        escapeHtml(member.name)
+      }</b><small>${member.hp}/${member.maxHp} HP · ${resourceCopy}</small></span>
+      <span class="hit-die-picker"><input name="${
+        escapeHtml(member.id)
+      }" type="number" min="0" max="${dice.current}" value="0" ${
+        dice.current ? "" : "disabled"
+      } aria-label="Hit Dice for ${
+        escapeHtml(member.name)
+      }"><em>/ ${dice.current}d${dice.size}</em></span>
+    </label>`;
+    }).join("")
+    : `<p class="rest-dialog-copy">No living adventurers can benefit from a short rest.</p>`;
+  $("#short-rest-dialog").showModal();
+}
+
+function applyShortRest(event) {
+  event.preventDefault();
+  const selections = Object.fromEntries(new FormData($("#short-rest-form")));
+  const result = takeShortRest(state.party, selections);
+  state.party = result.party;
+  saveState();
+  $("#short-rest-dialog").close();
+  renderParty();
+  const healed = result.healing.reduce((sum, entry) => sum + entry.restored, 0);
+  updateForecast(
+    `Short rest · ${healed} HP restored · ${result.resourcesRecovered} resource uses recovered`,
+  );
+}
+
+function applyLongRest() {
+  state.party = takeLongRest(state.party);
+  saveState();
+  renderParty();
+  updateForecast("Long rest · HP, Hit Dice, and all resources restored");
 }
 
 function newExpedition() {
@@ -575,6 +756,9 @@ function printMap() {
 $("#add-member").addEventListener("click", () => openMemberDialog());
 $("#add-member-wide").addEventListener("click", () => openMemberDialog());
 $("#save-member").addEventListener("click", saveMember);
+$("#short-rest").addEventListener("click", openShortRestDialog);
+$("#short-rest-form").addEventListener("submit", applyShortRest);
+$("#long-rest").addEventListener("click", applyLongRest);
 $("#member-form").elements.class.addEventListener("change", queueClassProfile);
 $("#member-form").elements.level.addEventListener("input", queueClassProfile);
 $("#new-expedition").addEventListener("click", newExpedition);

@@ -2,10 +2,15 @@ import {
   analyzeParty,
   buildEncounterForecast,
   generateDungeon,
+  hitDiceState,
   placeEncounters,
+  takeLongRest,
+  takeShortRest,
 } from "../public/lib/adventure.js";
 import {
+  chooseComposition,
   classifyAdjustedXp,
+  conditionBudgetBand,
   encounterMultiplier,
   normalizeClassLevel,
   partyThresholds,
@@ -20,6 +25,20 @@ Deno.test("party analysis produces a bounded readiness score", () => {
   const profile = analyzeParty(PARTY);
   if (profile.readiness <= 0 || profile.readiness >= 1) throw new Error("unbounded readiness");
   if (profile.budget <= 0) throw new Error("missing budget");
+});
+
+Deno.test("fallen adventurers are excluded from readiness and XP thresholds", () => {
+  const living = { ...PARTY[0] };
+  const fallen = { ...PARTY[1], level: 20, hp: 0, dead: true };
+  const profile = analyzeParty([living, fallen]);
+  if (profile.members !== 1 || profile.averageLevel !== living.level) {
+    throw new Error("fallen member still affects party analysis");
+  }
+  const thresholds = partyThresholds([living, fallen]);
+  const expected = partyThresholds([living]);
+  if (JSON.stringify(thresholds) !== JSON.stringify(expected)) {
+    throw new Error("fallen member still affects encounter XP thresholds");
+  }
 });
 
 Deno.test("dungeon geometry is deterministic", () => {
@@ -121,6 +140,31 @@ Deno.test("2014 encounter thresholds reproduce the official mixed-party example"
   }
 });
 
+Deno.test("party condition moves encounters within the selected official XP band", () => {
+  const thresholds = partyThresholds([{ level: 5 }, { level: 5 }, { level: 5 }, { level: 5 }]);
+  const wounded = { readiness: .48, hpRatio: .5, criticalMembers: 0 };
+  const healthy = { readiness: .82, hpRatio: .9, criticalMembers: 0 };
+  const woundedBand = conditionBudgetBand("medium", thresholds, wounded);
+  const healthyBand = conditionBudgetBand("medium", thresholds, healthy);
+  if (woundedBand.target >= healthyBand.target) {
+    throw new Error("lower condition did not lower the target inside the Medium band");
+  }
+  const woundedFight = chooseComposition("medium", thresholds, 4, 5, "same-room", wounded);
+  const healthyFight = chooseComposition("medium", thresholds, 4, 5, "same-room", healthy);
+  if (woundedFight.adjustedXp >= healthyFight.adjustedXp) {
+    throw new Error("wounded party did not receive a gentler Medium composition");
+  }
+  if (woundedFight.count > healthyFight.count) {
+    throw new Error("wounded party received more enemies than the healthy party");
+  }
+  if (
+    classifyAdjustedXp(woundedFight.adjustedXp, thresholds) !== "medium" ||
+    classifyAdjustedXp(healthyFight.adjustedXp, thresholds) !== "medium"
+  ) {
+    throw new Error("condition scaling escaped the selected difficulty band");
+  }
+});
+
 Deno.test("class level normalization exposes druid spell slots and Wild Shape separately", () => {
   const profile = normalizeClassLevel({
     level: 5,
@@ -141,4 +185,43 @@ Deno.test("class level normalization exposes druid spell slots and Wild Shape se
     throw new Error("spell slots were not preserved");
   }
   if (pools["wild-shape"] !== 2) throw new Error("Wild Shape uses missing");
+});
+
+Deno.test("short and long rests update only the appropriate party resources", () => {
+  const tired = [{
+    id: "fighter",
+    name: "Fenn",
+    class: "Fighter",
+    level: 4,
+    hp: 10,
+    maxHp: 40,
+    conModifier: 2,
+    resource: 1,
+    maxResource: 5,
+    hitDice: { current: 3, maximum: 4, size: 10 },
+    resources: [
+      { key: "surge", label: "Action Surge", current: 0, maximum: 1, recharge: "Short rest" },
+      { key: "other", label: "Daily charge", current: 1, maximum: 4, recharge: "Long rest" },
+    ],
+  }];
+  const short = takeShortRest(tired, { fighter: 2 }, () => .4);
+  if (short.party[0].hp !== 24 || short.party[0].hitDice.current !== 1) {
+    throw new Error("Hit Dice were not rolled and spent correctly");
+  }
+  if (short.party[0].resources[0].current !== 1 || short.party[0].resources[1].current !== 1) {
+    throw new Error("short rest recovered the wrong resources");
+  }
+  const long = takeLongRest(short.party);
+  if (long[0].hp !== 40 || long[0].resource !== 5 || long[0].hitDice.current !== 4) {
+    throw new Error("long rest did not fully restore the adventurer");
+  }
+  if (hitDiceState({ class: "Wizard", level: 5 }).size !== 6) {
+    throw new Error("class Hit Die size is incorrect");
+  }
+  const fallen = { ...tired[0], hp: 0, dead: true };
+  if (
+    takeLongRest([fallen])[0].hp !== 0 || takeShortRest([fallen], { fighter: 3 }).party[0].hp !== 0
+  ) {
+    throw new Error("resting revived a fallen adventurer");
+  }
 });
