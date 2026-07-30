@@ -130,7 +130,10 @@ function buildMapCells() {
   map.innerHTML = dungeon.grid.flatMap((row, y) =>
     row.map((tile, x) => {
       const info = TILE_INFO[tile] ?? TILE_INFO[" "];
-      return `<button class="map-cell ${info.kind}" data-x="${x}" data-y="${y}" data-tile="${tile}" data-title="${info.name}" title="${info.name}" tabindex="-1">${tile}</button>`;
+      const jitterX = (((x * 17 + y * 11) % 5) - 2) * 0.16;
+      const jitterY = (((x * 7 + y * 19) % 5) - 2) * 0.12;
+      const jitterRotation = (((x * 13 + y * 23) % 7) - 3) * 0.28;
+      return `<button class="map-cell ${info.kind}" data-x="${x}" data-y="${y}" data-tile="${tile}" data-title="${info.name}" title="${info.name}" tabindex="-1" style="--jitter-x:${jitterX}px;--jitter-y:${jitterY}px;--jitter-r:${jitterRotation}deg">${tile}</button>`;
     })
   ).join("");
   renderDungeonLedger();
@@ -340,6 +343,23 @@ function newExpedition() {
   updateForecast("A new dungeon takes shape");
 }
 
+function resetDungeon() {
+  const confirmed = globalThis.confirm(
+    "Reset this dungeon to floor 1? Your party will be kept, but the map and encounter history will be replaced.",
+  );
+  if (!confirmed) return;
+  state.seed = randomSeed();
+  state.completed = 0;
+  state.floor = 1;
+  state.expedition += 1;
+  dungeon = generateDungeon(state.seed);
+  saveState();
+  renderMeta();
+  buildMapCells();
+  playCollapse();
+  updateForecast("The old atlas was closed · a new dungeon begins");
+}
+
 function renderMeta() {
   $("#seed-label").textContent = state.seed.toUpperCase();
   $("#expedition-number").textContent = String(state.expedition).padStart(2, "0");
@@ -374,6 +394,7 @@ $("#add-member").addEventListener("click", () => openMemberDialog());
 $("#add-member-wide").addEventListener("click", () => openMemberDialog());
 $("#save-member").addEventListener("click", saveMember);
 $("#new-expedition").addEventListener("click", newExpedition);
+$("#reset-dungeon").addEventListener("click", resetDungeon);
 $("#replay-collapse").addEventListener("click", playCollapse);
 $("#refresh-forecast").addEventListener("click", () => {
   state.completed += 1;

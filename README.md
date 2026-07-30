@@ -29,6 +29,8 @@ deno task check
 - A library of 32 varied combat, social, puzzle, hazard, discovery, rescue, and bargain scenarios;
   each includes a concrete objective and a twist.
 - Numbered `1–3` map markers that bind each forecast card to a named room and atlas coordinate.
+- Rough, doubled outlines and seeded glyph jitter inspired by hand-drawn whiteboard rendering.
+- Separate descent and dungeon-reset controls; reset returns to floor 1 while preserving the party.
 - Local session persistence, encounter advancement, contrast controls, zoom, and JSON export.
 - A small JSON API at `POST /api/forecast` with an in-browser fallback.
 

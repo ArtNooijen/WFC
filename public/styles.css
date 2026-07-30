@@ -1095,6 +1095,7 @@ body.high-contrast {
   --ember: #c86f45;
   --danger: #b94e3d;
   --serif: Georgia, "Times New Roman", serif;
+  --rough-border: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M3 4 Q25 2 51 4 T97 3 Q98 28 96 51 T97 97 Q72 96 49 98 T3 97 Q4 73 2 49 T3 4' fill='none' stroke='%237e5b32' stroke-width='1.4'/%3E%3Cpath d='M5 2 Q27 4 50 2 T95 5 Q96 27 98 49 T95 95 Q73 98 51 96 T5 95 Q2 73 4 51 T5 2' fill='none' stroke='%23b18447' stroke-width='.65' opacity='.7'/%3E%3C/svg%3E");
 }
 
 body {
@@ -1225,6 +1226,14 @@ h1,
   font: inherit;
   line-height: 1;
   cursor: default;
+}
+
+.map-cell.resolved {
+  transform: translate(var(--jitter-x), var(--jitter-y)) rotate(var(--jitter-r));
+}
+
+.map-cell.wall {
+  text-shadow: .45px .35px 0 rgba(222, 187, 126, .36), -.25px .2px 0 rgba(50, 29, 14, .8);
 }
 
 .map-cell.wall {
@@ -1539,6 +1548,47 @@ body.high-contrast {
   --acid: #f0c978;
 }
 
+/* Rough.js-inspired doubled, imperfect outlines without a runtime dependency. */
+.ghost-button,
+.icon-button,
+.collapse-button,
+.segmented,
+.add-button,
+.party-summary,
+.member-card,
+.wide-add,
+.map-frame,
+.readiness-card,
+.encounter-location,
+.dungeon-ledger,
+.rest-button,
+dialog,
+input,
+select {
+  border: 2px solid transparent;
+  border-image: var(--rough-border) 10 / 2px / 1px stretch;
+}
+
+.panel-heading h1::after,
+.panel-heading h2::after,
+.map-heading h2::after {
+  content: "";
+  display: block;
+  width: 58%;
+  height: 5px;
+  margin-top: 3px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 8' preserveAspectRatio='none'%3E%3Cpath d='M2 5 C28 2 48 7 72 4 S102 5 118 3' fill='none' stroke='%23b18447' stroke-width='1.2'/%3E%3Cpath d='M3 6 C31 4 51 6 76 5 S104 6 117 4' fill='none' stroke='%237e5b32' stroke-width='.7' opacity='.7'/%3E%3C/svg%3E")
+    center / 100% 100% no-repeat;
+}
+
+.reset-button {
+  color: #c98764;
+}
+
+.reset-button:hover {
+  color: #efad83;
+}
+
 @media (max-width: 1250px) {
   .ascii-map {
     --cell-width: 8px;
@@ -1555,5 +1605,15 @@ body.high-contrast {
   }
   .ascii-map {
     --cell-width: 8px;
+  }
+  .top-actions .reset-button {
+    display: inline-block;
+    font-size: 0;
+    width: 35px;
+    padding: 0;
+  }
+  .top-actions .reset-button::after {
+    content: "↺";
+    font-size: 17px;
   }
 }
