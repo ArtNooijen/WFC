@@ -1,4 +1,4 @@
-import { buildEncounterForecast } from "./public/lib/adventure.js";
+import { applyForecastControls, buildEncounterForecast } from "./public/lib/adventure.js";
 import { enrichWithSrd, getClassProfile, hydratePartyResources } from "./srd.ts";
 
 const ROOT = new URL("./public/", import.meta.url);
@@ -37,6 +37,26 @@ Deno.serve({ port }, async (request) => {
         body.seed,
         body.completed ?? 0,
         body.floor ?? 1,
+        {
+          calibration: body.learning?.calibration,
+          samples: body.learning?.samples,
+          awareness: body.learning?.awareness,
+          settings: body.settings,
+        },
+      );
+      base = applyForecastControls(
+        base,
+        body.party,
+        body.seed,
+        body.completed ?? 0,
+        body.floor ?? 1,
+        body.controls,
+        {
+          calibration: body.learning?.calibration,
+          samples: body.learning?.samples,
+          awareness: body.learning?.awareness,
+          settings: body.settings,
+        },
       );
       try {
         const hydrated = await hydratePartyResources(body.party);
@@ -45,6 +65,26 @@ Deno.serve({ port }, async (request) => {
           body.seed,
           body.completed ?? 0,
           body.floor ?? 1,
+          {
+            calibration: body.learning?.calibration,
+            samples: body.learning?.samples,
+            awareness: body.learning?.awareness,
+            settings: body.settings,
+          },
+        );
+        base = applyForecastControls(
+          base,
+          hydrated.party,
+          body.seed,
+          body.completed ?? 0,
+          body.floor ?? 1,
+          body.controls,
+          {
+            calibration: body.learning?.calibration,
+            samples: body.learning?.samples,
+            awareness: body.learning?.awareness,
+            settings: body.settings,
+          },
         );
         return json(
           await enrichWithSrd(hydrated.party, base, body.seed, hydrated.classProfiles),

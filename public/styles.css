@@ -1254,6 +1254,239 @@ body.high-contrast {
   }
 }
 
+/* DM campaign controls */
+.member-statuses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 0 8px 8px;
+}
+.member-statuses span {
+  padding: 3px 5px;
+  border: 1px solid #665038;
+  background: rgba(112,75,38,.16);
+  color: #c09b65;
+  font: 6px var(--mono);
+}
+.hide-resources .resolution-resource,
+.hide-resources .resource-pool,
+.hide-resources .legacy-resource,
+.hide-resources .quick-member-actions button[data-quick-action="resource"] {
+  display: none;
+}
+.hide-afflictions .member-statuses {
+  display: none;
+}
+.hide-afflictions .affliction-field {
+  display: none;
+}
+.combat-analysis {
+  display: grid;
+  gap: 3px;
+  margin-top: 9px;
+  padding: 7px;
+  border-left: 2px solid #877044;
+  background: rgba(113,84,42,.09);
+}
+.combat-analysis b,
+.combat-analysis span {
+  font: 6.5px/1.4 var(--mono);
+}
+.combat-analysis b {
+  color: #c3a15d;
+}
+.combat-analysis span {
+  color: var(--dim);
+}
+.combat-analysis.risk-high {
+  border-color: var(--danger);
+}
+.encounter-controls {
+  display: grid;
+  grid-template-columns: repeat(3,auto) 1fr 1fr;
+  gap: 5px;
+  margin-top: 9px;
+}
+.encounter-controls button,
+.encounter-controls select {
+  min-width: 0;
+  margin: 0;
+  padding: 5px 6px;
+  border: 1px solid var(--line-soft);
+  background: rgba(29,20,13,.8);
+  color: var(--muted);
+  font: 6.5px var(--mono);
+}
+.encounter-controls button:first-child {
+  color: #d4b467;
+  border-color: #70552e;
+}
+.check-field {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.check-field input {
+  width: auto;
+  margin: 0;
+}
+.resolution-members {
+  display: grid;
+  gap: 7px;
+  margin-top: 16px;
+}
+.resolution-member {
+  display: grid;
+  grid-template-columns: 1fr auto 85px 105px 70px;
+  align-items: end;
+  gap: 8px;
+  padding: 9px;
+  border: 1px solid var(--line-soft);
+}
+.resolution-member > b {
+  font: 11px var(--serif);
+}
+.resolution-member > span {
+  color: var(--dim);
+  font: 7px var(--mono);
+}
+.resolution-member input {
+  margin-top: 4px;
+  padding: 7px;
+}
+.setting-list {
+  display: grid;
+  gap: 8px;
+}
+.setting-list label {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+  border: 1px solid var(--line-soft);
+}
+.setting-list b,
+.setting-list small {
+  display: block;
+}
+.setting-list b {
+  color: var(--ink);
+  font: 10px var(--serif);
+}
+.setting-list small {
+  margin-top: 3px;
+  color: var(--dim);
+  font: 7px var(--mono);
+}
+.setting-list input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+.journal-dialog {
+  width: min(720px,calc(100vw - 32px));
+}
+.learning-summary {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid #6c512d;
+  background: rgba(107,74,36,.16);
+}
+.learning-summary b {
+  color: var(--ink);
+  font: 13px var(--serif);
+}
+.learning-summary span,
+.learning-summary small {
+  color: var(--muted);
+  font: 8px/1.4 var(--mono);
+}
+.journal-list {
+  max-height: 52vh;
+  overflow: auto;
+  margin-top: 12px;
+}
+.journal-list article {
+  display: grid;
+  grid-template-columns: 115px 1fr;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.journal-list time,
+.journal-list span,
+.journal-list p {
+  color: var(--dim);
+  font: 7px/1.4 var(--mono);
+}
+.journal-list b {
+  display: block;
+  color: var(--ink);
+  font: 10px var(--serif);
+}
+.journal-list p {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+.journal-print-sheet {
+  display: none;
+}
+
+@media (max-width:720px) {
+  .resolution-member {
+    grid-template-columns: 1fr 1fr;
+  }
+  .encounter-controls {
+    grid-template-columns: repeat(3,1fr);
+  }
+}
+
+@media print {
+  .journal-print-sheet {
+    display: none !important;
+  }
+  body.print-journal .print-sheet {
+    display: none !important;
+  }
+  body.print-journal .journal-print-sheet {
+    display: block !important;
+    width: 277mm;
+    color: #000;
+    background: #fff;
+    font-family: Georgia,"Times New Roman",serif;
+  }
+  .journal-print-sheet header {
+    padding-bottom: 4mm;
+    border-bottom: .4mm solid #000;
+  }
+  .journal-print-sheet header p,
+  .journal-print-sheet header span {
+    font: 7pt "Liberation Mono",monospace;
+  }
+  .journal-print-sheet header h1 {
+    margin: 1mm 0;
+    font-size: 22pt;
+  }
+  #journal-print-content article {
+    display: grid;
+    grid-template-columns: 36mm 1fr;
+    gap: 5mm;
+    padding: 3mm 0;
+    border-bottom: .2mm solid #aaa;
+    break-inside: avoid;
+  }
+  #journal-print-content time,
+  #journal-print-content span,
+  #journal-print-content p {
+    font: 7pt/1.4 "Liberation Mono",monospace;
+  }
+  #journal-print-content b {
+    font-size: 10pt;
+  }
+}
+
 @page {
   size: A4 landscape;
   margin: 10mm;

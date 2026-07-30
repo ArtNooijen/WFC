@@ -8,6 +8,7 @@ import {
   takeShortRest,
   TILE_INFO,
 } from "./lib/adventure.js";
+import { DEFAULT_SETTINGS, learningModel, outcomeSample, spendResources } from "./lib/campaign.js";
 
 const STORAGE_KEY = "delvewright-session-v1";
 const DEFAULT_PARTY = [
@@ -71,13 +72,95 @@ let quickForecastTimer = null;
 function loadState() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (saved?.party?.length && saved.seed) return { floor: 1, ...saved };
+    if (saved?.party?.length && saved.seed) {
+      return {
+        floor: 1,
+        history: [],
+        undoStack: [],
+        learningSamples: [],
+        encounterControls: { rerolls: {}, ratings: {}, kinds: {} },
+        encounterLocks: {},
+        settings: { ...DEFAULT_SETTINGS },
+        awareness: 0,
+        safeRoomsUsed: {},
+        ...saved,
+        settings: { ...DEFAULT_SETTINGS, ...(saved.settings ?? {}) },
+        encounterControls: {
+          rerolls: {},
+          ratings: {},
+          kinds: {},
+          ...(saved.encounterControls ?? {}),
+        },
+      };
+    }
   } catch { /* Start fresh if local data was malformed. */ }
-  return { party: DEFAULT_PARTY, seed: randomSeed(), completed: 0, expedition: 1, floor: 1 };
+  return {
+    party: DEFAULT_PARTY,
+    seed: randomSeed(),
+    completed: 0,
+    expedition: 1,
+    floor: 1,
+    history: [],
+    undoStack: [],
+    learningSamples: [],
+    encounterControls: { rerolls: {}, ratings: {}, kinds: {} },
+    encounterLocks: {},
+    settings: { ...DEFAULT_SETTINGS },
+    awareness: 0,
+    safeRoomsUsed: {},
+  };
 }
 
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  $("#undo-action")?.toggleAttribute("disabled", !state.undoStack.length);
+}
+
+function clone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function checkpoint(label) {
+  state.undoStack.push({
+    label,
+    at: new Date().toISOString(),
+    snapshot: clone({
+      party: state.party,
+      completed: state.completed,
+      floor: state.floor,
+      seed: state.seed,
+      history: state.history,
+      learningSamples: state.learningSamples,
+      encounterControls: state.encounterControls,
+      encounterLocks: state.encounterLocks,
+      awareness: state.awareness,
+      safeRoomsUsed: state.safeRoomsUsed,
+      settings: state.settings,
+      expedition: state.expedition,
+    }),
+  });
+  state.undoStack = state.undoStack.slice(-30);
+}
+
+function logEvent(type, title, detail = "") {
+  state.history.unshift({
+    id: crypto.randomUUID(),
+    type,
+    title,
+    detail,
+    floor: state.floor,
+    seed: state.seed,
+    at: new Date().toISOString(),
+  });
+  state.history = state.history.slice(0, 150);
+}
+
+function modelState() {
+  return { ...learningModel(state.learningSamples), awareness: state.awareness };
+}
+
+function encounterKey(index) {
+  return `${state.floor}:${state.completed}:${index}`;
 }
 
 function randomSeed() {
@@ -98,6 +181,7 @@ function healthClass(member) {
 }
 
 function resourceSummary(member) {
+  if (!state.settings.trackResources) return "resource tracking off";
   if (!member.resources?.length) return `◈ ${member.resource}/${member.maxResource}`;
   const current = member.resources.reduce((sum, pool) => sum + Number(pool.current), 0);
   const maximum = member.resources.reduce((sum, pool) => sum + Number(pool.maximum), 0);
@@ -106,7 +190,9 @@ function resourceSummary(member) {
 
 function renderParty() {
   const living = state.party.filter((member) => !member.dead);
-  const profile = living.length ? analyzeParty(state.party) : null;
+  const profile = living.length ? analyzeParty(state.party, state.settings) : null;
+  document.body.classList.toggle("hide-resources", !state.settings.trackResources);
+  document.body.classList.toggle("hide-afflictions", !state.settings.trackAfflictions);
   $("#party-level").textContent = profile ? profile.averageLevel.toFixed(1) : "—";
   $("#party-hp").textContent = profile ? `${Math.round(profile.hpRatio * 100)}%` : "0%";
   $("#party-size").textContent = living.length;
@@ -148,6 +234,25 @@ function renderParty() {
       : "Mark dead and exclude from difficulty"
   }">☠</button>
       </div>
+      ${
+    state.settings.trackAfflictions && !member.dead
+      ? `<div class="member-statuses">${
+        Number(member.tempHp) > 0 ? `<span>+${member.tempHp} temp HP</span>` : ""
+      }${member.concentration ? "<span>Concentrating</span>" : ""}${
+        member.inspiration ? "<span>Inspiration</span>" : ""
+      }${Number(member.exhaustion) > 0 ? `<span>Exhaustion ${member.exhaustion}</span>` : ""}${
+        member.hp <= 0 && member.deathSaves
+          ? `<span>Death saves ${member.deathSaves.successes}✓/${member.deathSaves.failures}✕</span>`
+          : ""
+      }${
+        (member.conditions ?? []).map((condition) =>
+          `<span>${escapeHtml(condition)}${
+            Number(member.conditionRounds) > 0 ? ` · ${member.conditionRounds}r` : ""
+          }</span>`
+        ).join("")
+      }</div>`
+      : ""
+  }
     </article>`).join("");
   document.querySelectorAll(".member-card").forEach((card) => {
     card.addEventListener("click", () => openMemberDialog(card.dataset.memberId));
@@ -178,6 +283,7 @@ function quickUpdateMember(id, action) {
   const member = state.party.find((item) => item.id === id);
   if (!member || (member.dead && action !== "kill")) return;
   let message = `${member.name} updated`;
+  checkpoint(message);
   if (action === "hp") {
     member.hp = Math.max(0, Number(member.hp) - 1);
     message = `${member.name} loses 1 HP`;
@@ -185,6 +291,7 @@ function quickUpdateMember(id, action) {
     if (member.resources?.length) {
       const pool = member.resources.find((candidate) => Number(candidate.current) > 0);
       if (!pool) {
+        state.undoStack.pop();
         showToast(`${member.name} has no resource uses left`);
         return;
       }
@@ -196,6 +303,7 @@ function quickUpdateMember(id, action) {
       message = `${member.name} spends 1 ${pool.label}`;
     } else {
       if (Number(member.resource) <= 0) {
+        state.undoStack.pop();
         showToast(`${member.name} has no resource uses left`);
         return;
       }
@@ -213,6 +321,7 @@ function quickUpdateMember(id, action) {
       message = `${member.name} has fallen · excluded from encounter difficulty`;
     }
   }
+  logEvent("party", message);
   saveState();
   renderParty();
   queueQuickForecast(message);
@@ -226,7 +335,9 @@ function removeMember(id) {
     return;
   }
   if (!globalThis.confirm(`Remove ${member.name} from the party?`)) return;
+  checkpoint(`Remove ${member.name}`);
   state.party = state.party.filter((item) => item.id !== id);
+  logEvent("party", `Removed ${member.name}`);
   saveState();
   renderParty();
   updateForecast("Party member removed · encounters rebalanced");
@@ -358,18 +469,27 @@ async function updateForecast(message = "Forecast updated") {
         seed: state.seed,
         completed: state.completed,
         floor: state.floor,
+        settings: state.settings,
+        learning: modelState(),
+        controls: state.encounterControls,
       }),
     });
     if (!response.ok) throw new Error("Forecast API unavailable");
     forecast = await response.json();
   } catch {
-    forecast = buildEncounterForecast(state.party, state.seed, state.completed, state.floor);
+    forecast = buildEncounterForecast(state.party, state.seed, state.completed, state.floor, {
+      ...modelState(),
+      settings: state.settings,
+    });
     showToast("Running the local prediction model");
   } finally {
     button.disabled = false;
   }
   applyClassProfiles(forecast.classProfiles);
   forecast.encounters = placeEncounters(forecast.encounters, dungeon, state.completed);
+  forecast.encounters = forecast.encounters.map((encounter, index) =>
+    state.encounterLocks[encounterKey(index)] ?? encounter
+  );
   renderForecast();
   if (message) showToast(message);
 }
@@ -383,7 +503,8 @@ function renderForecast() {
     : `<span>!</span><div><b>Local fallback active</b><small>${
       escapeHtml(forecast.warning ?? "SRD API data unavailable")
     }</small></div>`;
-  $("#pacing-label").textContent = `${forecast.plan} pace · floor ${forecast.floor}`;
+  $("#pacing-label").textContent =
+    `${forecast.plan} · floor ${forecast.floor} · alert ${state.awareness}`;
   $("#readiness-value").textContent = `${percent}%`;
   $("#readiness-ring").style.setProperty("--readiness", `${percent}%`);
   $("#readiness-label").textContent = percent > 76
@@ -417,6 +538,13 @@ function renderForecast() {
       } XP<br>${escapeHtml(combat.safety)} · <a href="${
         escapeHtml(combat.monster.source)
       }" target="_blank" rel="noreferrer">SRD stat block ↗</a></small>
+          ${
+        combat.analysis
+          ? `<div class="combat-analysis risk-${combat.analysis.risk}"><b>${combat.analysis.risk.toUpperCase()} TACTICAL RISK</b>${
+            combat.analysis.signals.map((signal) => `<span>${escapeHtml(signal)}</span>`).join("")
+          }</div>`
+          : ""
+      }
         </div>`
       : "";
     return `<article class="encounter-card" id="encounter-${encounter.marker}" data-encounter="${encounter.marker}" style="animation-delay:${
@@ -438,11 +566,33 @@ function renderForecast() {
       combat ? "Adjusted XP" : "Pressure"
     } ${encounter.budget}</span><span>~${encounter.rounds} rounds</span></div>
         ${encounter.recovery ? `<p class="recovery-note">✦ ${encounter.recovery}</p>` : ""}
+        <div class="encounter-controls">
+          <button data-encounter-action="resolve" data-index="${index}">Resolve</button>
+          <button data-encounter-action="reroll" data-index="${index}">↻ Reroll</button>
+          <button data-encounter-action="lock" data-index="${index}">${
+      state.encounterLocks[encounterKey(index)] ? "Unlock" : "Lock"
+    }</button>
+          <select data-encounter-action="rating" data-index="${index}" aria-label="Difficulty"><option value="">Model</option>${
+      ["Low", "Moderate", "Hard", "Deadly"].map((rating) =>
+        `<option ${
+          state.encounterControls.ratings[index] === rating ? "selected" : ""
+        }>${rating}</option>`
+      ).join("")
+    }</select>
+          <select data-encounter-action="kind" data-index="${index}" aria-label="Encounter type">${
+      ["auto", "combat", "social", "puzzle", "hazard", "discovery"].map((kind) =>
+        `<option ${
+          state.encounterControls.kinds[index] === kind ? "selected" : ""
+        }>${kind}</option>`
+      ).join("")
+    }</select>
+        </div>
       </div>
     </article>`;
   }).join("");
   renderDungeonLedger();
   renderEncounterMarkers();
+  bindEncounterControls();
 }
 
 function renderEncounterMarkers() {
@@ -471,6 +621,137 @@ function renderEncounterMarkers() {
   });
 }
 
+function bindEncounterControls() {
+  document.querySelectorAll("[data-encounter-action]").forEach((control) => {
+    const eventName = control.tagName === "SELECT" ? "change" : "click";
+    control.addEventListener(eventName, (event) => {
+      event.stopPropagation();
+      const index = Number(control.dataset.index);
+      const action = control.dataset.encounterAction;
+      if (action === "resolve") return openResolveDialog(index);
+      checkpoint(`${action} encounter ${index + 1}`);
+      if (action === "reroll") {
+        state.encounterControls.rerolls[index] =
+          Number(state.encounterControls.rerolls[index] ?? 0) + 1;
+        delete state.encounterLocks[encounterKey(index)];
+        logEvent("forecast", `Rerolled encounter ${index + 1}`);
+      } else if (action === "lock") {
+        const key = encounterKey(index);
+        if (state.encounterLocks[key]) {
+          delete state.encounterLocks[key];
+          logEvent("forecast", `Unlocked ${forecast.encounters[index].title}`);
+        } else {
+          state.encounterLocks[key] = clone(forecast.encounters[index]);
+          logEvent("forecast", `Locked ${forecast.encounters[index].title}`);
+        }
+      } else if (action === "rating") {
+        if (control.value) state.encounterControls.ratings[index] = control.value;
+        else delete state.encounterControls.ratings[index];
+        delete state.encounterLocks[encounterKey(index)];
+        logEvent(
+          "forecast",
+          `Encounter ${index + 1} difficulty set to ${control.value || "Model"}`,
+        );
+      } else if (action === "kind") {
+        state.encounterControls.kinds[index] = control.value;
+        delete state.encounterLocks[encounterKey(index)];
+        logEvent("forecast", `Encounter ${index + 1} type set to ${control.value}`);
+      }
+      saveState();
+      if (action === "lock") renderForecast();
+      else updateForecast("DM encounter controls applied");
+    });
+  });
+}
+
+function openResolveDialog(index) {
+  const encounter = forecast.encounters[index];
+  const form = $("#resolve-form");
+  form.reset();
+  form.elements.encounterIndex.value = index;
+  form.elements.rounds.value = encounter.rounds ?? 3;
+  $("#resolve-title").textContent = encounter.title;
+  $("#resolution-members").innerHTML = state.party.filter((member) => !member.dead).map((member) =>
+    `<section class="resolution-member"><b>${
+      escapeHtml(member.name)
+    }</b><span>${member.hp}/${member.maxHp} HP</span>
+      <label>HP lost<input type="number" min="0" max="${
+      member.hp + Number(member.tempHp ?? 0)
+    }" value="0" data-resolution-member="${member.id}" data-field="hpLost"></label>
+      <label class="resolution-resource">Resources spent<input type="number" min="0" max="${
+      member.resource ?? 0
+    }" value="0" data-resolution-member="${member.id}" data-field="resourcesSpent"></label>
+      <label class="check-field"><input type="checkbox" data-resolution-member="${member.id}" data-field="downed"> Downed</label>
+    </section>`
+  ).join("");
+  $("#resolve-dialog").showModal();
+}
+
+function resolveEncounter(event) {
+  event.preventDefault();
+  const form = $("#resolve-form");
+  const data = Object.fromEntries(new FormData(form));
+  const index = Number(data.encounterIndex);
+  const encounter = forecast.encounters[index];
+  const members = {};
+  document.querySelectorAll("[data-resolution-member]").forEach((input) => {
+    const id = input.dataset.resolutionMember;
+    members[id] ??= {};
+    members[id][input.dataset.field] = input.type === "checkbox"
+      ? input.checked
+      : Number(input.value);
+  });
+  const report = {
+    outcome: data.outcome,
+    rounds: Number(data.rounds),
+    feedback: data.feedback,
+    notes: data.notes,
+    members,
+  };
+  checkpoint(`Resolve ${encounter.title}`);
+  const beforeParty = clone(state.party);
+  state.party = state.party.map((member) => {
+    const result = members[member.id];
+    if (!result || member.dead) return member;
+    const loss = Math.max(0, Number(result.hpLost));
+    const tempAbsorbed = Math.min(Number(member.tempHp ?? 0), loss);
+    let updated = {
+      ...member,
+      tempHp: Number(member.tempHp ?? 0) - tempAbsorbed,
+      hp: Math.max(0, Number(member.hp) - (loss - tempAbsorbed)),
+    };
+    if (Number(member.conditionRounds) > 0) {
+      updated.conditionRounds = Math.max(
+        0,
+        Number(member.conditionRounds) - Number(report.rounds),
+      );
+      if (updated.conditionRounds === 0) updated.conditions = [];
+    }
+    if (result.downed) {
+      updated.hp = 0;
+      updated.concentration = false;
+    }
+    if (state.settings.trackResources) updated = spendResources(updated, result.resourcesSpent);
+    return updated;
+  });
+  const sample = outcomeSample(encounter, beforeParty, report);
+  state.learningSamples.push(sample);
+  state.learningSamples = state.learningSamples.slice(-24);
+  logEvent(
+    "encounter",
+    `${data.outcome}: ${encounter.title}`,
+    `${data.rounds} rounds · ${data.feedback} · ${
+      Object.values(members).reduce((sum, member) => sum + Number(member.hpLost), 0)
+    } HP lost · ${data.notes || "No additional notes"}`,
+  );
+  state.completed += 1;
+  state.encounterControls = { rerolls: {}, ratings: {}, kinds: {} };
+  $("#resolve-dialog").close();
+  saveState();
+  renderParty();
+  updateForecast(`Encounter resolved · model now has ${state.learningSamples.length} samples`);
+}
+
 function focusEncounter(number, target) {
   const element = target === "map"
     ? document.querySelector(`.map-cell[data-encounter="${number}"]`)
@@ -488,22 +769,35 @@ function openMemberDialog(id = null) {
   form.reset();
   const member = state.party.find((item) => item.id === id);
   $("#dialog-title").textContent = member ? `Update ${member.name}` : "Add adventurer";
-  const defaults = member ? { ...member, conModifier: member.conModifier ?? 0 } : {
-    memberId: "",
-    name: "",
-    class: "Fighter",
-    level: 1,
-    hp: 10,
-    maxHp: 10,
-    ac: 14,
-    conModifier: 0,
-    resource: 1,
-    maxResource: 1,
-  };
+  const defaults = member
+    ? {
+      ...member,
+      conModifier: member.conModifier ?? 0,
+      tempHp: member.tempHp ?? 0,
+      exhaustion: member.exhaustion ?? 0,
+      deathSuccesses: member.deathSaves?.successes ?? 0,
+      deathFailures: member.deathSaves?.failures ?? 0,
+      conditions: (member.conditions ?? []).join(", "),
+      conditionRounds: member.conditionRounds ?? 0,
+    }
+    : {
+      memberId: "",
+      name: "",
+      class: "Fighter",
+      level: 1,
+      hp: 10,
+      maxHp: 10,
+      ac: 14,
+      conModifier: 0,
+      resource: 1,
+      maxResource: 1,
+    };
   for (const [key, value] of Object.entries(defaults)) {
     if (form.elements[key]) form.elements[key].value = value;
   }
   form.elements.memberId.value = member?.id ?? "";
+  form.elements.concentration.checked = Boolean(member?.concentration);
+  form.elements.inspiration.checked = Boolean(member?.inspiration);
   dialog.showModal();
   dialogClassProfile = null;
   loadClassProfile();
@@ -581,6 +875,7 @@ function saveMember(event) {
   const form = $("#member-form");
   if (!form.reportValidity()) return;
   const data = Object.fromEntries(new FormData(form));
+  const existingMember = state.party.find((item) => item.id === data.memberId);
   const member = {
     id: data.memberId || crypto.randomUUID(),
     name: data.name.trim(),
@@ -590,6 +885,17 @@ function saveMember(event) {
     maxHp: Number(data.maxHp),
     ac: Number(data.ac),
     conModifier: Number(data.conModifier),
+    tempHp: Number(data.tempHp),
+    exhaustion: Number(data.exhaustion),
+    deathSaves: {
+      successes: Number(data.deathSuccesses),
+      failures: Number(data.deathFailures),
+    },
+    conditions: String(data.conditions ?? "").split(",").map((condition) => condition.trim())
+      .filter(Boolean),
+    conditionRounds: Number(data.conditionRounds),
+    concentration: data.concentration === "on",
+    inspiration: data.inspiration === "on",
     resource: Number(data.resource),
     maxResource: Number(data.maxResource),
   };
@@ -606,6 +912,7 @@ function saveMember(event) {
   member.hp = Math.min(member.hp, member.maxHp);
   member.resource = Math.min(member.resource, member.maxResource);
   const index = state.party.findIndex((item) => item.id === member.id);
+  checkpoint(existingMember ? `Edit ${member.name}` : `Add ${member.name}`);
   if (index >= 0) {
     member.hitDice = hitDiceState({
       ...member,
@@ -613,6 +920,7 @@ function saveMember(event) {
     });
     state.party[index] = member;
   } else state.party.push(member);
+  logEvent("party", existingMember ? `Updated ${member.name}` : `Added ${member.name}`);
   saveState();
   dialogClose();
   renderParty();
@@ -657,6 +965,15 @@ function openShortRestDialog() {
 
 function applyShortRest(event) {
   event.preventDefault();
+  checkpoint("Short rest");
+  const rest = restLocation("short");
+  if (rest.interrupted) {
+    logEvent("rest", "Short rest interrupted", rest.detail);
+    saveState();
+    $("#short-rest-dialog").close();
+    updateForecast("The short rest was interrupted by dungeon activity");
+    return;
+  }
   const selections = Object.fromEntries(new FormData($("#short-rest-form")));
   const result = takeShortRest(state.party, selections);
   state.party = result.party;
@@ -664,23 +981,137 @@ function applyShortRest(event) {
   $("#short-rest-dialog").close();
   renderParty();
   const healed = result.healing.reduce((sum, entry) => sum + entry.restored, 0);
+  logEvent(
+    "rest",
+    "Short rest",
+    `${rest.detail} · ${healed} HP and ${result.resourcesRecovered} resource uses restored`,
+  );
+  saveState();
   updateForecast(
     `Short rest · ${healed} HP restored · ${result.resourcesRecovered} resource uses recovered`,
   );
 }
 
 function applyLongRest() {
+  checkpoint("Long rest");
+  const rest = restLocation("long");
+  if (rest.interrupted) {
+    logEvent("rest", "Long rest interrupted", rest.detail);
+    saveState();
+    updateForecast("The long rest was interrupted · no recovery applied");
+    return;
+  }
   state.party = takeLongRest(state.party);
+  logEvent("rest", "Long rest", `${rest.detail} · the living party was fully restored`);
   saveState();
   renderParty();
   updateForecast("Long rest · HP, Hit Dice, and all resources restored");
 }
 
+function restLocation(type) {
+  if (!state.settings.safeRestRules) return { detail: "Rest rules disabled", interrupted: false };
+  const key = `${state.floor}`;
+  const safeRoom = dungeon.rooms.find((room) => room.role === "safe");
+  if (safeRoom && !state.safeRoomsUsed[key]) {
+    state.safeRoomsUsed[key] = true;
+    state.awareness += type === "long" ? 1 : 0;
+    return { detail: `Sheltered in ${safeRoom.name}`, interrupted: false };
+  }
+  state.awareness += type === "long" ? 2 : 1;
+  const chance = type === "long" ? .35 : .2;
+  const interrupted = Math.random() < chance;
+  if (interrupted) state.completed += 1;
+  return {
+    detail: `Unsafe rest · dungeon awareness ${state.awareness}${
+      interrupted ? " · wandering threat" : ""
+    }`,
+    interrupted,
+  };
+}
+
+function openSettings() {
+  const form = $("#settings-form");
+  for (const [key, value] of Object.entries(state.settings)) {
+    if (form.elements[key]) form.elements[key].checked = Boolean(value);
+  }
+  $("#settings-dialog").showModal();
+}
+
+function saveSettings(event) {
+  event.preventDefault();
+  checkpoint("Change tracking settings");
+  const form = $("#settings-form");
+  state.settings = {
+    trackResources: form.elements.trackResources.checked,
+    trackAfflictions: form.elements.trackAfflictions.checked,
+    safeRestRules: form.elements.safeRestRules.checked,
+  };
+  logEvent("settings", "Tracking settings changed");
+  saveState();
+  $("#settings-dialog").close();
+  renderParty();
+  updateForecast("DM tracking settings applied");
+}
+
+function renderJournal() {
+  const learned = modelState();
+  $("#learning-summary").innerHTML = `<b>${
+    escapeHtml(learned.label)
+  }</b><span>${learned.samples} resolved encounter${
+    learned.samples === 1 ? "" : "s"
+  } · calibration ${learned.calibration.toFixed(2)} · ${
+    Math.round(learned.confidence * 100)
+  }% confidence</span><small>AoE ${
+    forecast?.profile?.capabilities?.aoe?.toFixed(1) ?? "—"
+  } · Control ${forecast?.profile?.capabilities?.control?.toFixed(1) ?? "—"} · Healing ${
+    forecast?.profile?.capabilities?.healing?.toFixed(1) ?? "—"
+  } · Ranged ${forecast?.profile?.capabilities?.ranged?.toFixed(1) ?? "—"}</small>`;
+  const markup = state.history.length
+    ? state.history.map((event) =>
+      `<article><time>${new Date(event.at).toLocaleString()}</time><div><b>${
+        escapeHtml(event.title)
+      }</b><span>Floor ${event.floor} · ${escapeHtml(event.type)}</span><p>${
+        escapeHtml(event.detail || "—")
+      }</p></div></article>`
+    ).join("")
+    : "<p>No campaign events recorded yet.</p>";
+  $("#journal-list").innerHTML = markup;
+  return markup;
+}
+
+function openJournal() {
+  renderJournal();
+  $("#journal-dialog").showModal();
+}
+
+function printJournal() {
+  const markup = renderJournal();
+  $("#journal-print-content").innerHTML = markup;
+  $("#journal-print-meta").textContent =
+    `Expedition ${state.expedition} · ${state.history.length} events · ${modelState().samples} learning samples`;
+  document.body.classList.add("print-journal");
+  requestAnimationFrame(() => globalThis.print());
+}
+
+function undoLastAction() {
+  const entry = state.undoStack.pop();
+  if (!entry) return;
+  Object.assign(state, clone(entry.snapshot));
+  saveState();
+  dungeon = generateDungeon(state.seed);
+  renderMeta();
+  renderParty();
+  buildMapCells();
+  updateForecast(`Undid: ${entry.label}`);
+}
+
 function newExpedition() {
+  checkpoint("Descend a floor");
   state.seed = randomSeed();
   state.completed = 0;
   state.floor += 1;
   dungeon = generateDungeon(state.seed);
+  logEvent("dungeon", `Descended to floor ${state.floor}`, `New seed ${state.seed}`);
   saveState();
   renderMeta();
   buildMapCells();
@@ -693,11 +1124,17 @@ function resetDungeon() {
     "Reset this dungeon to floor 1? Your party will be kept, but the map and encounter history will be replaced.",
   );
   if (!confirmed) return;
+  checkpoint("Reset dungeon");
   state.seed = randomSeed();
   state.completed = 0;
   state.floor = 1;
   state.expedition += 1;
+  state.encounterControls = { rerolls: {}, ratings: {}, kinds: {} };
+  state.encounterLocks = {};
+  state.safeRoomsUsed = {};
+  state.awareness = 0;
   dungeon = generateDungeon(state.seed);
+  logEvent("dungeon", "Dungeon reset", `Expedition ${state.expedition} began at ${state.seed}`);
   saveState();
   renderMeta();
   buildMapCells();
@@ -736,6 +1173,7 @@ function exportSession() {
 }
 
 function printMap() {
+  document.body.classList.remove("print-journal");
   if (!forecast) {
     forecast = buildEncounterForecast(state.party, state.seed, state.completed, state.floor);
     forecast.encounters = placeEncounters(forecast.encounters, dungeon, state.completed);
@@ -756,6 +1194,12 @@ function printMap() {
 $("#add-member").addEventListener("click", () => openMemberDialog());
 $("#add-member-wide").addEventListener("click", () => openMemberDialog());
 $("#save-member").addEventListener("click", saveMember);
+$("#resolve-form").addEventListener("submit", resolveEncounter);
+$("#open-settings").addEventListener("click", openSettings);
+$("#settings-form").addEventListener("submit", saveSettings);
+$("#open-journal").addEventListener("click", openJournal);
+$("#print-journal").addEventListener("click", printJournal);
+$("#undo-action").addEventListener("click", undoLastAction);
 $("#short-rest").addEventListener("click", openShortRestDialog);
 $("#short-rest-form").addEventListener("submit", applyShortRest);
 $("#long-rest").addEventListener("click", applyLongRest);
@@ -765,7 +1209,10 @@ $("#new-expedition").addEventListener("click", newExpedition);
 $("#reset-dungeon").addEventListener("click", resetDungeon);
 $("#replay-collapse").addEventListener("click", playCollapse);
 $("#refresh-forecast").addEventListener("click", () => {
+  checkpoint("Advance forecast");
   state.completed += 1;
+  state.encounterControls = { rerolls: {}, ratings: {}, kinds: {} };
+  logEvent("forecast", "Advanced to the next three encounters");
   saveState();
   updateForecast("Next three encounters rebalanced");
 });
@@ -776,6 +1223,7 @@ $("#copy-seed").addEventListener("click", async () => {
 $("#export-button").addEventListener("click", exportSession);
 $("#print-map").addEventListener("click", printMap);
 $("#theme-toggle").addEventListener("click", () => document.body.classList.toggle("high-contrast"));
+globalThis.addEventListener("afterprint", () => document.body.classList.remove("print-journal"));
 $("#model-toggle").addEventListener("click", () => {
   const panel = $(".model-explainer");
   panel.classList.toggle("open");
@@ -794,6 +1242,7 @@ $("#zoom-out").addEventListener("click", () => {
 
 renderMeta();
 renderParty();
+saveState();
 buildMapCells();
 playCollapse();
 updateForecast("");

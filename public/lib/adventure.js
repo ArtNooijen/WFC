@@ -415,7 +415,30 @@ export function takeShortRest(party, selections = {}, rng = Math.random) {
   return { party: restedParty, healing, resourcesRecovered };
 }
 
-export function analyzeParty(party) {
+const CLASS_CAPABILITIES = {
+  Barbarian: { aoe: 1, control: 2, healing: 1, ranged: 1 },
+  Bard: { aoe: 3, control: 5, healing: 3, ranged: 3 },
+  Cleric: { aoe: 4, control: 3, healing: 5, ranged: 3 },
+  Druid: { aoe: 4, control: 5, healing: 4, ranged: 3 },
+  Fighter: { aoe: 2, control: 2, healing: 1, ranged: 3 },
+  Monk: { aoe: 2, control: 3, healing: 1, ranged: 2 },
+  Paladin: { aoe: 2, control: 2, healing: 3, ranged: 1 },
+  Ranger: { aoe: 3, control: 3, healing: 2, ranged: 5 },
+  Rogue: { aoe: 1, control: 2, healing: 1, ranged: 4 },
+  Sorcerer: { aoe: 5, control: 4, healing: 1, ranged: 4 },
+  Warlock: { aoe: 3, control: 4, healing: 1, ranged: 5 },
+  Wizard: { aoe: 5, control: 5, healing: 1, ranged: 5 },
+};
+
+export function classCapability(member) {
+  const base = CLASS_CAPABILITIES[member.class] ?? { aoe: 2, control: 2, healing: 1, ranged: 2 };
+  const levelBonus = Number(member.level) >= 5 ? .5 : Number(member.level) >= 3 ? .25 : 0;
+  return Object.fromEntries(
+    Object.entries(base).map(([key, value]) => [key, clamp(value + levelBonus, 1, 5)]),
+  );
+}
+
+export function analyzeParty(party, options = {}) {
   const members = party.filter((member) => member.name.trim() && !member.dead);
   if (!members.length) throw new Error("Add at least one adventurer");
 
@@ -423,7 +446,7 @@ export function analyzeParty(party) {
   const hpRatio = members.reduce((sum, member) => {
     return sum + clamp(Number(member.hp) / Math.max(1, Number(member.maxHp)), 0, 1);
   }, 0) / members.length;
-  const resourceRatio = members.reduce((sum, member) => {
+  const measuredResourceRatio = members.reduce((sum, member) => {
     const current = member.resources?.length
       ? member.resources.reduce((total, resource) => total + Number(resource.current ?? 0), 0)
       : Number(member.resource);
@@ -432,13 +455,29 @@ export function analyzeParty(party) {
       : Number(member.maxResource);
     return sum + clamp(current / Math.max(1, maximum), 0, 1);
   }, 0) / members.length;
+  const resourceRatio = options.trackResources === false ? 1 : measuredResourceRatio;
   const defense = members.reduce((sum, member) => sum + Number(member.ac || 10), 0) /
     members.length;
 
   // Attrition is intentionally dominant: lowering HP must always lower readiness.
   // Defense and level describe capacity, while HP/resources describe current condition.
   const defenseFactor = clamp((defense - 10) / 12, 0, 1);
-  const readiness = clamp(hpRatio * 0.58 + resourceRatio * 0.27 + defenseFactor * 0.15, 0, 1);
+  const afflictionLoad = options.trackAfflictions === false ? 0 : members.reduce((sum, member) => {
+    const conditions = member.conditions?.length ?? 0;
+    const exhaustion = Number(member.exhaustion ?? 0);
+    return sum + conditions * .035 + exhaustion * .055 + (member.concentration ? .01 : 0);
+  }, 0) / members.length;
+  const readiness = clamp(
+    hpRatio * 0.58 + resourceRatio * 0.27 + defenseFactor * 0.15 - afflictionLoad,
+    0,
+    1,
+  );
+  const capabilities = members.reduce((totals, member) => {
+    const profile = classCapability(member);
+    for (const key of Object.keys(totals)) totals[key] += profile[key];
+    return totals;
+  }, { aoe: 0, control: 0, healing: 0, ranged: 0 });
+  for (const key of Object.keys(capabilities)) capabilities[key] /= members.length;
   const wounded = members.filter((member) => Number(member.hp) / Number(member.maxHp) < 0.5).length;
   const critical =
     members.filter((member) => Number(member.hp) / Number(member.maxHp) < 0.25).length;
@@ -448,6 +487,9 @@ export function analyzeParty(party) {
     averageLevel: levelWeight / members.length,
     hpRatio,
     resourceRatio,
+    measuredResourceRatio,
+    afflictionLoad,
+    capabilities,
     defense,
     readiness,
     wounded,
@@ -457,19 +499,30 @@ export function analyzeParty(party) {
   };
 }
 
-export function buildEncounterForecast(party, seed = "ember-vault", completed = 0, floor = 1) {
-  const profile = analyzeParty(party);
+export function buildEncounterForecast(
+  party,
+  seed = "ember-vault",
+  completed = 0,
+  floor = 1,
+  modelContext = {},
+) {
+  const profile = analyzeParty(party, modelContext.settings ?? {});
+  const calibration = clamp(Number(modelContext.calibration ?? 1), .72, 1.35);
+  const planningReadiness = clamp(profile.readiness / calibration, 0, 1);
+  const awarenessPressure = clamp(Number(modelContext.awareness ?? 0) * .025, 0, .16);
+  profile.planningReadiness = planningReadiness;
+  profile.calibration = calibration;
   const rng = createRng(
     `${seed}:encounters:${completed}:${Math.round(profile.hpRatio * 20)}:${
       Math.round(profile.resourceRatio * 20)
     }`,
   );
   const milestoneFloor = floor % 3 === 0;
-  const tier = profile.readiness < 0.35
+  const tier = planningReadiness < 0.35
     ? "Shelter"
-    : profile.readiness < 0.58
+    : planningReadiness < 0.58
     ? "Cautious"
-    : profile.readiness < 0.78
+    : planningReadiness < 0.78
     ? "Steady"
     : "Bold";
   const pacingByTier = {
@@ -480,13 +533,15 @@ export function buildEncounterForecast(party, seed = "ember-vault", completed = 
   };
   const patterns = pacingByTier[tier];
   const pattern = patterns[Math.floor(rng() * patterns.length)];
-  const conditionCeiling = 0.38 + profile.readiness * 0.64;
-  const pressures = pattern.map((value) => clamp(value * conditionCeiling, 0.18, 0.94));
-  if (milestoneFloor) pressures[2] = profile.readiness >= 0.75 ? 1.06 : 0.9;
+  const conditionCeiling = 0.38 + planningReadiness * 0.64;
+  const pressures = pattern.map((value) =>
+    clamp(value * conditionCeiling + awarenessPressure, 0.18, 0.94)
+  );
+  if (milestoneFloor) pressures[2] = planningReadiness >= 0.75 ? 1.06 : 0.9;
 
   const encounters = pressures.map((pressure, index) => {
     let pool = ARCHETYPES;
-    if (profile.readiness < 0.35 && index < 2) {
+    if (planningReadiness < 0.35 && index < 2) {
       pool = ARCHETYPES.filter((item) => item.kind !== "combat" || item.weight < 0.7);
     }
     const archetype = pool[Math.floor(rng() * pool.length)];
@@ -522,7 +577,7 @@ export function buildEncounterForecast(party, seed = "ember-vault", completed = 
         ? clamp(Math.round(1 + pressure * archetype.weight * profile.members + rng()), 1, 8)
         : 0,
       rounds: clamp(Math.round(2 + pressure * 3 + rng()), 2, 6),
-      recovery: profile.readiness < 0.58 && index === 1
+      recovery: planningReadiness < 0.58 && index === 1
         ? "A short rest is possible afterward."
         : null,
       clue: [
@@ -553,8 +608,54 @@ export function buildEncounterForecast(party, seed = "ember-vault", completed = 
     pacing: pattern,
     floor,
     milestoneFloor,
-    model: "attrition-planner-v2",
+    model: "adaptive-attrition-v3",
+    learning: {
+      calibration,
+      samples: Number(modelContext.samples ?? 0),
+      awareness: Number(modelContext.awareness ?? 0),
+    },
   };
+}
+
+export function applyForecastControls(
+  forecast,
+  party,
+  seed,
+  completed,
+  floor,
+  controls = {},
+  modelContext = {},
+) {
+  const encounters = forecast.encounters.map((encounter, index) => {
+    const reroll = Number(controls.rerolls?.[index] ?? 0);
+    let result = encounter;
+    if (reroll > 0) {
+      result = buildEncounterForecast(
+        party,
+        `${seed}:reroll:${index}:${reroll}`,
+        completed,
+        floor,
+        modelContext,
+      ).encounters[index];
+    }
+    const rating = controls.ratings?.[index];
+    const kind = controls.kinds?.[index];
+    if (rating) result = { ...result, rating };
+    if (kind && kind !== "auto") {
+      const changed = kind !== result.kind;
+      result = {
+        ...result,
+        kind,
+        title: changed ? `The DM's ${kind} challenge` : result.title,
+        objective: changed
+          ? `Resolve this ${kind} scene using the room and party state.`
+          : result.objective,
+        twist: changed ? "Use the room condition as the scene's complication." : result.twist,
+      };
+    }
+    return result;
+  });
+  return { ...forecast, encounters };
 }
 
 const TILE = {

@@ -1,6 +1,8 @@
 import {
   analyzeParty,
+  applyForecastControls,
   buildEncounterForecast,
+  classCapability,
   generateDungeon,
   hitDiceState,
   placeEncounters,
@@ -15,6 +17,7 @@ import {
   normalizeClassLevel,
   partyThresholds,
 } from "../srd.ts";
+import { learningModel, outcomeSample } from "../public/lib/campaign.js";
 
 const PARTY = [
   { name: "Mira", level: 4, hp: 27, maxHp: 31, ac: 16, resource: 3, maxResource: 4 },
@@ -223,5 +226,47 @@ Deno.test("short and long rests update only the appropriate party resources", ()
     takeLongRest([fallen])[0].hp !== 0 || takeShortRest([fallen], { fighter: 3 }).party[0].hp !== 0
   ) {
     throw new Error("resting revived a fallen adventurer");
+  }
+});
+
+Deno.test("class capabilities and tracking settings work without spell bookkeeping", () => {
+  if (
+    classCapability({ class: "Wizard", level: 5 }).aoe <=
+      classCapability({ class: "Fighter", level: 5 }).aoe
+  ) {
+    throw new Error("class AoE ratings are not differentiated");
+  }
+  const afflicted = PARTY.map((member) => ({ ...member, conditions: ["poisoned"], exhaustion: 2 }));
+  const tracked = analyzeParty(afflicted, { trackAfflictions: true });
+  const ignored = analyzeParty(afflicted, { trackAfflictions: false });
+  if (tracked.readiness >= ignored.readiness) {
+    throw new Error("afflictions did not affect readiness");
+  }
+});
+
+Deno.test("resolved outcomes train a bounded per-party calibration model", () => {
+  const sample = outcomeSample({ id: "e1", rating: "Moderate" }, PARTY, {
+    rounds: 8,
+    feedback: "harder",
+    members: {
+      a: { hpLost: 25, resourcesSpent: 3, downed: true },
+      b: { hpLost: 15, resourcesSpent: 2, downed: false },
+    },
+  });
+  const learned = learningModel(Array(8).fill(sample));
+  if (learned.calibration <= 1 || learned.calibration > 1.35 || learned.samples !== 8) {
+    throw new Error("learning calibration did not adapt safely");
+  }
+});
+
+Deno.test("DM encounter controls reroll and override type and difficulty", () => {
+  const base = buildEncounterForecast(PARTY, "control-vault", 0, 1);
+  const changed = applyForecastControls(base, PARTY, "control-vault", 0, 1, {
+    rerolls: { 0: 1 },
+    ratings: { 0: "Hard" },
+    kinds: { 0: "puzzle" },
+  });
+  if (changed.encounters[0].rating !== "Hard" || changed.encounters[0].kind !== "puzzle") {
+    throw new Error("DM encounter override was not applied");
   }
 });

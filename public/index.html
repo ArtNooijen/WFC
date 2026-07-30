@@ -23,8 +23,11 @@
             title="Copy dungeon seed"><span id="seed-label"></span> <span>⌘</span></button>
         </div>
         <div class="top-actions">
+          <button class="ghost-button" id="undo-action" disabled>Undo</button>
+          <button class="ghost-button" id="open-journal">Journal</button>
           <button class="ghost-button reset-button" id="reset-dungeon">Reset dungeon</button>
           <button class="ghost-button" id="new-expedition">Descend a floor</button>
+          <button class="icon-button" id="open-settings" aria-label="DM settings">⚙</button>
           <button class="icon-button" id="theme-toggle" aria-label="Toggle contrast">◐</button>
         </div>
       </header>
@@ -123,7 +126,7 @@
             <button id="model-toggle"
               aria-expanded="false"><span>How does this work?</span><span>⌄</span></button>
             <p
-              id="model-copy">The attrition planner gives health the greatest weight, followed by supplies and defence. As the party weakens, budgets, foe counts, and encounter ratings fall. Critically wounded groups are also given aid, recovery opportunities, and non-combat choices.</p>
+              id="model-copy">The DM-only adaptive planner weighs health, enabled resource and affliction tracking, class AoE/control/healing/ranged ratings, dungeon awareness, and your resolved-encounter feedback. It learns a bounded calibration for this party without replacing official XP bands.</p>
           </div>
         </aside>
       </main>
@@ -168,6 +171,22 @@
           <label>Armor class<input name="ac" type="number" min="1" max="40" required /></label>
           <label>CON modifier<input name="conModifier" type="number" min="-5" max="10" value="0" required /></label>
           <label
+            class="affliction-field">Temporary HP<input name="tempHp" type="number" min="0" max="999" value="0" required /></label>
+          <label
+            class="affliction-field">Exhaustion<input name="exhaustion" type="number" min="0" max="6" value="0" required /></label>
+          <label
+            class="affliction-field">Death save successes<input name="deathSuccesses" type="number" min="0" max="3" value="0" required /></label>
+          <label
+            class="affliction-field">Death save failures<input name="deathFailures" type="number" min="0" max="3" value="0" required /></label>
+          <label
+            class="full-field affliction-field">Conditions<input name="conditions" placeholder="poisoned, frightened, restrained" /></label>
+          <label
+            class="affliction-field">Condition duration<input name="conditionRounds" type="number" min="0" max="999" value="0" /><small>Rounds; 0 means until cleared</small></label>
+          <label
+            class="check-field affliction-field"><input name="concentration" type="checkbox" /> Concentrating</label>
+          <label
+            class="check-field affliction-field"><input name="inspiration" type="checkbox" /> Inspiration</label>
+          <label
             class="legacy-resource">Fallback resources<input name="resource" type="number" min="0" max="99" required /></label>
           <label
             class="legacy-resource">Fallback maximum<input name="maxResource" type="number" min="1" max="99" required /></label>
@@ -204,6 +223,53 @@
         </div>
       </form>
     </dialog>
+
+    <dialog id="resolve-dialog">
+      <form method="dialog" id="resolve-form">
+        <input type="hidden" name="encounterIndex" />
+        <div
+          class="dialog-heading"><div><p class="eyebrow">After action report</p><h2 id="resolve-title">Resolve encounter</h2></div><button value="cancel" class="icon-button">×</button></div>
+        <div class="field-grid">
+          <label>Outcome<select name="outcome"><option>Defeated</option><option>Escaped</option><option>Negotiated</option><option>Avoided</option></select></label>
+          <label>Rounds<input name="rounds" type="number" min="0" max="30" value="3" /></label>
+          <label>DM assessment<select name="feedback"><option value="accurate">As predicted</option><option value="easier">Easier than predicted</option><option value="harder">Harder than predicted</option></select></label>
+          <label>Notes<input name="notes" maxlength="180" placeholder="What changed in the fiction?" /></label>
+        </div>
+        <div id="resolution-members" class="resolution-members"></div>
+        <div
+          class="dialog-actions"><button value="cancel" class="ghost-button">Cancel</button><button value="default" class="primary-button">Resolve and learn</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="settings-dialog">
+      <form method="dialog" id="settings-form">
+        <div
+          class="dialog-heading"><div><p class="eyebrow">DM controls</p><h2>Tracking settings</h2></div><button value="cancel" class="icon-button">×</button></div>
+        <div class="setting-list">
+          <label><span><b>Class resources</b><small>Show pools and use them in readiness.</small></span><input name="trackResources" type="checkbox" /></label>
+          <label><span><b>Afflictions</b><small>Show conditions and apply their model penalty.</small></span><input name="trackAfflictions" type="checkbox" /></label>
+          <label><span><b>Safe-room rest rules</b><small>Resting consumes sanctuary and raises dungeon awareness.</small></span><input name="safeRestRules" type="checkbox" /></label>
+        </div>
+        <div
+          class="dialog-actions"><button value="cancel" class="ghost-button">Cancel</button><button value="default" class="primary-button">Save settings</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="journal-dialog" class="journal-dialog">
+      <form method="dialog">
+        <div
+          class="dialog-heading"><div><p class="eyebrow">DM campaign record</p><h2>Expedition journal</h2></div><button value="cancel" class="icon-button">×</button></div>
+        <div id="learning-summary" class="learning-summary"></div>
+        <div id="journal-list" class="journal-list"></div>
+        <div
+          class="dialog-actions"><button type="button" id="print-journal" class="ghost-button">Print journal</button><button value="cancel" class="primary-button">Close</button></div>
+      </form>
+    </dialog>
+
+    <section class="journal-print-sheet" id="journal-print-sheet" aria-hidden="true">
+      <header><p>DELVEWRIGHT · DM CAMPAIGN RECORD</p><h1>Expedition Journal</h1><span id="journal-print-meta"></span></header>
+      <div id="journal-print-content"></div>
+    </section>
 
     <div id="toast" class="toast" role="status"></div>
     <script type="module" src="/app.js"></script>

@@ -34,6 +34,16 @@ deno task check
 - A black-and-white A4 landscape print sheet that fits the full map, numbered encounters, seed,
   floor, and symbol key inside fixed print margins.
 - Local session persistence, encounter advancement, contrast controls, zoom, and JSON export.
+- DM-only encounter resolution with HP loss, resource expenditure, downed characters, outcome
+  notes, rounds, and an easier/accurate/harder assessment.
+- A bounded per-party learning calibration trained from the most recent 24 resolved encounters.
+- Per-class AoE, control, healing, and ranged capability ratings plus action-economy, flight, and
+  monster-trait risk notes.
+- Encounter reroll, lock, difficulty, scene-type, and resolve controls.
+- Temporary HP, conditions with round durations, concentration, Inspiration, exhaustion, and death
+  saves, with settings to disable resource or affliction tracking without deleting data.
+- Safe-room consumption, unsafe-rest interruption, dungeon-awareness pressure, a 30-step undo
+  stack, and a printable 150-event campaign journal.
 - A small JSON API at `POST /api/forecast` with an in-browser fallback.
 
 ## Architecture
@@ -67,8 +77,8 @@ Every third floor does end in a hard guardian room. The `Deadly` tier is restric
 milestone floors and only used when party condition makes it reasonable. Lower HP reduces the
 forecast's overall pressure and can introduce recovery or non-combat choices.
 
-This is deliberately an explainable baseline, not an untrained neural-network claim. To train a
-useful model, capture one row after every encounter:
+This remains an explainable model rather than an unsupported neural-network claim. The resolution
+form now captures a compact outcome row after every encounter:
 
 ```json
 {
@@ -79,7 +89,9 @@ useful model, capture one row after every encounter:
 }
 ```
 
-Once there are a few hundred diverse encounters, train a gradient-boosted model first (it is usually
+The application immediately uses a bounded, recency-weighted per-party calibration so it can learn
+with small amounts of data without producing extreme forecasts. Once there are a few hundred
+diverse encounters, train a gradient-boosted model first (it is usually
 stronger and easier to explain on small tabular datasets). Export it to ONNX and replace
 `buildEncounterForecast` behind the existing API. An LLM is most useful after budgeting: turn the
 structured budget and room context into evocative creatures, clues, hazards, and treasure. It should
@@ -120,6 +132,6 @@ not exposed by this SRD API).
 1. Add campaign accounts and a database (party snapshots, seeds, room state, outcomes).
 2. Replace browser local storage with server-side expedition/event persistence.
 3. Add D&D ruleset-specific encounter math and monster data under an appropriate license.
-4. Record outcomes and build an offline training/evaluation pipeline.
+4. Export accumulated outcome rows into an offline training/evaluation pipeline.
 5. Add an LLM content adapter with schema validation, caching, and a GM approval step.
-6. Add map editing, fog of war, room notes, shareable player view, and undo history.
+6. Add map editing and room notes while keeping the application DM-only.

@@ -129,6 +129,8 @@ type PartyCondition = {
   readiness?: number;
   hpRatio?: number;
   criticalMembers?: number;
+  aoeRating?: number;
+  rangedRating?: number;
 };
 
 function clamp(value: number, minimum: number, maximum: number) {
@@ -172,7 +174,10 @@ export function chooseComposition(
   const band = conditionBudgetBand(difficulty, thresholds, condition);
   const desiredCount = Math.max(
     1,
-    Math.floor(1 + band.conditionScore * (Math.min(6, partySize + 1) - 1)),
+    Math.floor(
+      1 + band.conditionScore * (Math.min(6, partySize + 1) - 1) +
+        Math.max(0, Number(condition.aoeRating ?? 3) - 3) * .35,
+    ),
   );
   const options = [];
   for (let count = 1; count <= 8; count++) {
@@ -440,6 +445,22 @@ async function buildMonsterEncounter(
   const monster = await getMonsterForCr(composition.cr, seed, encounter.title);
   const baseXp = monster.xp * composition.count;
   const adjustedXp = Math.round(baseXp * composition.multiplier);
+  const aoeRating = Number(condition.aoeRating ?? 3);
+  const actionRatio = composition.count / Math.max(1, party.length);
+  const flying = Object.keys(monster.speed ?? {}).includes("fly");
+  const riskSignals = [
+    actionRatio >= 1.5
+      ? aoeRating >= 4
+        ? `Horde pressure moderated by party AoE ${aoeRating.toFixed(1)}/5`
+        : `High action-economy risk; party AoE is only ${aoeRating.toFixed(1)}/5`
+      : `Action economy ${composition.count}:${party.length}`,
+    flying
+      ? Number(condition.rangedRating ?? 3) >= 3.5
+        ? "Flight covered by strong ranged capability"
+        : "Flight may invalidate melee specialists"
+      : null,
+    monster.traits?.length ? `Traits: ${monster.traits.join(", ")}` : null,
+  ].filter(Boolean);
   return {
     difficulty: classifyAdjustedXp(adjustedXp, thresholds),
     target: difficulty,
@@ -453,6 +474,12 @@ async function buildMonsterEncounter(
     conditionPercentile: composition.band.percentile,
     conditionScore: composition.band.conditionScore,
     desiredCount: composition.desiredCount,
+    analysis: {
+      aoeRating,
+      actionRatio,
+      risk: actionRatio >= 1.5 && aoeRating < 3 ? "high" : actionRatio > 1 ? "watch" : "controlled",
+      signals: riskSignals,
+    },
     rule: `${composition.count} creature${
       composition.count === 1 ? "" : "s"
     } × ${composition.multiplier} encounter multiplier`,
@@ -575,9 +602,11 @@ export async function enrichWithSrd(
       thresholds,
       `${seed}:${index}:${hashSeed(encounter.title)}`,
       {
-        readiness: forecast.profile?.readiness,
+        readiness: forecast.profile?.planningReadiness ?? forecast.profile?.readiness,
         hpRatio: forecast.profile?.hpRatio,
         criticalMembers: forecast.profile?.critical,
+        aoeRating: forecast.profile?.capabilities?.aoe,
+        rangedRating: forecast.profile?.capabilities?.ranged,
       },
     );
     return {
