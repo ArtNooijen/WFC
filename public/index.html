@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#21170f" />
+    <title>Delvewright — living dungeons</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="noise"></div>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#" aria-label="Delvewright home">
+          <span class="brand-mark">D</span>
+          <span><strong>DELVEWRIGHT</strong><small>An atlas for the underworld</small></span>
+        </a>
+        <div class="run-meta">
+          <span class="live-dot">✦</span>
+          <span>Expedition <b id="expedition-number">01</b> · Floor <b id="floor-number">1</b></span>
+          <span class="separator"></span>
+          <button class="seed-button" id="copy-seed"
+            title="Copy dungeon seed"><span id="seed-label"></span> <span>⌘</span></button>
+        </div>
+        <div class="top-actions">
+          <button class="ghost-button" id="new-expedition">Descend a floor</button>
+          <button class="icon-button" id="theme-toggle" aria-label="Toggle contrast">◐</button>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <aside class="party-panel panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Your table</p>
+              <h1>The company</h1>
+            </div>
+            <button id="add-member" class="add-button" aria-label="Add a party member">＋</button>
+          </div>
+          <div class="party-summary">
+            <div><strong id="party-level">4.0</strong><span>AVG LVL</span></div>
+            <div><strong id="party-hp">84%</strong><span>VITALITY</span></div>
+            <div><strong id="party-size">4</strong><span>SOULS</span></div>
+          </div>
+          <div id="party-list" class="party-list"></div>
+          <button id="add-member-wide" class="wide-add"><span>＋</span> Add adventurer</button>
+          <div
+            class="panel-note"><span>✦</span><p>Changes reshape what waits ahead—not the dungeon beneath your feet.</p></div>
+        </aside>
+
+        <section class="map-stage">
+          <div class="map-heading">
+            <div>
+              <p class="eyebrow"><span class="crumb-muted">The Ember Vault</span> / Folio I</p>
+              <h2>The dungeon remembers.</h2>
+            </div>
+            <div class="map-actions">
+              <div class="segmented" role="group" aria-label="Map zoom">
+                <button id="zoom-out" aria-label="Zoom out">−</button><span id="zoom-label">100%</span><button id="zoom-in" aria-label="Zoom in">＋</button>
+              </div>
+              <button class="collapse-button" id="replay-collapse"><span>✎</span> Redraw</button>
+            </div>
+          </div>
+
+          <div class="map-frame" id="map-frame">
+            <div id="ascii-map" class="ascii-map" aria-label="Generated ASCII dungeon map"></div>
+            <div class="map-corner top-left"></div>
+            <div class="map-corner top-right"></div>
+            <div class="map-corner bottom-left"></div>
+            <div class="map-corner bottom-right"></div>
+            <div class="collapse-status"
+              id="collapse-status"><span class="spinner">✎</span><span><b>INKING THE PASSAGES</b><small id="collapse-count">0 / 0 marks drawn</small></span></div>
+            <div
+              class="map-legend"><span><i class="entry-symbol">@</i> Party</span><span><i class="event-symbol">1–3</i> Forecast rooms</span><span><i class="exit-symbol">&gt;</i> Deeper</span></div>
+          </div>
+
+          <div class="map-footer">
+            <p><span class="pulse-ring">✦</span><b>The ink is dry</b><small>Rooms and passages persist when the party changes.</small></p>
+            <button id="export-button">Export session <span>↗</span></button>
+          </div>
+          <div class="atlas-key" aria-label="Dungeon map key">
+            <span><b>+</b> door</span><span><b>╬</b> locked</span><span><b>S</b> safe room</span><span><b>$</b> loot</span><span><b>^</b> trap</span><span><b>†</b> shrine</span><span><b>~</b> water</span><span><b>%</b> rubble</span><span><b>?</b> secret</span>
+          </div>
+        </section>
+
+        <aside class="forecast-panel panel">
+          <div class="panel-heading forecast-heading">
+            <div>
+              <p class="eyebrow">The gamekeeper's counsel</p>
+              <h2>Three rooms ahead</h2>
+            </div>
+            <span class="model-pill" id="pacing-label">V2 · ATTRITION</span>
+          </div>
+          <div class="readiness-card">
+            <div class="readiness-ring"
+              id="readiness-ring"><span id="readiness-value">—</span></div>
+            <div><span>PARTY CONDITION</span><strong id="readiness-label">Taking stock…</strong><small>Health · supplies · armour · level</small></div>
+          </div>
+          <div id="encounter-list" class="encounter-list"></div>
+          <section class="dungeon-ledger">
+            <div
+              class="ledger-title"><span>Dungeon ledger</span><b id="room-count">— rooms</b></div>
+            <div id="room-conditions" class="room-conditions"></div>
+            <div
+              class="loot-heading"><span>Loot table</span><small>Hidden until discovered</small></div>
+            <div id="loot-table" class="loot-table"></div>
+          </section>
+          <button class="rest-button"
+            id="refresh-forecast"><span>↻</span><span><b>Read the party again</b><small>Keep the map. Soften the road if wounded.</small></span></button>
+          <div class="model-explainer">
+            <button id="model-toggle"
+              aria-expanded="false"><span>How does this work?</span><span>⌄</span></button>
+            <p
+              id="model-copy">The attrition planner gives health the greatest weight, followed by supplies and defence. As the party weakens, budgets, foe counts, and encounter ratings fall. Critically wounded groups are also given aid, recovery opportunities, and non-combat choices.</p>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <dialog id="member-dialog">
+      <form method="dialog" id="member-form">
+        <div
+          class="dialog-heading"><div><p class="eyebrow">Character sheet</p><h2 id="dialog-title">Add adventurer</h2></div><button value="cancel" class="icon-button">×</button></div>
+        <input type="hidden" name="memberId" />
+        <label
+          class="full-field">Name<input name="name" placeholder="e.g. Mira Vale" required maxlength="32" /></label>
+        <div class="field-grid">
+          <label>Class<select name="class"><option>Fighter</option><option>Wizard</option><option>Rogue</option><option>Cleric</option><option>Ranger</option><option>Paladin</option><option>Bard</option><option>Druid</option><option>Warlock</option><option>Monk</option><option>Barbarian</option><option>Sorcerer</option></select></label>
+          <label>Level<input name="level" type="number" min="1" max="20" required /></label>
+          <label>Current HP<input name="hp" type="number" min="0" max="999" required /></label>
+          <label>Maximum HP<input name="maxHp" type="number" min="1" max="999" required /></label>
+          <label>Armor class<input name="ac" type="number" min="1" max="40" required /></label>
+          <label>Resources left<input name="resource" type="number" min="0" max="99" required /></label>
+          <label>Max resources<input name="maxResource" type="number" min="1" max="99" required /></label>
+        </div>
+        <div
+          class="dialog-actions"><button value="cancel" class="ghost-button">Cancel</button><button value="default" id="save-member" class="primary-button">Save adventurer</button></div>
+      </form>
+    </dialog>
+
+    <div id="toast" class="toast" role="status"></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
