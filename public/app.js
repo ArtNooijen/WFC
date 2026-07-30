@@ -1440,12 +1440,9 @@ $("#new-expedition").addEventListener("click", newExpedition);
 $("#reset-dungeon").addEventListener("click", resetDungeon);
 $("#replay-collapse").addEventListener("click", playCollapse);
 $("#refresh-forecast").addEventListener("click", () => {
-  checkpoint("Advance forecast");
-  state.completed += 1;
-  state.encounterControls = { rerolls: {}, ratings: {}, kinds: {} };
-  logEvent("forecast", "Advanced to the next three encounters");
+  checkpoint("Read the party again");
   saveState();
-  updateForecast("Next three encounters rebalanced");
+  updateForecast("Party re-read · locked encounters preserved");
 });
 $("#copy-seed").addEventListener("click", async () => {
   await navigator.clipboard?.writeText(state.seed);
