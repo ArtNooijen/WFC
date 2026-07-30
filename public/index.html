@@ -100,13 +100,15 @@
               id="readiness-ring"><span id="readiness-value">—</span></div>
             <div><span>PARTY CONDITION</span><strong id="readiness-label">Taking stock…</strong><small>Health · supplies · armour · level</small></div>
           </div>
+          <div class="srd-status"
+            id="srd-status"><span>◌</span><div><b>Loading 2014 SRD data</b><small>Classes · monsters · magic items</small></div></div>
           <div id="encounter-list" class="encounter-list"></div>
           <section class="dungeon-ledger">
             <div
               class="ledger-title"><span>Dungeon ledger</span><b id="room-count">— rooms</b></div>
             <div id="room-conditions" class="room-conditions"></div>
             <div
-              class="loot-heading"><span>Loot table</span><small>Hidden until discovered</small></div>
+              class="loot-heading"><span>SRD loot suggestions</span><small>Items matched to party tier</small></div>
             <div id="loot-table" class="loot-table"></div>
           </section>
           <button class="rest-button"
@@ -158,9 +160,19 @@
           <label>Current HP<input name="hp" type="number" min="0" max="999" required /></label>
           <label>Maximum HP<input name="maxHp" type="number" min="1" max="999" required /></label>
           <label>Armor class<input name="ac" type="number" min="1" max="40" required /></label>
-          <label>Resources left<input name="resource" type="number" min="0" max="99" required /></label>
-          <label>Max resources<input name="maxResource" type="number" min="1" max="99" required /></label>
+          <label
+            class="legacy-resource">Fallback resources<input name="resource" type="number" min="0" max="99" required /></label>
+          <label
+            class="legacy-resource">Fallback maximum<input name="maxResource" type="number" min="1" max="99" required /></label>
         </div>
+        <section class="class-resource-sheet">
+          <div
+            class="resource-sheet-heading"><div><span>2014 SRD class resources</span><small id="class-source-label">Select a class and level</small></div><span class="api-mark">5e API</span></div>
+          <div id="srd-resource-list" class="srd-resource-list">
+            <p>Class resources will appear here.</p>
+          </div>
+          <div id="srd-class-notes" class="srd-class-notes"></div>
+        </section>
         <div
           class="dialog-actions"><button value="cancel" class="ghost-button">Cancel</button><button value="default" id="save-member" class="primary-button">Save adventurer</button></div>
       </form>

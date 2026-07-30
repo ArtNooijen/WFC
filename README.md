@@ -85,6 +85,36 @@ stronger and easier to explain on small tabular datasets). Export it to ONNX and
 structured budget and room context into evocative creatures, clues, hazards, and treasure. It should
 not be the only difficulty judge.
 
+## 2014 SRD and 5e-bits integration
+
+The Deno server talks to `https://www.dnd5eapi.co/api/2014` and keeps a one-hour in-memory cache.
+The browser never needs to call the public service directly. If it is unavailable, the forecast
+returns its local creative content with a visible fallback warning.
+
+Class selection and level changes load the real class-level record. The editor separates spell-slot
+levels and expendable class pools instead of treating them as one resource. Current integrations
+include Rage, Channel Divinity, Wild Shape, Action Surge, Indomitable, Ki, Sorcery Points, Warlock
+short-rest slots, and all available spell-slot levels. Informational values such as Bardic
+Inspiration die size, Arcane Recovery capacity, invocation count, proficiency bonus, and newly
+gained features are shown as notes. Wild Shape uses come from its linked SRD feature; its maximum CR
+and movement limits come from the selected class-level record.
+
+Combat uses the official 2014 encounter procedure:
+
+1. Sum Easy, Medium, Hard, and Deadly XP thresholds for every character level.
+2. Let the attrition planner choose the desired band from current party condition and dungeon pace.
+3. Search valid CR/count combinations inside that XP band.
+4. Apply the official multiple-monster multiplier, including small/large party adjustments.
+5. Fetch an actual monster for the chosen CR and expose its XP, AC, HP, type, actions, and
+   stat-block source.
+6. Apply the Basic Rules CR caution so non-deadly creatures do not exceed average party level.
+
+Every forecast includes at least one combat encounter. Non-combat puzzles and negotiations do not
+pretend to use monster XP rules. Loot combines actual magic-item records with useful
+adventuring-gear records and their listed prices; magic-item rarity is filtered toward the party's
+tier. These are suggestions, not a claim to reproduce the full DMG random-treasure tables (which are
+not exposed by this SRD API).
+
 ## Next production steps
 
 1. Add campaign accounts and a database (party snapshots, seeds, room state, outcomes).

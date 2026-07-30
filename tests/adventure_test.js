@@ -4,6 +4,12 @@ import {
   generateDungeon,
   placeEncounters,
 } from "../public/lib/adventure.js";
+import {
+  classifyAdjustedXp,
+  encounterMultiplier,
+  normalizeClassLevel,
+  partyThresholds,
+} from "../srd.ts";
 
 const PARTY = [
   { name: "Mira", level: 4, hp: 27, maxHp: 31, ac: 16, resource: 3, maxResource: 4 },
@@ -79,6 +85,9 @@ Deno.test("forecasts draw from a varied encounter library", () => {
   const titles = new Set();
   for (let index = 0; index < 20; index++) {
     const forecast = buildEncounterForecast(PARTY, `variety-${index}`, index, 1);
+    if (!forecast.encounters.some((encounter) => encounter.kind === "combat")) {
+      throw new Error("forecast has no rules-backed combat encounter");
+    }
     for (const encounter of forecast.encounters) {
       titles.add(encounter.title);
       if (!encounter.objective || !encounter.twist) {
@@ -96,4 +105,40 @@ Deno.test("the next three encounters are assigned to distinct named map rooms", 
   const coordinates = new Set(placed.map((encounter) => encounter.room.coordinates));
   if (coordinates.size !== 3) throw new Error("encounter markers overlap");
   if (placed.some((encounter) => !encounter.room.name)) throw new Error("unnamed encounter room");
+});
+
+Deno.test("2014 encounter thresholds reproduce the official mixed-party example", () => {
+  const thresholds = partyThresholds([{ level: 3 }, { level: 3 }, { level: 3 }, { level: 2 }]);
+  if (
+    JSON.stringify(thresholds) !==
+      JSON.stringify({ easy: 275, medium: 550, hard: 825, deadly: 1400 })
+  ) {
+    throw new Error(`incorrect thresholds: ${JSON.stringify(thresholds)}`);
+  }
+  if (encounterMultiplier(4, 4) !== 2) throw new Error("incorrect group multiplier");
+  if (classifyAdjustedXp(1000, thresholds) !== "hard") {
+    throw new Error("incorrect XP classification");
+  }
+});
+
+Deno.test("class level normalization exposes druid spell slots and Wild Shape separately", () => {
+  const profile = normalizeClassLevel({
+    level: 5,
+    prof_bonus: 3,
+    class: { name: "Druid" },
+    features: [],
+    spellcasting: {
+      spell_slots_level_1: 4,
+      spell_slots_level_2: 3,
+      spell_slots_level_3: 2,
+    },
+    class_specific: { wild_shape_max_cr: 0.5, wild_shape_swim: true, wild_shape_fly: false },
+  }, "Druid");
+  const pools = Object.fromEntries(
+    profile.resources.map((resource) => [resource.key, resource.maximum]),
+  );
+  if (pools["slot-1"] !== 4 || pools["slot-2"] !== 3 || pools["slot-3"] !== 2) {
+    throw new Error("spell slots were not preserved");
+  }
+  if (pools["wild-shape"] !== 2) throw new Error("Wild Shape uses missing");
 });

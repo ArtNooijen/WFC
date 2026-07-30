@@ -1,4 +1,5 @@
 import { buildEncounterForecast } from "./public/lib/adventure.js";
+import { enrichWithSrd, getClassProfile, hydratePartyResources } from "./srd.ts";
 
 const ROOT = new URL("./public/", import.meta.url);
 const MIME: Record<string, string> = {
@@ -31,11 +32,45 @@ Deno.serve({ port }, async (request) => {
   if (request.method === "POST" && url.pathname === "/api/forecast") {
     try {
       const body = await request.json();
-      return json(
-        buildEncounterForecast(body.party, body.seed, body.completed ?? 0, body.floor ?? 1),
+      let base = buildEncounterForecast(
+        body.party,
+        body.seed,
+        body.completed ?? 0,
+        body.floor ?? 1,
       );
+      try {
+        const hydrated = await hydratePartyResources(body.party);
+        base = buildEncounterForecast(
+          hydrated.party,
+          body.seed,
+          body.completed ?? 0,
+          body.floor ?? 1,
+        );
+        return json(
+          await enrichWithSrd(hydrated.party, base, body.seed, hydrated.classProfiles),
+        );
+      } catch (error) {
+        console.error("SRD enrichment unavailable:", error);
+        return json({
+          ...base,
+          dataSource: "fallback",
+          warning: "The live 5e SRD API is unavailable; showing local fallback content.",
+        });
+      }
     } catch (error) {
       return json({ error: error instanceof Error ? error.message : "Invalid request" }, 400);
+    }
+  }
+
+  const classMatch = url.pathname.match(/^\/api\/srd\/classes\/([a-z-]+)\/levels\/(\d{1,2})$/);
+  if (request.method === "GET" && classMatch) {
+    try {
+      return json(await getClassProfile(classMatch[1], Number(classMatch[2])));
+    } catch (error) {
+      return json(
+        { error: error instanceof Error ? error.message : "Unable to load class data" },
+        502,
+      );
     }
   }
 

@@ -60,6 +60,9 @@ let dungeon = generateDungeon(state.seed);
 let forecast = null;
 let animationFrame = null;
 let zoom = 1;
+let dialogClassProfile = null;
+let classProfileTimer = null;
+let classProfileRequest = 0;
 
 function loadState() {
   try {
@@ -89,6 +92,13 @@ function healthClass(member) {
   return ratio < 0.3 ? "critical" : ratio < 0.65 ? "wounded" : "";
 }
 
+function resourceSummary(member) {
+  if (!member.resources?.length) return `◈ ${member.resource}/${member.maxResource}`;
+  const current = member.resources.reduce((sum, pool) => sum + Number(pool.current), 0);
+  const maximum = member.resources.reduce((sum, pool) => sum + Number(pool.maximum), 0);
+  return `${member.resources.length} pools · ${current}/${maximum}`;
+}
+
 function renderParty() {
   const profile = analyzeParty(state.party);
   $("#party-level").textContent = profile.averageLevel.toFixed(1);
@@ -107,7 +117,7 @@ function renderParty() {
       </div>
       <div class="stat-bars"><div class="hp-bar"><i style="width:${
     Math.min(100, member.hp / member.maxHp * 100)
-  }%"></i></div><span>AC ${member.ac} · ◈ ${member.resource}/${member.maxResource}</span></div>
+  }%"></i></div><span>AC ${member.ac} · ${resourceSummary(member)}</span></div>
     </article>`).join("");
   document.querySelectorAll(".member-card").forEach((card) => {
     card.addEventListener("click", () => openMemberDialog(card.dataset.memberId));
@@ -148,11 +158,53 @@ function renderDungeonLedger() {
   $("#room-conditions").innerHTML = Object.entries(counts).slice(0, 4).map(([name, count]) =>
     `<span>${escapeHtml(name)} <b>${count}</b></span>`
   ).join("");
-  $("#loot-table").innerHTML = dungeon.loot.length
-    ? dungeon.loot.map((loot) =>
-      `<p><b>d8 · ${loot.roll}</b><span>${escapeHtml(loot.result)}</span></p>`
+  const lootEntries = forecast?.loot?.length ? forecast.loot : dungeon.loot;
+  $("#loot-table").innerHTML = lootEntries.length
+    ? lootEntries.map((loot) =>
+      loot.name
+        ? `<p class="api-loot"><b>${escapeHtml(loot.rarity)}</b><span><a href="${
+          escapeHtml(loot.source)
+        }" target="_blank" rel="noreferrer">${escapeHtml(loot.name)} ↗</a><small>${
+          escapeHtml(loot.description)
+        }</small></span></p>`
+        : `<p><b>d8 · ${loot.roll}</b><span>${escapeHtml(loot.result)}</span></p>`
     ).join("")
     : "<p><span>No marked cache on this floor.</span></p>";
+}
+
+function applyClassProfiles(entries) {
+  if (!entries?.length) return;
+  let changed = false;
+  for (const entry of entries) {
+    const member = state.party.find((candidate) => candidate.id === entry.id);
+    if (!member) continue;
+    const existing = new Map((member.resources ?? []).map((pool) => [pool.key, pool]));
+    const legacyRatio = Math.max(
+      0,
+      Math.min(1, Number(member.resource ?? 0) / Math.max(1, Number(member.maxResource ?? 1))),
+    );
+    member.resources = entry.profile.resources.map((pool) => ({
+      ...pool,
+      current: Math.min(
+        Number(existing.get(pool.key)?.current ?? Math.round(Number(pool.maximum) * legacyRatio)),
+        Number(pool.maximum),
+      ),
+    }));
+    member.classProfile = {
+      proficiencyBonus: entry.profile.proficiencyBonus,
+      notes: entry.profile.notes,
+      source: entry.profile.source,
+    };
+    if (member.resources.length) {
+      member.resource = member.resources.reduce((sum, pool) => sum + Number(pool.current), 0);
+      member.maxResource = member.resources.reduce((sum, pool) => sum + Number(pool.maximum), 0);
+    }
+    changed = true;
+  }
+  if (changed) {
+    saveState();
+    renderParty();
+  }
 }
 
 function playCollapse() {
@@ -198,6 +250,7 @@ async function updateForecast(message = "Forecast updated") {
   } finally {
     button.disabled = false;
   }
+  applyClassProfiles(forecast.classProfiles);
   forecast.encounters = placeEncounters(forecast.encounters, dungeon, state.completed);
   renderForecast();
   if (message) showToast(message);
@@ -205,6 +258,13 @@ async function updateForecast(message = "Forecast updated") {
 
 function renderForecast() {
   const percent = Math.round(forecast.profile.readiness * 100);
+  const liveSrd = forecast.dataSource?.includes("dnd5eapi.co");
+  $("#srd-status").classList.toggle("offline", !liveSrd);
+  $("#srd-status").innerHTML = liveSrd
+    ? `<span>✓</span><div><b>Live 2014 SRD data</b><small>Official XP rules · 5e-bits monsters and items</small></div>`
+    : `<span>!</span><div><b>Local fallback active</b><small>${
+      escapeHtml(forecast.warning ?? "SRD API data unavailable")
+    }</small></div>`;
   $("#pacing-label").textContent = `${forecast.plan} pace · floor ${forecast.floor}`;
   $("#readiness-value").textContent = `${percent}%`;
   $("#readiness-ring").style.setProperty("--readiness", `${percent}%`);
@@ -213,27 +273,53 @@ function renderForecast() {
     : percent > 55
     ? "Capable, with caution"
     : "Rest would be wise";
-  $("#encounter-list").innerHTML = forecast.encounters.map((encounter, index) => `
-    <article class="encounter-card" id="encounter-${encounter.marker}" data-encounter="${encounter.marker}" style="animation-delay:${
-    index * 80
-  }ms">
+  $("#encounter-list").innerHTML = forecast.encounters.map((encounter, index) => {
+    const combat = encounter.combat;
+    const displayedRating = combat
+      ? combat.difficulty[0].toUpperCase() + combat.difficulty.slice(1)
+      : encounter.rating;
+    const combatMarkup = combat
+      ? `<div class="combat-roster">
+          <div class="combat-title"><span>SRD COMBAT</span><b>${combat.count} × ${
+        escapeHtml(combat.monster.name)
+      }</b></div>
+          <div class="monster-stats"><span>CR ${combat.monster.cr}</span><span>AC ${combat.monster.ac}</span><span>HP ${combat.monster.hp} each</span><span>${
+        escapeHtml(combat.monster.type)
+      }</span></div>
+          <p>${escapeHtml(combat.monster.size)} ${escapeHtml(combat.monster.type)} · ${
+        escapeHtml(combat.monster.actions.join(" · ") || "See stat block")
+      }</p>
+          <div class="xp-proof"><span>${combat.baseXp.toLocaleString()} base XP</span><b>× ${combat.multiplier}</b><span>${combat.adjustedXp.toLocaleString()} adjusted XP</span></div>
+          <small>${escapeHtml(combat.rule)} · ${displayedRating} threshold ${
+        combat.thresholds[combat.difficulty].toLocaleString()
+      } XP<br>${escapeHtml(combat.safety)} · <a href="${
+        escapeHtml(combat.monster.source)
+      }" target="_blank" rel="noreferrer">SRD stat block ↗</a></small>
+        </div>`
+      : "";
+    return `<article class="encounter-card" id="encounter-${encounter.marker}" data-encounter="${encounter.marker}" style="animation-delay:${
+      index * 80
+    }ms">
       <button class="encounter-node locate-encounter" data-encounter="${encounter.marker}" title="Show room ${encounter.marker} on the map">${encounter.marker}</button>
       <div>
         <div class="encounter-order"><span>0${
-    index + 1
-  } · ${encounter.intent.toUpperCase()}</span><span class="rating ${encounter.rating}">${encounter.rating}</span></div>
+      index + 1
+    } · ${encounter.intent.toUpperCase()}</span><span class="rating ${displayedRating}">${displayedRating}</span></div>
         <h3>${escapeHtml(encounter.title)}</h3>
         <button class="encounter-location locate-encounter" data-encounter="${encounter.marker}"><b>ROOM ${encounter.marker}</b> ${
-    escapeHtml(encounter.room.name)
-  } · ${encounter.room.coordinates}</button>
+      escapeHtml(encounter.room.name)
+    } · ${encounter.room.coordinates}</button>
         <p><b>Objective:</b> ${escapeHtml(encounter.objective)}</p>
         <p class="encounter-twist"><b>Twist:</b> ${escapeHtml(encounter.twist)}</p>
-        <div class="encounter-meta"><span>${encounter.tone}</span><span>Budget ${encounter.budget}</span>${
-    encounter.foes ? `<span>${encounter.foes} foes</span>` : ""
-  }<span>~${encounter.rounds} rounds</span></div>
+        ${combatMarkup}
+        <div class="encounter-meta"><span>${encounter.tone}</span><span>${
+      combat ? "Adjusted XP" : "Pressure"
+    } ${encounter.budget}</span><span>~${encounter.rounds} rounds</span></div>
         ${encounter.recovery ? `<p class="recovery-note">✦ ${encounter.recovery}</p>` : ""}
       </div>
-    </article>`).join("");
+    </article>`;
+  }).join("");
+  renderDungeonLedger();
   renderEncounterMarkers();
 }
 
@@ -297,7 +383,75 @@ function openMemberDialog(id = null) {
   }
   form.elements.memberId.value = member?.id ?? "";
   dialog.showModal();
+  dialogClassProfile = null;
+  loadClassProfile();
   setTimeout(() => form.elements.name.focus(), 50);
+}
+
+async function loadClassProfile() {
+  const requestId = ++classProfileRequest;
+  const form = $("#member-form");
+  const className = form.elements.class.value.toLowerCase();
+  const level = Number(form.elements.level.value || 1);
+  const list = $("#srd-resource-list");
+  $("#save-member").disabled = true;
+  list.innerHTML = "<p>Consulting the 2014 SRD…</p>";
+  $("#class-source-label").textContent = `${form.elements.class.value} · level ${level}`;
+  try {
+    const response = await fetch(`/api/srd/classes/${className}/levels/${level}`);
+    if (!response.ok) throw new Error("Class data unavailable");
+    const profile = await response.json();
+    if (requestId !== classProfileRequest) return;
+    dialogClassProfile = profile;
+    const member = state.party.find((item) => item.id === form.elements.memberId.value);
+    const existing = new Map((member?.resources ?? []).map((pool) => [pool.key, pool]));
+    const legacyRatio = Math.max(
+      0,
+      Math.min(
+        1,
+        Number(member?.resource ?? form.elements.resource.value) /
+          Math.max(1, Number(member?.maxResource ?? form.elements.maxResource.value)),
+      ),
+    );
+    form.classList.toggle("has-srd-resources", profile.resources.length > 0);
+    list.innerHTML = profile.resources.length
+      ? profile.resources.map((pool) => {
+        const current = Math.min(
+          Number(
+            existing.get(pool.key)?.current ?? Math.round(Number(pool.maximum) * legacyRatio),
+          ),
+          Number(pool.maximum),
+        );
+        return `<label class="resource-pool"><span><b>${escapeHtml(pool.label)}</b><small>${
+          escapeHtml(pool.recharge)
+        }${
+          pool.detail ? ` · ${escapeHtml(pool.detail)}` : ""
+        }</small></span><input data-resource-key="${pool.key}" type="number" min="0" max="${pool.maximum}" value="${current}" aria-label="Current ${
+          escapeHtml(pool.label)
+        }"><em>/ ${pool.maximum}</em></label>`;
+      }).join("")
+      : "<p>This class has no expendable base-class pool in the API at this level.</p>";
+    $("#srd-class-notes").innerHTML = [
+      `Proficiency bonus +${profile.proficiencyBonus}`,
+      ...profile.notes,
+      ...(profile.features.length ? [`New at this level: ${profile.features.join(", ")}`] : []),
+    ].map((note) => `<span>${escapeHtml(note)}</span>`).join("");
+    $("#class-source-label").textContent = `Live data · ${profile.class} ${profile.level}`;
+  } catch {
+    if (requestId !== classProfileRequest) return;
+    dialogClassProfile = null;
+    form.classList.remove("has-srd-resources");
+    list.innerHTML =
+      "<p>Could not reach the SRD service. The fallback resource fields remain available.</p>";
+    $("#srd-class-notes").innerHTML = "";
+  } finally {
+    if (requestId === classProfileRequest) $("#save-member").disabled = false;
+  }
+}
+
+function queueClassProfile() {
+  clearTimeout(classProfileTimer);
+  classProfileTimer = setTimeout(loadClassProfile, 180);
 }
 
 function saveMember(event) {
@@ -316,6 +470,16 @@ function saveMember(event) {
     resource: Number(data.resource),
     maxResource: Number(data.maxResource),
   };
+  if (dialogClassProfile?.resources?.length) {
+    member.resources = dialogClassProfile.resources.map((pool) => ({
+      ...pool,
+      current: Number(
+        document.querySelector(`[data-resource-key="${pool.key}"]`)?.value ?? pool.current,
+      ),
+    }));
+    member.resource = member.resources.reduce((sum, pool) => sum + Number(pool.current), 0);
+    member.maxResource = member.resources.reduce((sum, pool) => sum + Number(pool.maximum), 0);
+  }
   member.hp = Math.min(member.hp, member.maxHp);
   member.resource = Math.min(member.resource, member.maxResource);
   const index = state.party.findIndex((item) => item.id === member.id);
@@ -411,6 +575,8 @@ function printMap() {
 $("#add-member").addEventListener("click", () => openMemberDialog());
 $("#add-member-wide").addEventListener("click", () => openMemberDialog());
 $("#save-member").addEventListener("click", saveMember);
+$("#member-form").elements.class.addEventListener("change", queueClassProfile);
+$("#member-form").elements.level.addEventListener("input", queueClassProfile);
 $("#new-expedition").addEventListener("click", newExpedition);
 $("#reset-dungeon").addEventListener("click", resetDungeon);
 $("#replay-collapse").addEventListener("click", playCollapse);

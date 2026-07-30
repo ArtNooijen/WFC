@@ -323,7 +323,13 @@ export function analyzeParty(party) {
     return sum + clamp(Number(member.hp) / Math.max(1, Number(member.maxHp)), 0, 1);
   }, 0) / members.length;
   const resourceRatio = members.reduce((sum, member) => {
-    return sum + clamp(Number(member.resource) / Math.max(1, Number(member.maxResource)), 0, 1);
+    const current = member.resources?.length
+      ? member.resources.reduce((total, resource) => total + Number(resource.current ?? 0), 0)
+      : Number(member.resource);
+    const maximum = member.resources?.length
+      ? member.resources.reduce((total, resource) => total + Number(resource.maximum ?? 0), 0)
+      : Number(member.maxResource);
+    return sum + clamp(current / Math.max(1, maximum), 0, 1);
   }, 0) / members.length;
   const defense = members.reduce((sum, member) => sum + Number(member.ac || 10), 0) /
     members.length;
@@ -426,6 +432,19 @@ export function buildEncounterForecast(party, seed = "ember-vault", completed = 
       ][Math.floor(rng() * 4)],
     };
   });
+  if (!encounters.some((encounter) => encounter.kind === "combat")) {
+    const hardestIndex = pressures.indexOf(Math.max(...pressures));
+    const combatPool = ARCHETYPES.filter((archetype) => archetype.kind === "combat");
+    const archetype = combatPool[Math.floor(rng() * combatPool.length)];
+    Object.assign(encounters[hardestIndex], {
+      title: archetype.name,
+      kind: archetype.kind,
+      icon: archetype.icon,
+      tone: archetype.tone,
+      objective: archetype.objective,
+      twist: archetype.twist,
+    });
+  }
   return {
     profile,
     encounters,

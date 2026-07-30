@@ -672,6 +672,47 @@ h1,
   gap: 13px;
   margin-bottom: 18px;
 }
+
+.srd-status {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: -8px 0 12px;
+  padding: 7px 9px;
+  border-left: 2px solid #789663;
+  background: rgba(103, 132, 78, .08);
+}
+
+.srd-status > span {
+  color: #9fbd82;
+  font: 12px var(--mono);
+}
+
+.srd-status b,
+.srd-status small {
+  display: block;
+}
+
+.srd-status b {
+  color: #b9caa8;
+  font: 8px var(--mono);
+  text-transform: uppercase;
+}
+
+.srd-status small {
+  margin-top: 2px;
+  color: var(--dim);
+  font: 7px var(--mono);
+}
+
+.srd-status.offline {
+  border-left-color: #a86143;
+  background: rgba(151, 76, 43, .08);
+}
+
+.srd-status.offline > span {
+  color: #d6865c;
+}
 .readiness-ring {
   --readiness: 50%;
   width: 52px;
@@ -1549,6 +1590,79 @@ h1,
   color: #8f8069 !important;
 }
 
+.combat-roster {
+  margin: 9px 0;
+  padding: 9px;
+  border: 1px solid #5b4227;
+  background: rgba(16, 11, 7, .5);
+}
+
+.combat-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.combat-title span {
+  color: #9a7e52;
+  font: 7px var(--mono);
+  letter-spacing: .12em;
+}
+
+.combat-title b {
+  color: #e1c287;
+  font: 9px var(--mono);
+}
+
+.monster-stats,
+.xp-proof {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.monster-stats span {
+  padding: 3px 5px;
+  border: 1px solid #49351f;
+  color: #b6a17e;
+  font: 7px var(--mono);
+}
+
+.combat-roster p {
+  margin: 7px 0 !important;
+}
+
+.xp-proof {
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0 5px;
+  border-top: 1px dotted #4d3924;
+  color: #ae9875;
+  font: 7px var(--mono);
+}
+
+.xp-proof b {
+  color: #d9ad61;
+}
+
+.combat-roster > small {
+  display: block;
+  color: #756852;
+  font: 6.5px/1.45 var(--mono);
+}
+
+.combat-roster a,
+.api-loot a {
+  color: #c9a35e;
+  text-decoration: none;
+}
+
+.combat-roster a:hover,
+.api-loot a:hover {
+  text-decoration: underline;
+}
+
 .encounter-card.focused {
   background: rgba(148, 96, 43, .18);
   outline: 1px solid #9e743e;
@@ -1558,7 +1672,13 @@ h1,
 .rating.Low {
   color: #9db787;
 }
+.rating.Easy {
+  color: #9db787;
+}
 .rating.Moderate {
+  color: #d2ae65;
+}
+.rating.Medium {
   color: #d2ae65;
 }
 .rating.Hard {
@@ -1662,6 +1782,128 @@ h1,
 
 .loot-table p b {
   color: #caa55d;
+}
+
+.loot-table .api-loot {
+  grid-template-columns: 58px 1fr;
+}
+
+.api-loot small {
+  display: -webkit-box;
+  margin-top: 3px;
+  overflow: hidden;
+  color: #746753;
+  font: 7px/1.45 var(--mono);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.class-resource-sheet {
+  margin-top: 18px;
+  padding: 13px;
+  border: 1px solid #594025;
+  background: rgba(16, 11, 7, .38);
+}
+
+.resource-sheet-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.resource-sheet-heading span,
+.resource-sheet-heading small {
+  display: block;
+}
+
+.resource-sheet-heading span {
+  color: #d0ad6e;
+  font: 8px var(--mono);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+}
+
+.resource-sheet-heading small {
+  margin-top: 3px;
+  color: var(--dim);
+  font: 7px var(--mono);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.resource-sheet-heading .api-mark {
+  padding: 3px 5px;
+  border: 1px solid #6c4c28;
+  font-size: 6px;
+}
+
+.srd-resource-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.srd-resource-list > p {
+  grid-column: 1/-1;
+  margin: 0;
+  color: var(--dim);
+  font: 8px/1.5 var(--mono);
+}
+
+.resource-pool {
+  display: grid;
+  grid-template-columns: 1fr 48px auto;
+  align-items: center;
+  gap: 6px;
+  padding: 7px;
+  border: 1px solid #45321f;
+  text-transform: none;
+}
+
+.resource-pool b,
+.resource-pool small {
+  display: block;
+}
+
+.resource-pool b {
+  color: #cab58f;
+  font: 8px var(--mono);
+}
+
+.resource-pool small {
+  margin-top: 3px;
+  color: #756852;
+  font: 6px/1.35 var(--mono);
+}
+
+.resource-pool input {
+  margin: 0;
+  padding: 7px 4px;
+  text-align: center;
+}
+
+.resource-pool em {
+  color: #8b795d;
+  font: normal 7px var(--mono);
+}
+
+.srd-class-notes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 9px;
+}
+
+.srd-class-notes span {
+  padding: 3px 5px;
+  background: rgba(118, 85, 43, .16);
+  color: #927d5c;
+  font: 6.5px var(--mono);
+}
+
+.has-srd-resources .legacy-resource {
+  display: none;
 }
 
 dialog,
