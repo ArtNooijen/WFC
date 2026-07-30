@@ -20,11 +20,13 @@ export function outcomeSample(encounter, beforeParty, report) {
     0,
   );
   const downed = Object.values(report.members ?? {}).filter((member) => member.downed).length;
+  const killed = Object.values(report.members ?? {}).filter((member) => member.killed).length;
   const expected = { Low: .25, Moderate: .45, Hard: .65, Deadly: .85 }[encounter.rating] ?? .45;
   const feedback = { easier: -.1, accurate: 0, harder: .12 }[report.feedback] ?? 0;
   const actual = clamp(
     hpLoss / maximumHp * .55 + resourcesSpent / resourceMaximum * .22 +
-      downed / Math.max(1, living.length) * .28 + Number(report.rounds ?? 3) / 10 * .1 + feedback,
+      downed / Math.max(1, living.length) * .28 +
+      killed / Math.max(1, living.length) * .38 + Number(report.rounds ?? 3) / 10 * .1 + feedback,
     .08,
     1.2,
   );
@@ -35,23 +37,32 @@ export function outcomeSample(encounter, beforeParty, report) {
     actual,
     ratio: clamp(actual / expected, .55, 1.65),
     feedback: report.feedback,
+    downed,
+    killed,
+    objectiveCompleted: Boolean(report.objectiveCompleted),
+    withoutCombat: Boolean(report.withoutCombat),
     at: new Date().toISOString(),
   };
 }
 
-export function learningModel(samples = []) {
+export function learningModel(samples = [], restStats = {}) {
   const recent = samples.slice(-24);
   const priorWeight = 4;
   const weighted = recent.reduce((sum, sample, index) => {
     const recency = .65 + (index + 1) / Math.max(1, recent.length) * .35;
     return { sum: sum.sum + Number(sample.ratio) * recency, weight: sum.weight + recency };
   }, { sum: priorWeight, weight: priorWeight });
-  const calibration = clamp(weighted.sum / weighted.weight, .72, 1.35);
+  const restCount = Number(restStats.short ?? 0) + Number(restStats.long ?? 0);
+  const restFrequency = restCount / Math.max(1, recent.length);
+  const restAdjustment = clamp((restFrequency - .5) * .05, 0, .1);
+  const calibration = clamp(weighted.sum / weighted.weight + restAdjustment, .72, 1.35);
   const confidence = clamp(recent.length / 12, 0, 1);
   return {
     calibration,
     samples: recent.length,
     confidence,
+    restFrequency,
+    restCount,
     label: calibration > 1.08
       ? "Party struggles above baseline"
       : calibration < .92

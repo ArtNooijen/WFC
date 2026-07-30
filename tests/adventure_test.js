@@ -249,13 +249,21 @@ Deno.test("resolved outcomes train a bounded per-party calibration model", () =>
     rounds: 8,
     feedback: "harder",
     members: {
-      a: { hpLost: 25, resourcesSpent: 3, downed: true },
+      a: { hpLost: 25, resourcesSpent: 3, downed: true, killed: true },
       b: { hpLost: 15, resourcesSpent: 2, downed: false },
     },
   });
   const learned = learningModel(Array(8).fill(sample));
   if (learned.calibration <= 1 || learned.calibration > 1.35 || learned.samples !== 8) {
     throw new Error("learning calibration did not adapt safely");
+  }
+  if (!sample.killed || sample.objectiveCompleted) {
+    throw new Error("outcome details were not retained for learning");
+  }
+  const rested = learningModel(Array(8).fill({ ratio: 1 }), { short: 12, long: 4 });
+  const unrested = learningModel(Array(8).fill({ ratio: 1 }), { short: 0, long: 0 });
+  if (rested.calibration <= unrested.calibration || rested.restFrequency !== 2) {
+    throw new Error("rest frequency did not influence calibration");
   }
 });
 

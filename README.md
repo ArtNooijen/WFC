@@ -34,16 +34,18 @@ deno task check
 - A black-and-white A4 landscape print sheet that fits the full map, numbered encounters, seed,
   floor, and symbol key inside fixed print margins.
 - Local session persistence, encounter advancement, contrast controls, zoom, and JSON export.
-- DM-only encounter resolution with HP loss, resource expenditure, downed characters, outcome
-  notes, rounds, and an easier/accurate/harder assessment.
+- DM-only encounter resolution with HP loss, resource expenditure, downed/killed characters,
+  objective completion, no-combat completion, rounds, notes, and a table difficulty assessment.
 - A bounded per-party learning calibration trained from the most recent 24 resolved encounters.
 - Per-class AoE, control, healing, and ranged capability ratings plus action-economy, flight, and
   monster-trait risk notes.
 - Encounter reroll, lock, difficulty, scene-type, and resolve controls.
 - Temporary HP, conditions with round durations, concentration, Inspiration, exhaustion, and death
   saves, with settings to disable resource or affliction tracking without deleting data.
-- Safe-room consumption, unsafe-rest interruption, dungeon-awareness pressure, a 30-step undo
-  stack, and a printable 150-event campaign journal.
+- An explicit safe-room location toggle, named short/long-rest complications, unsafe-rest
+  interruptions, rest-frequency learning, dungeon awareness, and cleared-room reoccupation.
+- A 30-step undo stack and printable campaign journal filtered to major moments: encounters, loot,
+  cleared/reoccupied rooms, deaths, notable rests, and dungeon transitions.
 - A small JSON API at `POST /api/forecast` with an in-browser fallback.
 
 ## Architecture

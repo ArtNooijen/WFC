@@ -1,5 +1,6 @@
 import {
   analyzeParty,
+  applyForecastControls,
   buildEncounterForecast,
   generateDungeon,
   hitDiceState,
@@ -83,6 +84,11 @@ function loadState() {
         settings: { ...DEFAULT_SETTINGS },
         awareness: 0,
         safeRoomsUsed: {},
+        inSafeRoom: false,
+        restStats: { short: 0, long: 0, interrupted: 0 },
+        clearedRooms: {},
+        claimedLoot: [],
+        pendingRestEncounter: null,
         ...saved,
         settings: { ...DEFAULT_SETTINGS, ...(saved.settings ?? {}) },
         encounterControls: {
@@ -108,6 +114,11 @@ function loadState() {
     settings: { ...DEFAULT_SETTINGS },
     awareness: 0,
     safeRoomsUsed: {},
+    inSafeRoom: false,
+    restStats: { short: 0, long: 0, interrupted: 0 },
+    clearedRooms: {},
+    claimedLoot: [],
+    pendingRestEncounter: null,
   };
 }
 
@@ -137,12 +148,19 @@ function checkpoint(label) {
       safeRoomsUsed: state.safeRoomsUsed,
       settings: state.settings,
       expedition: state.expedition,
+      inSafeRoom: state.inSafeRoom,
+      restStats: state.restStats,
+      clearedRooms: state.clearedRooms,
+      claimedLoot: state.claimedLoot,
+      pendingRestEncounter: state.pendingRestEncounter,
     }),
   });
   state.undoStack = state.undoStack.slice(-30);
 }
 
 function logEvent(type, title, detail = "") {
+  const notable = new Set(["encounter", "loot", "room", "rest", "death", "dungeon"]);
+  if (!notable.has(type)) return;
   state.history.unshift({
     id: crypto.randomUUID(),
     type,
@@ -156,7 +174,10 @@ function logEvent(type, title, detail = "") {
 }
 
 function modelState() {
-  return { ...learningModel(state.learningSamples), awareness: state.awareness };
+  return {
+    ...learningModel(state.learningSamples, state.restStats),
+    awareness: state.awareness,
+  };
 }
 
 function encounterKey(index) {
@@ -315,10 +336,12 @@ function quickUpdateMember(id, action) {
       member.dead = false;
       member.hp = Math.max(1, Number(member.hp));
       message = `${member.name} returns at 1 HP · included in encounter difficulty`;
+      logEvent("death", `${member.name} was revived`, "Returned to the active party at 1 HP");
     } else {
       member.hp = 0;
       member.dead = true;
       message = `${member.name} has fallen · excluded from encounter difficulty`;
+      logEvent("death", `${member.name} was killed`, `Marked fallen on floor ${state.floor}`);
     }
   }
   logEvent("party", message);
@@ -362,7 +385,44 @@ function buildMapCells() {
       return `<button class="map-cell ${info.kind}" data-x="${x}" data-y="${y}" data-tile="${tile}" data-title="${info.name}" title="${info.name}" tabindex="-1" style="--jitter-x:${jitterX}px;--jitter-y:${jitterY}px;--jitter-r:${jitterRotation}deg">${tile}</button>`;
     })
   ).join("");
+  for (const room of dungeon.rooms) {
+    const coordinates = `${String.fromCharCode(65 + Math.floor(room.cx / 5))}${room.cy + 1}`;
+    if (!state.clearedRooms[coordinates]) continue;
+    const cell = document.querySelector(`.map-cell[data-x="${room.cx}"][data-y="${room.cy}"]`);
+    cell?.classList.add("cleared-room");
+  }
   renderDungeonLedger();
+  renderSafeRoomToggle();
+}
+
+function renderClearedRooms() {
+  document.querySelectorAll(".map-cell.cleared-room").forEach((cell) =>
+    cell.classList.remove("cleared-room")
+  );
+  for (const room of dungeon.rooms) {
+    const coordinates = `${String.fromCharCode(65 + Math.floor(room.cx / 5))}${room.cy + 1}`;
+    if (!state.clearedRooms[coordinates]) continue;
+    document.querySelector(`.map-cell[data-x="${room.cx}"][data-y="${room.cy}"]`)?.classList.add(
+      "cleared-room",
+    );
+  }
+}
+
+function renderSafeRoomToggle() {
+  const button = $("#safe-room-toggle");
+  const safeRoom = dungeon.rooms.find((room) => room.role === "safe");
+  button.classList.toggle("active", Boolean(state.inSafeRoom));
+  button.querySelector("b").textContent = state.inSafeRoom
+    ? `Inside ${safeRoom?.name ?? "a safe room"}`
+    : "Party is not in a safe room";
+}
+
+function toggleSafeRoom() {
+  checkpoint("Change party location");
+  state.inSafeRoom = !state.inSafeRoom;
+  saveState();
+  renderSafeRoomToggle();
+  showToast(state.inSafeRoom ? "Safe-room protection enabled" : "Party left the safe room");
 }
 
 function renderDungeonLedger() {
@@ -382,10 +442,25 @@ function renderDungeonLedger() {
           escapeHtml(loot.source)
         }" target="_blank" rel="noreferrer">${escapeHtml(loot.name)} ↗</a><small>${
           escapeHtml(loot.description)
-        }</small></span></p>`
+        }</small></span><button class="claim-loot" data-loot-name="${escapeHtml(loot.name)}" ${
+          state.claimedLoot.includes(loot.name) ? "disabled" : ""
+        }>${state.claimedLoot.includes(loot.name) ? "Claimed" : "+ Claim"}</button></p>`
         : `<p><b>d8 · ${loot.roll}</b><span>${escapeHtml(loot.result)}</span></p>`
     ).join("")
     : "<p><span>No marked cache on this floor.</span></p>";
+  document.querySelectorAll(".claim-loot").forEach((button) => {
+    button.addEventListener("click", () => claimLoot(button.dataset.lootName));
+  });
+}
+
+function claimLoot(name) {
+  if (!name || state.claimedLoot.includes(name)) return;
+  checkpoint(`Claim ${name}`);
+  state.claimedLoot.push(name);
+  logEvent("loot", `Loot gained: ${name}`, `Claimed on floor ${state.floor}`);
+  saveState();
+  renderDungeonLedger();
+  showToast(`${name} added to the campaign record`);
 }
 
 function applyClassProfiles(entries) {
@@ -471,7 +546,7 @@ async function updateForecast(message = "Forecast updated") {
         floor: state.floor,
         settings: state.settings,
         learning: modelState(),
-        controls: state.encounterControls,
+        controls: forecastControls(),
       }),
     });
     if (!response.ok) throw new Error("Forecast API unavailable");
@@ -481,6 +556,15 @@ async function updateForecast(message = "Forecast updated") {
       ...modelState(),
       settings: state.settings,
     });
+    forecast = applyForecastControls(
+      forecast,
+      state.party,
+      state.seed,
+      state.completed,
+      state.floor,
+      forecastControls(),
+      { ...modelState(), settings: state.settings },
+    );
     showToast("Running the local prediction model");
   } finally {
     button.disabled = false;
@@ -490,8 +574,30 @@ async function updateForecast(message = "Forecast updated") {
   forecast.encounters = forecast.encounters.map((encounter, index) =>
     state.encounterLocks[encounterKey(index)] ?? encounter
   );
+  if (state.pendingRestEncounter && forecast.encounters[0]) {
+    const existing = forecast.encounters[0];
+    forecast.encounters[0] = {
+      ...existing,
+      ...state.pendingRestEncounter,
+      room: existing.room,
+      marker: existing.marker,
+      combat: state.pendingRestEncounter.kind === "combat" ? existing.combat : undefined,
+    };
+  }
   renderForecast();
   if (message) showToast(message);
+}
+
+function forecastControls() {
+  const controls = clone(state.encounterControls);
+  controls.rerolls ??= {};
+  controls.ratings ??= {};
+  controls.kinds ??= {};
+  if (state.pendingRestEncounter) {
+    controls.ratings[0] = state.pendingRestEncounter.rating;
+    controls.kinds[0] = state.pendingRestEncounter.kind;
+  }
+  return controls;
 }
 
 function renderForecast() {
@@ -616,6 +722,7 @@ function renderEncounterMarkers() {
     marker.tabIndex = 0;
     marker.onclick = () => focusEncounter(encounter.marker, "card");
   });
+  renderClearedRooms();
   document.querySelectorAll(".locate-encounter").forEach((button) => {
     button.addEventListener("click", () => focusEncounter(Number(button.dataset.encounter), "map"));
   });
@@ -682,6 +789,7 @@ function openResolveDialog(index) {
       member.resource ?? 0
     }" value="0" data-resolution-member="${member.id}" data-field="resourcesSpent"></label>
       <label class="check-field"><input type="checkbox" data-resolution-member="${member.id}" data-field="downed"> Downed</label>
+      <label class="check-field"><input type="checkbox" data-resolution-member="${member.id}" data-field="killed"> Killed</label>
     </section>`
   ).join("");
   $("#resolve-dialog").showModal();
@@ -706,6 +814,8 @@ function resolveEncounter(event) {
     rounds: Number(data.rounds),
     feedback: data.feedback,
     notes: data.notes,
+    objectiveCompleted: data.objectiveCompleted === "on",
+    withoutCombat: data.withoutCombat === "on",
     members,
   };
   checkpoint(`Resolve ${encounter.title}`);
@@ -727,10 +837,11 @@ function resolveEncounter(event) {
       );
       if (updated.conditionRounds === 0) updated.conditions = [];
     }
-    if (result.downed) {
+    if (result.downed || result.killed) {
       updated.hp = 0;
       updated.concentration = false;
     }
+    if (result.killed) updated.dead = true;
     if (state.settings.trackResources) updated = spendResources(updated, result.resourcesSpent);
     return updated;
   });
@@ -742,8 +853,29 @@ function resolveEncounter(event) {
     `${data.outcome}: ${encounter.title}`,
     `${data.rounds} rounds · ${data.feedback} · ${
       Object.values(members).reduce((sum, member) => sum + Number(member.hpLost), 0)
-    } HP lost · ${data.notes || "No additional notes"}`,
+    } HP lost · ${report.objectiveCompleted ? "objective completed" : "objective failed"}${
+      report.withoutCombat ? " without combat" : ""
+    } · ${data.notes || "No additional notes"}`,
   );
+  for (const [id, result] of Object.entries(members)) {
+    if (result.killed) {
+      const member = beforeParty.find((candidate) => candidate.id === id);
+      if (member) logEvent("death", `${member.name} was killed`, `During ${encounter.title}`);
+    }
+  }
+  if (report.objectiveCompleted && encounter.room) {
+    state.clearedRooms[encounter.room.coordinates] = {
+      name: encounter.room.name,
+      coordinates: encounter.room.coordinates,
+      floor: state.floor,
+    };
+    logEvent(
+      "room",
+      `Room cleared: ${encounter.room.name}`,
+      `${encounter.room.coordinates}${report.withoutCombat ? " · without combat" : ""}`,
+    );
+  }
+  if (state.pendingRestEncounter && index === 0) state.pendingRestEncounter = null;
   state.completed += 1;
   state.encounterControls = { rerolls: {}, ratings: {}, kinds: {} };
   $("#resolve-dialog").close();
@@ -967,7 +1099,9 @@ function applyShortRest(event) {
   event.preventDefault();
   checkpoint("Short rest");
   const rest = restLocation("short");
+  state.restStats.short += 1;
   if (rest.interrupted) {
+    state.restStats.interrupted += 1;
     logEvent("rest", "Short rest interrupted", rest.detail);
     saveState();
     $("#short-rest-dialog").close();
@@ -981,11 +1115,6 @@ function applyShortRest(event) {
   $("#short-rest-dialog").close();
   renderParty();
   const healed = result.healing.reduce((sum, entry) => sum + entry.restored, 0);
-  logEvent(
-    "rest",
-    "Short rest",
-    `${rest.detail} · ${healed} HP and ${result.resourcesRecovered} resource uses restored`,
-  );
   saveState();
   updateForecast(
     `Short rest · ${healed} HP restored · ${result.resourcesRecovered} resource uses recovered`,
@@ -995,14 +1124,24 @@ function applyShortRest(event) {
 function applyLongRest() {
   checkpoint("Long rest");
   const rest = restLocation("long");
+  state.restStats.long += 1;
   if (rest.interrupted) {
+    state.restStats.interrupted += 1;
     logEvent("rest", "Long rest interrupted", rest.detail);
     saveState();
     updateForecast("The long rest was interrupted · no recovery applied");
     return;
   }
   state.party = takeLongRest(state.party);
+  const reoccupied = maybeReoccupyRoom();
   logEvent("rest", "Long rest", `${rest.detail} · the living party was fully restored`);
+  if (reoccupied) {
+    logEvent(
+      "room",
+      `Room reoccupied: ${reoccupied.name}`,
+      `${reoccupied.coordinates} changed while the party slept`,
+    );
+  }
   saveState();
   renderParty();
   updateForecast("Long rest · HP, Hit Dice, and all resources restored");
@@ -1010,23 +1149,80 @@ function applyLongRest() {
 
 function restLocation(type) {
   if (!state.settings.safeRestRules) return { detail: "Rest rules disabled", interrupted: false };
-  const key = `${state.floor}`;
   const safeRoom = dungeon.rooms.find((room) => room.role === "safe");
-  if (safeRoom && !state.safeRoomsUsed[key]) {
-    state.safeRoomsUsed[key] = true;
+  if (state.inSafeRoom && safeRoom) {
     state.awareness += type === "long" ? 1 : 0;
-    return { detail: `Sheltered in ${safeRoom.name}`, interrupted: false };
+    maybeCreateRestEncounter(type, false, true);
+    return {
+      detail: `Sheltered in ${safeRoom.name} · dungeon awareness ${state.awareness}`,
+      interrupted: false,
+    };
   }
   state.awareness += type === "long" ? 2 : 1;
   const chance = type === "long" ? .35 : .2;
   const interrupted = Math.random() < chance;
   if (interrupted) state.completed += 1;
+  maybeCreateRestEncounter(type, interrupted, false);
   return {
     detail: `Unsafe rest · dungeon awareness ${state.awareness}${
       interrupted ? " · wandering threat" : ""
     }`,
     interrupted,
   };
+}
+
+function maybeCreateRestEncounter(type, interrupted, safe) {
+  const createQuietEvent = !interrupted && Math.random() < (type === "long" ? .28 : .14);
+  if (!interrupted && !createQuietEvent) return;
+  delete state.encounterLocks[encounterKey(0)];
+  if (interrupted) {
+    state.pendingRestEncounter = {
+      title: type === "long" ? "Raid upon the sleeping camp" : "The watchman's sudden alarm",
+      kind: "combat",
+      rating: type === "long" && state.awareness >= 4 ? "Hard" : "Moderate",
+      icon: "⚔",
+      tone: "Interruption",
+      intent: "Wandering threat",
+      objective: "Protect the resting party and secure the camp before recovery can continue.",
+      twist: type === "long"
+        ? "The attackers have followed the party's earlier trail and know one of their tactics."
+        : "Bedrolls and packs divide the room into awkward, vulnerable ground.",
+      recovery: "The interrupted rest grants no recovery until this threat is resolved.",
+    };
+  } else {
+    state.pendingRestEncounter = {
+      title: safe ? "A visitor at the sanctuary" : "Whispers during the watch",
+      kind: "social",
+      rating: "Low",
+      icon: "♜",
+      tone: "Rest event",
+      intent: "Camp complication",
+      objective: "Decide whether the nocturnal visitor is a warning, an opportunity, or a threat.",
+      twist: type === "long"
+        ? "The visitor knows which cleared chamber has become occupied again."
+        : "Accepting its help will increase dungeon awareness by one.",
+    };
+  }
+}
+
+function maybeReoccupyRoom() {
+  const entries = Object.entries(state.clearedRooms).filter(([, room]) =>
+    room.floor === state.floor
+  );
+  if (!entries.length || Math.random() >= (state.inSafeRoom ? .25 : .5)) return null;
+  const [coordinates, room] = entries[Math.floor(Math.random() * entries.length)];
+  delete state.clearedRooms[coordinates];
+  state.pendingRestEncounter = {
+    title: `New occupants in ${room.name}`,
+    kind: "combat",
+    rating: state.awareness >= 4 ? "Hard" : "Moderate",
+    icon: "⚔",
+    tone: "Reoccupation",
+    intent: "Dungeon response",
+    objective: `Reclaim ${room.name}, which changed hands while the party rested.`,
+    twist: "The new occupants have used evidence from the previous battle to prepare the room.",
+  };
+  return room;
 }
 
 function openSettings() {
@@ -1061,13 +1257,17 @@ function renderJournal() {
     learned.samples === 1 ? "" : "s"
   } · calibration ${learned.calibration.toFixed(2)} · ${
     Math.round(learned.confidence * 100)
-  }% confidence</span><small>AoE ${
+  }% confidence · ${learned.restCount} rests (${
+    learned.restFrequency.toFixed(1)
+  }/encounter)</span><small>AoE ${
     forecast?.profile?.capabilities?.aoe?.toFixed(1) ?? "—"
   } · Control ${forecast?.profile?.capabilities?.control?.toFixed(1) ?? "—"} · Healing ${
     forecast?.profile?.capabilities?.healing?.toFixed(1) ?? "—"
   } · Ranged ${forecast?.profile?.capabilities?.ranged?.toFixed(1) ?? "—"}</small>`;
-  const markup = state.history.length
-    ? state.history.map((event) =>
+  const notableTypes = new Set(["encounter", "loot", "room", "rest", "death", "dungeon"]);
+  const notableHistory = state.history.filter((event) => notableTypes.has(event.type));
+  const markup = notableHistory.length
+    ? notableHistory.map((event) =>
       `<article><time>${new Date(event.at).toLocaleString()}</time><div><b>${
         escapeHtml(event.title)
       }</b><span>Floor ${event.floor} · ${escapeHtml(event.type)}</span><p>${
@@ -1087,8 +1287,12 @@ function openJournal() {
 function printJournal() {
   const markup = renderJournal();
   $("#journal-print-content").innerHTML = markup;
+  const majorEvents =
+    state.history.filter((event) =>
+      ["encounter", "loot", "room", "rest", "death", "dungeon"].includes(event.type)
+    ).length;
   $("#journal-print-meta").textContent =
-    `Expedition ${state.expedition} · ${state.history.length} events · ${modelState().samples} learning samples`;
+    `Expedition ${state.expedition} · ${majorEvents} major events · ${modelState().samples} learning samples`;
   document.body.classList.add("print-journal");
   requestAnimationFrame(() => globalThis.print());
 }
@@ -1110,6 +1314,7 @@ function newExpedition() {
   state.seed = randomSeed();
   state.completed = 0;
   state.floor += 1;
+  state.inSafeRoom = false;
   dungeon = generateDungeon(state.seed);
   logEvent("dungeon", `Descended to floor ${state.floor}`, `New seed ${state.seed}`);
   saveState();
@@ -1133,6 +1338,8 @@ function resetDungeon() {
   state.encounterLocks = {};
   state.safeRoomsUsed = {};
   state.awareness = 0;
+  state.inSafeRoom = false;
+  state.pendingRestEncounter = null;
   dungeon = generateDungeon(state.seed);
   logEvent("dungeon", "Dungeon reset", `Expedition ${state.expedition} began at ${state.seed}`);
   saveState();
@@ -1203,6 +1410,7 @@ $("#undo-action").addEventListener("click", undoLastAction);
 $("#short-rest").addEventListener("click", openShortRestDialog);
 $("#short-rest-form").addEventListener("submit", applyShortRest);
 $("#long-rest").addEventListener("click", applyLongRest);
+$("#safe-room-toggle").addEventListener("click", toggleSafeRoom);
 $("#member-form").elements.class.addEventListener("change", queueClassProfile);
 $("#member-form").elements.level.addEventListener("input", queueClassProfile);
 $("#new-expedition").addEventListener("click", newExpedition);

@@ -54,6 +54,8 @@
             <button
               id="long-rest"><span>☾</span><b>Long rest</b><small>Restore the company</small></button>
           </div>
+          <button id="safe-room-toggle"
+            class="safe-room-toggle"><span>S</span><b>Party is not in a safe room</b></button>
           <div
             class="panel-note"><span>✦</span><p>Changes reshape what waits ahead—not the dungeon beneath your feet.</p></div>
         </aside>
@@ -232,8 +234,12 @@
         <div class="field-grid">
           <label>Outcome<select name="outcome"><option>Defeated</option><option>Escaped</option><option>Negotiated</option><option>Avoided</option></select></label>
           <label>Rounds<input name="rounds" type="number" min="0" max="30" value="3" /></label>
-          <label>DM assessment<select name="feedback"><option value="accurate">As predicted</option><option value="easier">Easier than predicted</option><option value="harder">Harder than predicted</option></select></label>
+          <label>Table difficulty rating<select name="feedback"><option value="accurate">As predicted</option><option value="easier">Easier than predicted</option><option value="harder">Harder than predicted</option></select></label>
           <label>Notes<input name="notes" maxlength="180" placeholder="What changed in the fiction?" /></label>
+          <label
+            class="check-field"><input name="objectiveCompleted" type="checkbox" checked /> Objective completed</label>
+          <label
+            class="check-field"><input name="withoutCombat" type="checkbox" /> Completed without combat</label>
         </div>
         <div id="resolution-members" class="resolution-members"></div>
         <div
