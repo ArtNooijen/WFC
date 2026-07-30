@@ -626,6 +626,20 @@ h1,
   font: 9px var(--mono);
   cursor: pointer;
 }
+
+.map-footer-actions {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+#print-map {
+  color: #d8b66e;
+}
+
+.print-sheet {
+  display: none;
+}
 .map-footer button:hover {
   color: var(--acid);
 }
@@ -1048,6 +1062,129 @@ body.high-contrast {
   }
   .field-grid {
     grid-template-columns: 1fr 1fr;
+  }
+}
+
+@page {
+  size: A4 landscape;
+  margin: 10mm;
+}
+
+@media print {
+  html,
+  body {
+    width: 297mm;
+    min-height: 210mm;
+    margin: 0;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .app-shell,
+  dialog,
+  .toast,
+  .noise {
+    display: none !important;
+  }
+
+  .print-sheet {
+    display: flex !important;
+    width: 277mm;
+    height: 190mm;
+    margin: 0;
+    flex-direction: column;
+    overflow: hidden;
+    background: #fff;
+    color: #000;
+    font-family: Georgia, "Times New Roman", serif;
+  }
+
+  .print-header {
+    display: flex;
+    min-height: 21mm;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding-bottom: 3mm;
+    border-bottom: .45mm solid #000;
+  }
+
+  .print-header span {
+    display: block;
+    margin-bottom: 1.5mm;
+    font: 7pt "Liberation Mono", monospace;
+    letter-spacing: .18em;
+  }
+
+  .print-header h1 {
+    margin: 0;
+    font-size: 19pt;
+    font-weight: 500;
+  }
+
+  .print-header dl {
+    display: flex;
+    gap: 10mm;
+    margin: 1mm 0 0;
+  }
+
+  .print-header dl div {
+    min-width: 25mm;
+  }
+
+  .print-header dt {
+    margin-bottom: 1mm;
+    font: 6.5pt "Liberation Mono", monospace;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+  }
+
+  .print-header dd {
+    margin: 0;
+    font: 9pt "Liberation Mono", monospace;
+  }
+
+  .print-map-frame {
+    display: flex;
+    min-height: 0;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    margin: 4mm 0 3mm;
+    border: .35mm solid #000;
+    overflow: hidden;
+  }
+
+  #print-map-content {
+    margin: 0;
+    color: #000;
+    font: 700 9.5pt/1.08 "Liberation Mono", "Courier New", monospace;
+    letter-spacing: 1.35mm;
+    white-space: pre;
+  }
+
+  .print-key {
+    display: flex;
+    justify-content: center;
+    gap: 5mm;
+    padding: 2.5mm 0;
+    border-top: .25mm solid #000;
+    border-bottom: .25mm solid #000;
+    font: 6.5pt "Liberation Mono", monospace;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .print-key b {
+    font-size: 8pt;
+  }
+
+  .print-footer {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 2.5mm;
+    font: 6pt "Liberation Mono", monospace;
+    text-transform: uppercase;
+    letter-spacing: .08em;
   }
 }
 @media (max-width: 450px) {

@@ -390,6 +390,24 @@ function exportSession() {
   showToast("Session exported");
 }
 
+function printMap() {
+  if (!forecast) {
+    forecast = buildEncounterForecast(state.party, state.seed, state.completed, state.floor);
+    forecast.encounters = placeEncounters(forecast.encounters, dungeon, state.completed);
+  }
+  const printable = dungeon.grid.map((row) => [...row]);
+  forecast.encounters.forEach((encounter) => {
+    printable[encounter.room.y][encounter.room.x] = String(encounter.marker);
+  });
+  $("#print-map-content").textContent = printable.map((row) => row.join("")).join("\n");
+  $("#print-floor").textContent = state.floor;
+  $("#print-seed").textContent = state.seed.toUpperCase();
+  $("#print-rooms").textContent =
+    `${dungeon.rooms.length} rooms · ${dungeon.steps.length} drawn tiles`;
+  $("#print-sheet").setAttribute("aria-hidden", "false");
+  requestAnimationFrame(() => globalThis.print());
+}
+
 $("#add-member").addEventListener("click", () => openMemberDialog());
 $("#add-member-wide").addEventListener("click", () => openMemberDialog());
 $("#save-member").addEventListener("click", saveMember);
@@ -406,6 +424,7 @@ $("#copy-seed").addEventListener("click", async () => {
   showToast("Seed copied");
 });
 $("#export-button").addEventListener("click", exportSession);
+$("#print-map").addEventListener("click", printMap);
 $("#theme-toggle").addEventListener("click", () => document.body.classList.toggle("high-contrast"));
 $("#model-toggle").addEventListener("click", () => {
   const panel = $(".model-explainer");
