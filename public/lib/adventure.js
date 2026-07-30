@@ -430,6 +430,43 @@ const CLASS_CAPABILITIES = {
   Wizard: { aoe: 5, control: 5, healing: 1, ranged: 5 },
 };
 
+const CLASS_RESOURCE_DEPENDENCY = {
+  Wizard: .82,
+  Sorcerer: .82,
+  Cleric: .76,
+  Druid: .76,
+  Bard: .72,
+  Warlock: .72,
+  Monk: .55,
+  Paladin: .48,
+  Ranger: .45,
+  Barbarian: .34,
+  Fighter: .2,
+  Rogue: .14,
+};
+
+export function classResourceDependency(className) {
+  return CLASS_RESOURCE_DEPENDENCY[className] ?? .35;
+}
+
+export function memberResourceState(member) {
+  const current = member.resources?.length
+    ? member.resources.reduce((total, resource) => total + Number(resource.current ?? 0), 0)
+    : Number(member.resource ?? 0);
+  const maximum = member.resources?.length
+    ? member.resources.reduce((total, resource) => total + Number(resource.maximum ?? 0), 0)
+    : Number(member.maxResource ?? 0);
+  const ratio = maximum > 0 ? clamp(current / maximum, 0, 1) : 1;
+  const dependency = classResourceDependency(member.class);
+  return {
+    current,
+    maximum,
+    ratio,
+    dependency,
+    operational: clamp(1 - dependency * (1 - ratio), 0, 1),
+  };
+}
+
 export function classCapability(member) {
   const base = CLASS_CAPABILITIES[member.class] ?? { aoe: 2, control: 2, healing: 1, ranged: 2 };
   const levelBonus = Number(member.level) >= 5 ? .5 : Number(member.level) >= 3 ? .25 : 0;
@@ -446,16 +483,14 @@ export function analyzeParty(party, options = {}) {
   const hpRatio = members.reduce((sum, member) => {
     return sum + clamp(Number(member.hp) / Math.max(1, Number(member.maxHp)), 0, 1);
   }, 0) / members.length;
-  const measuredResourceRatio = members.reduce((sum, member) => {
-    const current = member.resources?.length
-      ? member.resources.reduce((total, resource) => total + Number(resource.current ?? 0), 0)
-      : Number(member.resource);
-    const maximum = member.resources?.length
-      ? member.resources.reduce((total, resource) => total + Number(resource.maximum ?? 0), 0)
-      : Number(member.maxResource);
-    return sum + clamp(current / Math.max(1, maximum), 0, 1);
-  }, 0) / members.length;
-  const resourceRatio = options.trackResources === false ? 1 : measuredResourceRatio;
+  const memberResources = members.map(memberResourceState);
+  const measuredResourceRatio = memberResources.reduce((sum, resource) => sum + resource.ratio, 0) /
+    members.length;
+  const weightedResourceRatio = memberResources.reduce(
+    (sum, resource) => sum + resource.operational,
+    0,
+  ) / members.length;
+  const resourceRatio = options.trackResources === false ? 1 : weightedResourceRatio;
   const defense = members.reduce((sum, member) => sum + Number(member.ac || 10), 0) /
     members.length;
 
@@ -472,26 +507,50 @@ export function analyzeParty(party, options = {}) {
     0,
     1,
   );
+  const displayCondition = clamp(
+    options.trackResources === false ? hpRatio : hpRatio * .68 + measuredResourceRatio * .32,
+    0,
+    1,
+  );
   const capabilities = members.reduce((totals, member) => {
     const profile = classCapability(member);
-    for (const key of Object.keys(totals)) totals[key] += profile[key];
+    const resource = options.trackResources === false
+      ? { operational: 1 }
+      : memberResourceState(member);
+    const capabilityScale = .2 + resource.operational * .8;
+    for (const key of Object.keys(totals)) totals[key] += profile[key] * capabilityScale;
     return totals;
   }, { aoe: 0, control: 0, healing: 0, ranged: 0 });
   for (const key of Object.keys(capabilities)) capabilities[key] /= members.length;
   const wounded = members.filter((member) => Number(member.hp) / Number(member.maxHp) < 0.5).length;
   const critical =
     members.filter((member) => Number(member.hp) / Number(member.maxHp) < 0.25).length;
-  const capacity = levelWeight * 100 * (0.82 + defenseFactor * 0.28);
+  const capacity = members.reduce((sum, member) => {
+    const memberDefense = clamp((Number(member.ac || 10) - 10) / 12, 0, 1);
+    const resource = options.trackResources === false
+      ? { operational: 1 }
+      : memberResourceState(member);
+    return sum + Number(member.level || 1) * 100 * (0.82 + memberDefense * .28) *
+        resource.operational;
+  }, 0);
   return {
     members: members.length,
     averageLevel: levelWeight / members.length,
     hpRatio,
     resourceRatio,
     measuredResourceRatio,
+    weightedResourceRatio,
+    resourceDependencies: members.map((member, index) => ({
+      id: member.id,
+      name: member.name,
+      class: member.class,
+      ...memberResources[index],
+    })),
     afflictionLoad,
     capabilities,
     defense,
     readiness,
+    displayCondition,
     wounded,
     critical,
     capacity: Math.round(capacity),
@@ -537,7 +596,7 @@ export function buildEncounterForecast(
   const pressures = pattern.map((value) =>
     clamp(value * conditionCeiling + awarenessPressure, 0.18, 0.94)
   );
-  if (milestoneFloor) pressures[2] = planningReadiness >= 0.75 ? 1.06 : 0.9;
+  if (milestoneFloor) pressures[2] = planningReadiness >= 0.85 ? 1.06 : 0.9;
 
   const encounters = pressures.map((pressure, index) => {
     let pool = ARCHETYPES;

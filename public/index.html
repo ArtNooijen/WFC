@@ -109,7 +109,7 @@
           <div class="readiness-card">
             <div class="readiness-ring"
               id="readiness-ring"><span id="readiness-value">—</span></div>
-            <div><span>PARTY CONDITION</span><strong id="readiness-label">Taking stock…</strong><small>Health · supplies · armour · level</small></div>
+            <div><span>PARTY CONDITION</span><strong id="readiness-label">Taking stock…</strong><small>Health · supplies · armour · level</small><div id="condition-breakdown" class="condition-breakdown"></div><div class="model-score-line" title="The detailed score used for encounter planning after armour, afflictions, resources, learned party performance, and other model inputs."><span>MODEL SCORE</span><b id="model-score-value">—</b><small id="model-score-context">Calculating…</small></div></div>
           </div>
           <div class="srd-status"
             id="srd-status"><span>◌</span><div><b>Loading 2014 SRD data</b><small>Classes · monsters · magic items</small></div></div>
@@ -128,7 +128,7 @@
             <button id="model-toggle"
               aria-expanded="false"><span>How does this work?</span><span>⌄</span></button>
             <p
-              id="model-copy">The DM-only adaptive planner weighs health, enabled resource and affliction tracking, class AoE/control/healing/ranged ratings, dungeon awareness, and your resolved-encounter feedback. It learns a bounded calibration for this party without replacing official XP bands.</p>
+              id="model-copy">The DM-only adaptive planner weighs health, class-specific resource dependence, enabled affliction tracking, class AoE/control/healing/ranged ratings, dungeon awareness, and resolved-encounter feedback. Empty spell slots reduce caster capacity far more than empty martial feature pools. It learns a bounded calibration without replacing official XP bands.</p>
           </div>
         </aside>
       </main>

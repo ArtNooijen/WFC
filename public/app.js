@@ -18,10 +18,10 @@ const DEFAULT_PARTY = [
     name: "Mira Vale",
     class: "Ranger",
     level: 4,
-    hp: 31,
+    hp: 36,
     maxHp: 36,
     ac: 16,
-    resource: 3,
+    resource: 4,
     maxResource: 4,
   },
   {
@@ -40,10 +40,10 @@ const DEFAULT_PARTY = [
     name: "Sable Quill",
     class: "Wizard",
     level: 4,
-    hp: 18,
+    hp: 26,
     maxHp: 26,
     ac: 13,
-    resource: 5,
+    resource: 7,
     maxResource: 7,
   },
   {
@@ -51,10 +51,10 @@ const DEFAULT_PARTY = [
     name: "Brother Orr",
     class: "Cleric",
     level: 4,
-    hp: 29,
+    hp: 33,
     maxHp: 33,
     ac: 17,
-    resource: 4,
+    resource: 6,
     maxResource: 6,
   },
 ];
@@ -601,7 +601,9 @@ function forecastControls() {
 }
 
 function renderForecast() {
-  const percent = Math.round(forecast.profile.readiness * 100);
+  const percent = Math.round(
+    Number(forecast.profile.displayCondition ?? forecast.profile.readiness) * 100,
+  );
   const liveSrd = forecast.dataSource?.includes("dnd5eapi.co");
   $("#srd-status").classList.toggle("offline", !liveSrd);
   $("#srd-status").innerHTML = liveSrd
@@ -613,6 +615,27 @@ function renderForecast() {
     `${forecast.plan} · floor ${forecast.floor} · alert ${state.awareness}`;
   $("#readiness-value").textContent = `${percent}%`;
   $("#readiness-ring").style.setProperty("--readiness", `${percent}%`);
+  $("#condition-breakdown").innerHTML = `<span><b>${
+    Math.round(Number(forecast.profile.hpRatio ?? 0) * 100)
+  }%</b> health</span><span><b>${
+    state.settings.trackResources
+      ? `${Math.round(Number(forecast.profile.measuredResourceRatio ?? 0) * 100)}%`
+      : "off"
+  }</b> supplies</span><span><b>${
+    Number(forecast.profile.defense ?? 0).toFixed(1)
+  }</b> armour</span><span><b>${
+    Number(forecast.profile.averageLevel ?? 0).toFixed(1)
+  }</b> level</span>`;
+  const modelPercent = Math.round(
+    Number(forecast.profile.planningReadiness ?? forecast.profile.readiness ?? 0) * 100,
+  );
+  const calibration = Number(forecast.profile.calibration ?? 1);
+  $("#model-score-value").textContent = `${modelPercent}%`;
+  $("#model-score-context").textContent = `${
+    forecast.learning?.samples ?? 0
+  } outcomes · class-weighted supplies ${
+    Math.round(Number(forecast.profile.weightedResourceRatio ?? 1) * 100)
+  }% · calibration ${calibration.toFixed(2)}`;
   $("#readiness-label").textContent = percent > 76
     ? "Ready to press deeper"
     : percent > 55

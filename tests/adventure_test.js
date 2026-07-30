@@ -3,8 +3,10 @@ import {
   applyForecastControls,
   buildEncounterForecast,
   classCapability,
+  classResourceDependency,
   generateDungeon,
   hitDiceState,
+  memberResourceState,
   placeEncounters,
   takeLongRest,
   takeShortRest,
@@ -28,6 +30,19 @@ Deno.test("party analysis produces a bounded readiness score", () => {
   const profile = analyzeParty(PARTY);
   if (profile.readiness <= 0 || profile.readiness >= 1) throw new Error("unbounded readiness");
   if (profile.budget <= 0) throw new Error("missing budget");
+});
+
+Deno.test("visual condition reaches 100% when HP and supplies are full", () => {
+  const rested = PARTY.map((member) => ({
+    ...member,
+    hp: member.maxHp,
+    resource: member.maxResource,
+  }));
+  const profile = analyzeParty(rested);
+  if (profile.displayCondition !== 1) throw new Error("rested visual condition is not 100%");
+  if (profile.readiness >= 1) {
+    throw new Error("detailed model unexpectedly discarded armour context");
+  }
 });
 
 Deno.test("fallen adventurers are excluded from readiness and XP thresholds", () => {
@@ -241,6 +256,32 @@ Deno.test("class capabilities and tracking settings work without spell bookkeepi
   const ignored = analyzeParty(afflicted, { trackAfflictions: false });
   if (tracked.readiness >= ignored.readiness) {
     throw new Error("afflictions did not affect readiness");
+  }
+});
+
+Deno.test("empty resources penalize full casters more than martial classes", () => {
+  const emptyWizard = memberResourceState({
+    class: "Wizard",
+    resource: 0,
+    maxResource: 9,
+  });
+  const emptyFighter = memberResourceState({
+    class: "Fighter",
+    resource: 0,
+    maxResource: 1,
+  });
+  if (
+    classResourceDependency("Wizard") <= classResourceDependency("Fighter") ||
+    emptyWizard.operational >= emptyFighter.operational ||
+    emptyWizard.operational <= 0
+  ) {
+    throw new Error("class-sensitive resource floors are incorrect");
+  }
+  const base = { name: "A", level: 5, hp: 30, maxHp: 30, ac: 15, resource: 0 };
+  const wizard = analyzeParty([{ ...base, class: "Wizard", maxResource: 9 }]);
+  const fighter = analyzeParty([{ ...base, class: "Fighter", maxResource: 1 }]);
+  if (wizard.capacity >= fighter.capacity || wizard.resourceRatio >= fighter.resourceRatio) {
+    throw new Error("empty caster resources did not reduce modeled capacity enough");
   }
 });
 
