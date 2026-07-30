@@ -1583,6 +1583,7 @@ body.high-contrast {
 
   .app-shell,
   dialog,
+  .initiative-tracker,
   .toast,
   .noise {
     display: none !important;
@@ -2456,4 +2457,196 @@ select {
     content: "↺";
     font-size: 17px;
   }
+}
+
+/* DM initiative and resolved floor board */
+.forecast-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.initiative-start {
+  padding: 6px 8px;
+  border: 1px solid #70552e;
+  background: rgba(98,70,34,.2);
+  color: #d5b66e;
+  font: 7px var(--mono);
+}
+.initiative-start:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+.resolved-banner {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 9px;
+  padding: 7px 8px;
+  border: 1px solid #5e673f;
+  background: rgba(83,98,50,.14);
+  color: #c4c990;
+  font: 7px var(--mono);
+}
+.resolved-encounter {
+  opacity: .72;
+}
+.resolved-encounter .combat-roster {
+  filter: grayscale(.55);
+}
+.resolved-marker {
+  background: #59613d !important;
+  color: #fff !important;
+}
+.initiative-target {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 12px;
+  padding: 10px;
+  border: 1px solid #674d2c;
+  background: rgba(95,65,31,.16);
+}
+.initiative-target b {
+  font: 13px var(--serif);
+}
+.initiative-target span,
+.initiative-target small {
+  color: var(--muted);
+  font: 7px var(--mono);
+}
+.initiative-player-rolls {
+  display: grid;
+  gap: 7px;
+}
+.initiative-player-rolls label {
+  display: grid;
+  grid-template-columns: 1fr 75px;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid var(--line-soft);
+}
+.initiative-player-rolls b,
+.initiative-player-rolls small {
+  display: block;
+}
+.initiative-player-rolls b {
+  color: var(--ink);
+  font: 10px var(--serif);
+}
+.initiative-player-rolls small {
+  color: var(--dim);
+  font: 6px var(--mono);
+}
+.initiative-player-rolls input {
+  margin: 0;
+  padding: 7px;
+  text-align: center;
+}
+.initiative-tracker {
+  position: fixed;
+  z-index: 50;
+  top: 90px;
+  right: 22px;
+  width: min(390px,calc(100vw - 32px));
+  border: 1px solid #755832;
+  background: #21170f;
+  color: var(--ink);
+  box-shadow: 0 18px 60px rgba(0,0,0,.58);
+}
+.initiative-tracker[hidden] {
+  display: none;
+}
+.initiative-tracker > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid #624728;
+  cursor: move;
+  touch-action: none;
+  user-select: none;
+  background: #2b1e12;
+}
+.initiative-tracker > header span,
+.initiative-tracker > header b {
+  display: block;
+}
+.initiative-tracker > header span {
+  color: #a98b57;
+  font: 6px var(--mono);
+  letter-spacing: .14em;
+}
+.initiative-tracker > header b {
+  margin-top: 2px;
+  font: 11px var(--serif);
+}
+.initiative-tracker > header button {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 18px;
+}
+#initiative-entries {
+  max-height: 55vh;
+  overflow: auto;
+  padding: 6px;
+}
+.initiative-entry {
+  display: grid;
+  grid-template-columns: 14px minmax(90px,1fr) 48px 62px 24px 24px 24px;
+  gap: 4px;
+  align-items: center;
+  padding: 5px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.initiative-entry.active {
+  background: rgba(168,126,58,.17);
+  box-shadow: inset 2px 0 #d1a753;
+}
+.initiative-entry.monster {
+  color: #c88a71;
+}
+.initiative-entry input {
+  min-width: 0;
+  margin: 0;
+  padding: 5px;
+  font: 8px var(--mono);
+}
+.initiative-entry .initiative-score {
+  text-align: center;
+}
+.initiative-roll {
+  color: var(--dim);
+  font: 6px var(--mono);
+  text-align: center;
+}
+.turn-mark {
+  color: #d1a753;
+  font-size: 9px;
+}
+.initiative-entry button {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--line-soft);
+  background: transparent;
+  color: var(--muted);
+  font: 9px var(--mono);
+  padding: 0;
+}
+.initiative-tracker > footer {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 6px;
+  padding: 8px;
+  border-top: 1px solid #624728;
+}
+.initiative-tracker > footer button {
+  padding: 7px;
+  border: 1px solid #604728;
+  background: rgba(79,54,28,.3);
+  color: var(--muted);
+  font: 7px var(--mono);
+}
+.initiative-tracker > footer button:last-child {
+  color: #e0bf72;
 }

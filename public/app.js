@@ -89,6 +89,7 @@ function loadState() {
         clearedRooms: {},
         claimedLoot: [],
         pendingRestEncounter: null,
+        initiative: null,
         ...saved,
         settings: { ...DEFAULT_SETTINGS, ...(saved.settings ?? {}) },
         encounterControls: {
@@ -119,6 +120,7 @@ function loadState() {
     clearedRooms: {},
     claimedLoot: [],
     pendingRestEncounter: null,
+    initiative: null,
   };
 }
 
@@ -153,6 +155,7 @@ function checkpoint(label) {
       clearedRooms: state.clearedRooms,
       claimedLoot: state.claimedLoot,
       pendingRestEncounter: state.pendingRestEncounter,
+      initiative: state.initiative,
     }),
   });
   state.undoStack = state.undoStack.slice(-30);
@@ -676,10 +679,14 @@ function renderForecast() {
       }
         </div>`
       : "";
-    return `<article class="encounter-card" id="encounter-${encounter.marker}" data-encounter="${encounter.marker}" style="animation-delay:${
+    return `<article class="encounter-card ${
+      encounter.resolved ? "resolved-encounter" : ""
+    }" id="encounter-${encounter.marker}" data-encounter="${encounter.marker}" style="animation-delay:${
       index * 80
     }ms">
-      <button class="encounter-node locate-encounter" data-encounter="${encounter.marker}" title="Show room ${encounter.marker} on the map">${encounter.marker}</button>
+      <button class="encounter-node locate-encounter" data-encounter="${encounter.marker}" title="Show room ${encounter.marker} on the map">${
+      encounter.resolved ? "✓" : encounter.marker
+    }</button>
       <div>
         <div class="encounter-order"><span>0${
       index + 1
@@ -695,40 +702,258 @@ function renderForecast() {
       combat ? "Adjusted XP" : "Pressure"
     } ${encounter.budget}</span><span>~${encounter.rounds} rounds</span></div>
         ${encounter.recovery ? `<p class="recovery-note">✦ ${encounter.recovery}</p>` : ""}
-        <div class="encounter-controls">
+        ${
+      encounter.resolved
+        ? `<div class="resolved-banner"><b>✓ RESOLVED</b><span>${
+          escapeHtml(encounter.resolution?.outcome ?? "Completed")
+        } · ${encounter.resolution?.rounds ?? "—"} rounds</span></div>`
+        : `<div class="encounter-controls">
           <button data-encounter-action="resolve" data-index="${index}">Resolve</button>
           <button data-encounter-action="reroll" data-index="${index}">↻ Reroll</button>
           <button data-encounter-action="lock" data-index="${index}">${
-      state.encounterLocks[encounterKey(index)] ? "Unlock" : "Lock"
-    }</button>
+          state.encounterLocks[encounterKey(index)] ? "Unlock" : "Lock"
+        }</button>
           <select data-encounter-action="rating" data-index="${index}" aria-label="Difficulty"><option value="">Model</option>${
-      ["Low", "Moderate", "Hard", "Deadly"].map((rating) =>
-        `<option ${
-          state.encounterControls.ratings[index] === rating ? "selected" : ""
-        }>${rating}</option>`
-      ).join("")
-    }</select>
+          ["Low", "Moderate", "Hard", "Deadly"].map((rating) =>
+            `<option ${
+              state.encounterControls.ratings[index] === rating ? "selected" : ""
+            }>${rating}</option>`
+          ).join("")
+        }</select>
           <select data-encounter-action="kind" data-index="${index}" aria-label="Encounter type">${
-      ["auto", "combat", "social", "puzzle", "hazard", "discovery"].map((kind) =>
-        `<option ${
-          state.encounterControls.kinds[index] === kind ? "selected" : ""
-        }>${kind}</option>`
-      ).join("")
-    }</select>
-        </div>
+          ["auto", "combat", "social", "puzzle", "hazard", "discovery"].map((kind) =>
+            `<option ${
+              state.encounterControls.kinds[index] === kind ? "selected" : ""
+            }>${kind}</option>`
+          ).join("")
+        }</select>
+        </div>`
+    }
       </div>
     </article>`;
   }).join("");
   renderDungeonLedger();
   renderEncounterMarkers();
   bindEncounterControls();
+  const nextCombat = nextInitiativeEncounter();
+  $("#start-initiative").disabled = !nextCombat;
+  $("#start-initiative").textContent = nextCombat ? "Start initiative" : "No combat pending";
+  renderInitiativeTracker();
+}
+
+function nextInitiativeEncounter() {
+  return forecast?.encounters?.map((encounter, index) => ({ encounter, index })).find((
+    { encounter },
+  ) => !encounter.resolved && (encounter.kind === "combat" || encounter.combat));
+}
+
+function openInitiativeDialog() {
+  const target = nextInitiativeEncounter();
+  if (!target) {
+    showToast("No unresolved combat encounter is waiting");
+    return;
+  }
+  const { encounter, index } = target;
+  const form = $("#initiative-form");
+  form.reset();
+  form.dataset.encounterIndex = index;
+  $("#initiative-target").innerHTML = `<b>${
+    escapeHtml(encounter.title)
+  }</b><span>Room ${encounter.marker} · ${escapeHtml(encounter.room.name)}</span><small>${
+    encounter.combat
+      ? `${encounter.combat.count} × ${escapeHtml(encounter.combat.monster.name)}`
+      : `${encounter.foes || 1} enemies`
+  }</small>`;
+  $("#initiative-player-rolls").innerHTML = state.party.filter((member) => !member.dead).map((
+    member,
+  ) =>
+    `<label><span><b>${escapeHtml(member.name)}</b><small>${
+      escapeHtml(member.class)
+    } · level ${member.level}</small></span><input type="number" min="-10" max="99" value="10" data-player-initiative="${member.id}"></label>`
+  ).join("");
+  $("#initiative-dialog").showModal();
+}
+
+function rollD20() {
+  const value = new Uint32Array(1);
+  crypto.getRandomValues(value);
+  return value[0] % 20 + 1;
+}
+
+function beginInitiative(event) {
+  event.preventDefault();
+  const index = Number($("#initiative-form").dataset.encounterIndex);
+  const encounter = forecast.encounters[index];
+  if (!encounter || encounter.resolved) return;
+  checkpoint(`Start initiative for ${encounter.title}`);
+  const entries = [];
+  document.querySelectorAll("[data-player-initiative]").forEach((input) => {
+    const member = state.party.find((candidate) => candidate.id === input.dataset.playerInitiative);
+    if (!member) return;
+    entries.push({
+      id: crypto.randomUUID(),
+      name: member.name,
+      initiative: Number(input.value),
+      side: "player",
+    });
+  });
+  const count = Math.max(1, Number(encounter.combat?.count ?? encounter.foes ?? 1));
+  const monsterName = encounter.combat?.monster?.name ?? "Enemy";
+  const modifier = Number(encounter.combat?.monster?.initiativeModifier ?? 0);
+  for (let number = 1; number <= count; number++) {
+    const natural = rollD20();
+    entries.push({
+      id: crypto.randomUUID(),
+      name: count > 1 ? `${monsterName} ${number}` : monsterName,
+      initiative: natural + modifier,
+      roll: natural,
+      modifier,
+      side: "monster",
+    });
+  }
+  entries.sort((a, b) => b.initiative - a.initiative || (a.side === "player" ? -1 : 1));
+  state.initiative = {
+    encounterKey: encounterKey(index),
+    encounterTitle: encounter.title,
+    entries,
+    activeIndex: 0,
+    position: state.initiative?.position ?? null,
+  };
+  saveState();
+  $("#initiative-dialog").close();
+  renderInitiativeTracker();
+}
+
+function renderInitiativeTracker() {
+  const tracker = $("#initiative-tracker");
+  if (!state.initiative) {
+    tracker.hidden = true;
+    return;
+  }
+  tracker.hidden = false;
+  $("#initiative-encounter-title").textContent = state.initiative.encounterTitle;
+  if (state.initiative.position) {
+    tracker.style.left = `${state.initiative.position.x}px`;
+    tracker.style.top = `${state.initiative.position.y}px`;
+    tracker.style.right = "auto";
+  }
+  $("#initiative-entries").innerHTML = state.initiative.entries.map((entry, index) =>
+    `<div class="initiative-entry ${entry.side} ${
+      index === state.initiative.activeIndex ? "active" : ""
+    }" data-initiative-id="${entry.id}">
+      <span class="turn-mark">${index === state.initiative.activeIndex ? "◆" : "·"}</span>
+      <input class="initiative-name" value="${
+      escapeHtml(entry.name)
+    }" aria-label="Participant name">
+      <input class="initiative-score" type="number" min="-10" max="99" value="${entry.initiative}" aria-label="Initiative score">
+      <span class="initiative-roll">${
+      entry.side === "monster"
+        ? `d20 ${entry.roll ?? "—"} ${Number(entry.modifier) >= 0 ? "+" : ""}${entry.modifier ?? 0}`
+        : "PLAYER"
+    }</span>
+      <button data-init-move="up" title="Move up">↑</button><button data-init-move="down" title="Move down">↓</button><button data-init-remove title="Remove">×</button>
+    </div>`
+  ).join("");
+  document.querySelectorAll(".initiative-entry").forEach((row) => {
+    const id = row.dataset.initiativeId;
+    row.querySelector(".initiative-name").addEventListener(
+      "change",
+      (event) => editInitiativeEntry(id, "name", event.target.value),
+    );
+    row.querySelector(".initiative-score").addEventListener(
+      "change",
+      (event) => editInitiativeEntry(id, "initiative", Number(event.target.value)),
+    );
+    row.querySelectorAll("[data-init-move]").forEach((button) =>
+      button.addEventListener("click", () => moveInitiativeEntry(id, button.dataset.initMove))
+    );
+    row.querySelector("[data-init-remove]").addEventListener(
+      "click",
+      () => removeInitiativeEntry(id),
+    );
+  });
+}
+
+function editInitiativeEntry(id, field, value) {
+  const entry = state.initiative?.entries.find((candidate) => candidate.id === id);
+  if (!entry) return;
+  entry[field] = value;
+  saveState();
+}
+
+function moveInitiativeEntry(id, direction) {
+  const entries = state.initiative?.entries;
+  if (!entries) return;
+  const activeId = entries[state.initiative.activeIndex]?.id;
+  const from = entries.findIndex((entry) => entry.id === id);
+  const to = Math.max(0, Math.min(entries.length - 1, from + (direction === "up" ? -1 : 1)));
+  if (from === to) return;
+  [entries[from], entries[to]] = [entries[to], entries[from]];
+  state.initiative.activeIndex = Math.max(
+    0,
+    entries.findIndex((entry) => entry.id === activeId),
+  );
+  saveState();
+  renderInitiativeTracker();
+}
+
+function removeInitiativeEntry(id) {
+  if (!state.initiative) return;
+  state.initiative.entries = state.initiative.entries.filter((entry) => entry.id !== id);
+  state.initiative.activeIndex = Math.min(
+    state.initiative.activeIndex,
+    Math.max(0, state.initiative.entries.length - 1),
+  );
+  saveState();
+  renderInitiativeTracker();
+}
+
+function addInitiativeEntry() {
+  if (!state.initiative) return;
+  state.initiative.entries.push({
+    id: crypto.randomUUID(),
+    name: "New participant",
+    initiative: 10,
+    side: "other",
+  });
+  saveState();
+  renderInitiativeTracker();
+}
+
+function sortInitiative() {
+  if (!state.initiative) return;
+  state.initiative.entries.sort((a, b) => Number(b.initiative) - Number(a.initiative));
+  state.initiative.activeIndex = 0;
+  saveState();
+  renderInitiativeTracker();
+}
+
+function nextInitiativeTurn() {
+  if (!state.initiative?.entries.length) return;
+  state.initiative.activeIndex = (Number(state.initiative.activeIndex) + 1) %
+    state.initiative.entries.length;
+  saveState();
+  renderInitiativeTracker();
+}
+
+function closeInitiative() {
+  state.initiative = null;
+  saveState();
+  renderInitiativeTracker();
 }
 
 function renderEncounterMarkers() {
   document.querySelectorAll(".map-cell.encounter-marker").forEach((cell) => {
     cell.textContent = cell.dataset.tile;
     cell.title = cell.dataset.title;
-    cell.classList.remove("encounter-marker", "marker-1", "marker-2", "marker-3", "focused");
+    cell.classList.remove(
+      "encounter-marker",
+      "marker-1",
+      "marker-2",
+      "marker-3",
+      "resolved-marker",
+      "focused",
+    );
     delete cell.dataset.encounter;
     cell.onclick = null;
     cell.tabIndex = -1;
@@ -738,9 +963,10 @@ function renderEncounterMarkers() {
       `.map-cell[data-x="${encounter.room.x}"][data-y="${encounter.room.y}"]`,
     );
     if (!marker) return;
-    marker.textContent = encounter.marker;
+    marker.textContent = encounter.resolved ? "✓" : encounter.marker;
     marker.title = `Encounter ${encounter.marker}: ${encounter.title} — ${encounter.room.name}`;
     marker.classList.add("encounter-marker", `marker-${encounter.marker}`);
+    if (encounter.resolved) marker.classList.add("resolved-marker");
     marker.dataset.encounter = encounter.marker;
     marker.tabIndex = 0;
     marker.onclick = () => focusEncounter(encounter.marker, "card");
@@ -899,8 +1125,17 @@ function resolveEncounter(event) {
     );
   }
   if (state.pendingRestEncounter && index === 0) state.pendingRestEncounter = null;
-  state.completed += 1;
-  state.encounterControls = { rerolls: {}, ratings: {}, kinds: {} };
+  if (state.initiative?.encounterKey === encounterKey(index)) state.initiative = null;
+  state.encounterLocks[encounterKey(index)] = {
+    ...clone(encounter),
+    resolved: true,
+    resolution: {
+      outcome: data.outcome,
+      rounds: Number(data.rounds),
+      objectiveCompleted: report.objectiveCompleted,
+      withoutCombat: report.withoutCombat,
+    },
+  };
   $("#resolve-dialog").close();
   saveState();
   renderParty();
@@ -1338,6 +1573,10 @@ function newExpedition() {
   state.completed = 0;
   state.floor += 1;
   state.inSafeRoom = false;
+  state.encounterControls = { rerolls: {}, ratings: {}, kinds: {} };
+  state.encounterLocks = {};
+  state.pendingRestEncounter = null;
+  state.initiative = null;
   dungeon = generateDungeon(state.seed);
   logEvent("dungeon", `Descended to floor ${state.floor}`, `New seed ${state.seed}`);
   saveState();
@@ -1349,7 +1588,7 @@ function newExpedition() {
 
 function resetDungeon() {
   const confirmed = globalThis.confirm(
-    "Reset this dungeon to floor 1? Your party will be kept, but the map and encounter history will be replaced.",
+    "Reset this dungeon to floor 1? The party will be fully resupplied, while the map, resolved encounters, and journal will be cleared.",
   );
   if (!confirmed) return;
   checkpoint("Reset dungeon");
@@ -1363,13 +1602,33 @@ function resetDungeon() {
   state.awareness = 0;
   state.inSafeRoom = false;
   state.pendingRestEncounter = null;
+  state.initiative = null;
+  state.party = takeLongRest(state.party).map((member) => {
+    if (!member.dead) return member;
+    const hitDice = hitDiceState(member);
+    const resources = member.resources?.map((pool) => ({
+      ...pool,
+      current: Number(pool.maximum),
+    }));
+    return {
+      ...member,
+      hp: 0,
+      resource: resources?.length
+        ? resources.reduce((sum, pool) => sum + Number(pool.current), 0)
+        : Number(member.maxResource),
+      resources,
+      hitDice: { ...hitDice, current: hitDice.maximum },
+    };
+  });
+  state.history = [];
+  state.clearedRooms = {};
+  state.claimedLoot = [];
   dungeon = generateDungeon(state.seed);
-  logEvent("dungeon", "Dungeon reset", `Expedition ${state.expedition} began at ${state.seed}`);
   saveState();
   renderMeta();
   buildMapCells();
   playCollapse();
-  updateForecast("The old atlas was closed · a new dungeon begins");
+  updateForecast("New dungeon · party resources restored · journal cleared");
 }
 
 function renderMeta() {
@@ -1421,10 +1680,50 @@ function printMap() {
   requestAnimationFrame(() => globalThis.print());
 }
 
+function setupInitiativeDrag() {
+  const tracker = $("#initiative-tracker");
+  const handle = $("#initiative-drag-handle");
+  let drag = null;
+  handle.addEventListener("pointerdown", (event) => {
+    if (event.target.closest("button")) return;
+    const bounds = tracker.getBoundingClientRect();
+    drag = { offsetX: event.clientX - bounds.left, offsetY: event.clientY - bounds.top };
+    handle.setPointerCapture(event.pointerId);
+  });
+  handle.addEventListener("pointermove", (event) => {
+    if (!drag) return;
+    const x = Math.max(
+      8,
+      Math.min(globalThis.innerWidth - tracker.offsetWidth - 8, event.clientX - drag.offsetX),
+    );
+    const y = Math.max(8, Math.min(globalThis.innerHeight - 70, event.clientY - drag.offsetY));
+    tracker.style.left = `${x}px`;
+    tracker.style.top = `${y}px`;
+    tracker.style.right = "auto";
+  });
+  const finish = () => {
+    if (!drag || !state.initiative) return;
+    state.initiative.position = {
+      x: Number.parseFloat(tracker.style.left),
+      y: Number.parseFloat(tracker.style.top),
+    };
+    drag = null;
+    saveState();
+  };
+  handle.addEventListener("pointerup", finish);
+  handle.addEventListener("pointercancel", finish);
+}
+
 $("#add-member").addEventListener("click", () => openMemberDialog());
 $("#add-member-wide").addEventListener("click", () => openMemberDialog());
 $("#save-member").addEventListener("click", saveMember);
 $("#resolve-form").addEventListener("submit", resolveEncounter);
+$("#start-initiative").addEventListener("click", openInitiativeDialog);
+$("#initiative-form").addEventListener("submit", beginInitiative);
+$("#close-initiative").addEventListener("click", closeInitiative);
+$("#add-initiative-entry").addEventListener("click", addInitiativeEntry);
+$("#sort-initiative").addEventListener("click", sortInitiative);
+$("#next-initiative-turn").addEventListener("click", nextInitiativeTurn);
 $("#open-settings").addEventListener("click", openSettings);
 $("#settings-form").addEventListener("submit", saveSettings);
 $("#open-journal").addEventListener("click", openJournal);
@@ -1471,6 +1770,7 @@ $("#zoom-out").addEventListener("click", () => {
 renderMeta();
 renderParty();
 saveState();
+setupInitiativeDrag();
 buildMapCells();
 playCollapse();
 updateForecast("");

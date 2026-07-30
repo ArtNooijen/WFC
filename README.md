@@ -30,7 +30,8 @@ deno task check
   each includes a concrete objective and a twist.
 - Numbered `1–3` map markers that bind each forecast card to a named room and atlas coordinate.
 - Rough, doubled outlines and seeded glyph jitter inspired by hand-drawn whiteboard rendering.
-- Separate descent and dungeon-reset controls; reset returns to floor 1 while preserving the party.
+- Separate descent and dungeon-reset controls; reset returns to floor 1, fully resupplies the party,
+  and clears journal, room, encounter, loot-claim, and initiative state.
 - A black-and-white A4 landscape print sheet that fits the full map, numbered encounters, seed,
   floor, and symbol key inside fixed print margins.
 - Local session persistence, encounter advancement, contrast controls, zoom, and JSON export.
@@ -40,6 +41,11 @@ deno task check
 - Per-class AoE, control, healing, and ranged capability ratings plus action-economy, flight, and
   monster-trait risk notes.
 - Encounter reroll, lock, difficulty, scene-type, and resolve controls.
+- Resolved encounter cards remain pinned to their rooms until the DM descends; unresolved cards can
+  continue adapting to party state.
+- A draggable initiative plaque accepts physical player rolls, rolls each pending encounter monster
+  with its SRD Dexterity modifier, and supports editable scores/names, manual ordering, extra
+  participants, and turn advancement.
 - Temporary HP, conditions with round durations, concentration, Inspiration, exhaustion, and death
   saves, with settings to disable resource or affliction tracking without deleting data.
 - An explicit safe-room location toggle, named short/long-rest complications, unsafe-rest

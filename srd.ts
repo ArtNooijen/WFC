@@ -413,6 +413,8 @@ async function getMonsterForCr(cr: number, seed: string, title: string) {
       ? Math.max(...monster.armor_class.map((entry: any) => entry.value))
       : monster.armor_class,
     hp: monster.hit_points,
+    dexterity: monster.dexterity,
+    initiativeModifier: Math.floor((Number(monster.dexterity) - 10) / 2),
     hitDice: monster.hit_dice,
     speed: monster.speed,
     traits: (monster.special_abilities ?? []).slice(0, 2).map((trait: any) => trait.name),

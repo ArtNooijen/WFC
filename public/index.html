@@ -104,7 +104,8 @@
               <p class="eyebrow">The gamekeeper's counsel</p>
               <h2>Three rooms ahead</h2>
             </div>
-            <span class="model-pill" id="pacing-label">V2 · ATTRITION</span>
+            <div
+              class="forecast-heading-actions"><button id="start-initiative" class="initiative-start">Start initiative</button><span class="model-pill" id="pacing-label">V2 · ATTRITION</span></div>
           </div>
           <div class="readiness-card">
             <div class="readiness-ring"
@@ -271,6 +272,26 @@
           class="dialog-actions"><button type="button" id="print-journal" class="ghost-button">Print journal</button><button value="cancel" class="primary-button">Close</button></div>
       </form>
     </dialog>
+
+    <dialog id="initiative-dialog">
+      <form method="dialog" id="initiative-form">
+        <div
+          class="dialog-heading"><div><p class="eyebrow">DM combat tool</p><h2>Start initiative</h2></div><button value="cancel" class="icon-button">×</button></div>
+        <p
+          class="rest-dialog-copy">Players roll at the table. Enter their results; monsters from the next unresolved combat roll automatically.</p>
+        <div id="initiative-target" class="initiative-target"></div>
+        <div id="initiative-player-rolls" class="initiative-player-rolls"></div>
+        <div
+          class="dialog-actions"><button value="cancel" class="ghost-button">Cancel</button><button value="default" class="primary-button">Roll monsters and begin</button></div>
+      </form>
+    </dialog>
+
+    <aside id="initiative-tracker" class="initiative-tracker" hidden>
+      <header
+        id="initiative-drag-handle"><div><span>INITIATIVE</span><b id="initiative-encounter-title">Encounter</b></div><button id="close-initiative" aria-label="Close initiative tracker">×</button></header>
+      <div id="initiative-entries"></div>
+      <footer><button id="add-initiative-entry">＋ Add</button><button id="sort-initiative">Sort</button><button id="next-initiative-turn">Next turn →</button></footer>
+    </aside>
 
     <section class="journal-print-sheet" id="journal-print-sheet" aria-hidden="true">
       <header><p>DELVEWRIGHT · DM CAMPAIGN RECORD</p><h1>Expedition Journal</h1><span id="journal-print-meta"></span></header>
