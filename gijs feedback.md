@@ -15,4 +15,6 @@ reason for the party to enter the dungeon why who do they kill who do they need 
 
 make it so exit can be close to entery , proximity from entry an exit inverse of the loot in the dungen
 
-can escape the add adventure not forced to fill in an name
+can escape the add adventure not forced to fill in an name.
+
+i want to be able to move the rooms after they are created.
