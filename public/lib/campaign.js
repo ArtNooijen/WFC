@@ -32,6 +32,11 @@ export function outcomeSample(encounter, beforeParty, report) {
     .08,
     1.2,
   );
+  const evidenceWeight = report.withoutCombat
+    ? .05
+    : hpLoss === 0 && resourcesSpent === 0 && downed === 0 && killed === 0
+    ? .2
+    : 1;
   return {
     id: crypto.randomUUID(),
     encounterId: encounter.id,
@@ -43,6 +48,7 @@ export function outcomeSample(encounter, beforeParty, report) {
     killed,
     objectiveCompleted: Boolean(report.objectiveCompleted),
     withoutCombat: Boolean(report.withoutCombat),
+    evidenceWeight,
     at: new Date().toISOString(),
   };
 }
@@ -52,13 +58,20 @@ export function learningModel(samples = [], restStats = {}) {
   const priorWeight = 4;
   const weighted = recent.reduce((sum, sample, index) => {
     const recency = .65 + (index + 1) / Math.max(1, recent.length) * .35;
-    return { sum: sum.sum + Number(sample.ratio) * recency, weight: sum.weight + recency };
-  }, { sum: priorWeight, weight: priorWeight });
+    const inferredEvidence = sample.evidenceWeight ??
+      (sample.withoutCombat ? .05 : Number(sample.actual) <= .081 ? .2 : 1);
+    const evidence = clamp(Number(inferredEvidence), .05, 1);
+    return {
+      sum: sum.sum + Number(sample.ratio) * recency * evidence,
+      weight: sum.weight + recency * evidence,
+      evidence: sum.evidence + recency * evidence,
+    };
+  }, { sum: priorWeight, weight: priorWeight, evidence: 0 });
   const restCount = Number(restStats.short ?? 0) + Number(restStats.long ?? 0);
   const restFrequency = restCount / Math.max(1, recent.length);
   const restAdjustment = clamp((restFrequency - .5) * .05, 0, .1);
   const calibration = clamp(weighted.sum / weighted.weight + restAdjustment, .72, 1.35);
-  const confidence = clamp(recent.length / 12, 0, 1);
+  const confidence = clamp(weighted.evidence / 12, 0, 1);
   return {
     calibration,
     samples: recent.length,

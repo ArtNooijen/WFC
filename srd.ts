@@ -242,6 +242,44 @@ export function chooseComposition(
   };
 }
 
+export function chooseBossComposition(
+  difficulty: Difficulty,
+  thresholds: ReturnType<typeof partyThresholds>,
+  partySize: number,
+  maximumCr: number,
+  condition: PartyCondition = {},
+) {
+  const band = conditionBudgetBand(difficulty, thresholds, condition);
+  const candidates = [];
+  for (const boss of CR_XP.filter((entry) => entry.cr <= maximumCr && entry.cr >= .5)) {
+    for (const minion of CR_XP.filter((entry) => entry.cr < boss.cr)) {
+      for (let minionCount = 1; minionCount <= 4; minionCount++) {
+        const count = 1 + minionCount;
+        const baseXp = boss.xp + minion.xp * minionCount;
+        const multiplier = encounterMultiplier(count, partySize);
+        const adjustedXp = Math.round(baseXp * multiplier);
+        if (adjustedXp < band.lower || adjustedXp > band.upper) continue;
+        if (classifyAdjustedXp(adjustedXp, thresholds) !== difficulty) continue;
+        if (boss.xp < minion.xp * minionCount * .6) continue;
+        candidates.push({
+          cr: boss.cr,
+          minionCr: minion.cr,
+          minionCount,
+          count,
+          baseXp,
+          adjustedXp,
+          multiplier,
+          band,
+          desiredCount: count,
+          score: Math.abs(adjustedXp - band.target) - boss.xp * .015,
+        });
+      }
+    }
+  }
+  candidates.sort((a, b) => a.score - b.score || b.cr - a.cr);
+  return candidates[0] ?? null;
+}
+
 function totalSlots(spellcasting: Record<string, number> | undefined) {
   if (!spellcasting) return 0;
   return Object.entries(spellcasting).filter(([key]) => key.startsWith("spell_slots_level_"))
@@ -340,6 +378,18 @@ export async function getClassProfile(className: string, level: number) {
   const index = classIndex(className);
   const data = await api<any>(`/classes/${index}/levels/${Math.max(1, Math.min(20, level))}`);
   return normalizeClassLevel(data, className);
+}
+
+export async function getConditions() {
+  const list = await api<any>("/conditions");
+  return {
+    conditions: (list.results ?? []).map((condition: any) => ({
+      index: condition.index,
+      name: condition.name,
+      source: `${API_BASE}/conditions/${condition.index}`,
+    })),
+    dataSource: API_BASE,
+  };
 }
 
 export async function hydratePartyResources(party: any[]) {
@@ -564,7 +614,7 @@ async function buildMonsterEncounter(
   const averageLevel = party.reduce((sum, member) => sum + Number(member.level), 0) /
     party.length;
   const maximumCr = difficulty === "deadly" ? averageLevel + 2 : averageLevel;
-  const composition = chooseComposition(
+  const regularComposition = chooseComposition(
     difficulty,
     thresholds,
     party.length,
@@ -572,12 +622,30 @@ async function buildMonsterEncounter(
     seed,
     condition,
   );
+  const composition: any = encounter.boss
+    ? chooseBossComposition(difficulty, thresholds, party.length, maximumCr, condition) ??
+      regularComposition
+    : regularComposition;
   let monster: any = applyEncounterMonsterTheme(
     await getMonsterForCr(composition.cr, seed, encounter),
     encounter,
   );
   let secondaryMonster: any = null;
-  if (composition.count >= 2 && !encounter.boss) {
+  if (encounter.boss && composition.minionCount) {
+    try {
+      secondaryMonster = applyEncounterMonsterTheme(
+        await getMonsterForCr(
+          composition.minionCr,
+          `${seed}:spawned-minion`,
+          encounter,
+          [monster.index],
+        ),
+        encounter,
+      );
+    } catch {
+      secondaryMonster = null;
+    }
+  } else if (composition.count >= 2) {
     try {
       const candidate = applyEncounterMonsterTheme(
         await getMonsterForCr(
@@ -593,10 +661,22 @@ async function buildMonsterEncounter(
       // A CR with only one available stat block remains a single-creature-type encounter.
     }
   }
-  const groups = secondaryMonster
+  const groups: any[] = secondaryMonster && encounter.boss
+    ? [
+      { count: 1, monster, role: "boss", spawned: false },
+      {
+        count: composition.minionCount,
+        monster: secondaryMonster,
+        role: "spawned minion",
+        spawned: true,
+      },
+    ]
+    : secondaryMonster
     ? splitEncounterCount(composition.count).map((count, index) => ({
       count,
       monster: index === 0 ? monster : secondaryMonster,
+      role: "enemy",
+      spawned: false,
     }))
     : [{ count: composition.count, monster }];
   const baseXp = groups.reduce((sum, group) => sum + group.monster.xp * group.count, 0);
@@ -624,7 +704,14 @@ async function buildMonsterEncounter(
     count: composition.count,
     monster,
     groups,
-    composition: groups.length > 1 ? "Mixed SRD group" : "Single SRD creature type",
+    composition: encounter.boss && groups.some((group) => group.spawned)
+      ? "Solo boss with spawned minions"
+      : groups.length > 1
+      ? "Mixed SRD group"
+      : "Single SRD creature type",
+    spawnRule: encounter.boss && groups.some((group) => group.spawned)
+      ? `The boss begins alone. Spawn one ${secondaryMonster.name} from its pool at initiative 20 or when the boss first falls below half HP.`
+      : null,
     baseXp,
     adjustedXp,
     multiplier: composition.multiplier,

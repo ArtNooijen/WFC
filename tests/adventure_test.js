@@ -13,6 +13,7 @@ import {
   takeShortRest,
 } from "../public/lib/adventure.js";
 import {
+  chooseBossComposition,
   chooseComposition,
   classifyAdjustedXp,
   conditionBudgetBand,
@@ -370,6 +371,27 @@ Deno.test("mixed SRD groups preserve creature count and encounter multiplier", (
   }
 });
 
+Deno.test("boss compositions use one larger enemy and a spawned minion pool", () => {
+  const party = Array.from({ length: 4 }, () => ({ level: 5 }));
+  const thresholds = partyThresholds(party);
+  const composition = chooseBossComposition(
+    "deadly",
+    thresholds,
+    party.length,
+    7,
+    { hpRatio: 1, resourceRatio: 1 },
+  );
+  if (!composition || composition.minionCount < 1 || composition.cr <= composition.minionCr) {
+    throw new Error("boss did not receive a lower-CR spawned minion pool");
+  }
+  if (composition.count !== composition.minionCount + 1) {
+    throw new Error("boss composition count does not include boss and minions exactly once");
+  }
+  if (classifyAdjustedXp(composition.adjustedXp, thresholds) !== "deadly") {
+    throw new Error("boss composition escaped its selected XP band");
+  }
+});
+
 Deno.test("party condition moves encounters within the selected official XP band", () => {
   const thresholds = partyThresholds([{ level: 5 }, { level: 5 }, { level: 5 }, { level: 5 }]);
   const wounded = { readiness: .48, hpRatio: .5, criticalMembers: 0 };
@@ -392,6 +414,71 @@ Deno.test("party condition moves encounters within the selected official XP band
     classifyAdjustedXp(healthyFight.adjustedXp, thresholds) !== "medium"
   ) {
     throw new Error("condition scaling escaped the selected difficulty band");
+  }
+});
+
+Deno.test("past easy outcomes cannot hide a currently depleted party", () => {
+  const depleted = [
+    {
+      name: "Mira",
+      class: "Ranger",
+      level: 4,
+      hp: 36,
+      maxHp: 36,
+      ac: 16,
+      resource: 0,
+      maxResource: 3,
+    },
+    {
+      name: "Thorn",
+      class: "Fighter",
+      level: 4,
+      hp: 14,
+      maxHp: 42,
+      ac: 18,
+      resource: 1,
+      maxResource: 1,
+    },
+    {
+      name: "Sable",
+      class: "Wizard",
+      level: 4,
+      hp: 7,
+      maxHp: 26,
+      ac: 13,
+      resource: 3,
+      maxResource: 7,
+    },
+    {
+      name: "Orr",
+      class: "Cleric",
+      level: 4,
+      hp: 7,
+      maxHp: 33,
+      ac: 17,
+      resource: 0,
+      maxResource: 8,
+    },
+  ];
+  const forecast = buildEncounterForecast(depleted, "silent-reliquary-81", 0, 3, {
+    calibration: .72,
+    settings: {
+      trackResources: true,
+      trackAfflictions: true,
+      themeMode: "full-dungeon",
+      dungeonTheme: "ossuary",
+    },
+  });
+  if (forecast.profile.wounded !== 3 || forecast.profile.critical !== 1) {
+    throw new Error("depleted member distribution was not recognized");
+  }
+  if (forecast.profile.planningReadiness >= .55) {
+    throw new Error(
+      `historical calibration inflated depleted readiness to ${forecast.profile.planningReadiness}`,
+    );
+  }
+  if (Math.abs(forecast.profile.learnedAdjustment) > .071) {
+    throw new Error("learned performance adjustment escaped its safety cap");
   }
 });
 
@@ -517,6 +604,22 @@ Deno.test("resolved outcomes train a bounded per-party calibration model", () =>
   const unrested = learningModel(Array(8).fill({ ratio: 1 }), { short: 0, long: 0 });
   if (rested.calibration <= unrested.calibration || rested.restFrequency !== 2) {
     throw new Error("rest frequency did not influence calibration");
+  }
+});
+
+Deno.test("empty resolution reports have low learning weight", () => {
+  const empty = outcomeSample({ id: "empty", rating: "Hard" }, PARTY, {
+    rounds: 3,
+    feedback: "accurate",
+    members: { a: { hpLost: 0, resourcesSpent: 0 } },
+  });
+  const costly = outcomeSample({ id: "costly", rating: "Hard" }, PARTY, {
+    rounds: 5,
+    feedback: "harder",
+    members: { a: { hpLost: 20, resourcesSpent: 2, downed: true } },
+  });
+  if (empty.evidenceWeight >= costly.evidenceWeight) {
+    throw new Error("an empty report was treated as strong encounter evidence");
   }
 });
 

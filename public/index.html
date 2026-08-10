@@ -92,7 +92,9 @@
             <p><span class="pulse-ring">✦</span><b>The ink is dry</b><small>Rooms and passages persist when the party changes.</small></p>
             <div class="map-footer-actions">
               <button id="print-map">Print A4 <span>▧</span></button>
+              <button id="import-button">Import session <span>↙</span></button>
               <button id="export-button">Export session <span>↗</span></button>
+              <input id="import-session-file" type="file" accept="application/json,.json" hidden />
             </div>
           </div>
           <div class="atlas-key" aria-label="Dungeon map key">
@@ -113,7 +115,7 @@
           <div class="readiness-card">
             <div class="readiness-ring"
               id="readiness-ring"><span id="readiness-value">—</span></div>
-            <div><span>PARTY CONDITION</span><strong id="readiness-label">Taking stock…</strong><small>Health · supplies · armour · level</small><div id="condition-breakdown" class="condition-breakdown"></div><div class="model-score-line" title="The detailed score used for encounter planning after armour, afflictions, resources, learned party performance, and other model inputs."><span>MODEL SCORE</span><b id="model-score-value">—</b><small id="model-score-context">Calculating…</small></div></div>
+            <div><span>PARTY CONDITION</span><strong id="readiness-label">Taking stock…</strong><small>Health · supplies · armour · level</small><div id="condition-breakdown" class="condition-breakdown"></div><div class="model-score-line" title="Current readiness with only a small, capped adjustment from learned party performance."><span>PLANNING SCORE</span><b id="model-score-value">—</b><small id="model-score-context">Calculating…</small></div></div>
           </div>
           <div class="srd-status"
             id="srd-status"><span>◌</span><div><b>Loading 2014 SRD data</b><small>Classes · monsters · magic items</small></div></div>
@@ -187,7 +189,7 @@
           <label
             class="affliction-field">Death save failures<input name="deathFailures" type="number" min="0" max="3" value="0" required /></label>
           <label
-            class="full-field affliction-field">Conditions<input name="conditions" placeholder="poisoned, frightened, restrained" /></label>
+            class="full-field affliction-field">Conditions<input name="conditions" list="condition-options" placeholder="poisoned, frightened, restrained" /><small>Suggestions come from the live 2014 SRD.</small></label>
           <label
             class="affliction-field">Condition duration<input name="conditionRounds" type="number" min="0" max="999" value="0" /><small>Rounds; 0 means until cleared</small></label>
           <label
@@ -209,6 +211,19 @@
         </section>
         <div
           class="dialog-actions"><button value="cancel" formnovalidate class="ghost-button">Cancel</button><button value="default" id="save-member" class="primary-button">Save adventurer</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="condition-dialog">
+      <form id="condition-form">
+        <div
+          class="dialog-heading"><div><p class="eyebrow">2014 SRD</p><h2>Add condition</h2></div><button type="button" id="cancel-condition" class="icon-button">×</button></div>
+        <input type="hidden" name="memberId" />
+        <label
+          class="full-field">Condition<input name="condition" list="condition-options" autocomplete="off" required placeholder="Start typing, e.g. poisoned" /><small id="condition-source">Loading official conditions…</small></label>
+        <datalist id="condition-options"></datalist>
+        <div
+          class="dialog-actions"><button type="button" id="cancel-condition-secondary" class="ghost-button">Cancel</button><button type="submit" class="primary-button">Add condition</button></div>
       </form>
     </dialog>
 
@@ -297,7 +312,7 @@
       <header
         id="initiative-drag-handle"><div><span>INITIATIVE</span><b id="initiative-encounter-title">Encounter</b></div><button id="close-initiative" aria-label="Close initiative tracker">×</button></header>
       <div id="initiative-entries"></div>
-      <footer><button id="add-initiative-entry">＋ Add</button><button id="sort-initiative">Sort</button><button id="next-initiative-turn">Next turn →</button></footer>
+      <footer><button id="add-initiative-entry">＋ Add</button><button id="spawn-initiative-minion" hidden>Spawn minion</button><button id="sort-initiative">Sort</button><button id="next-initiative-turn">Next turn →</button></footer>
     </aside>
 
     <section class="journal-print-sheet" id="journal-print-sheet" aria-hidden="true">

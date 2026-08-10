@@ -1047,6 +1047,9 @@ export function analyzeParty(party, options = {}) {
   const resourceRatio = options.trackResources === false ? 1 : weightedResourceRatio;
   const defense = members.reduce((sum, member) => sum + Number(member.ac || 10), 0) /
     members.length;
+  const wounded = members.filter((member) => Number(member.hp) / Number(member.maxHp) < 0.5).length;
+  const critical =
+    members.filter((member) => Number(member.hp) / Number(member.maxHp) < 0.25).length;
 
   // Attrition is intentionally dominant: lowering HP must always lower readiness.
   // Defense and level describe capacity, while HP/resources describe current condition.
@@ -1056,8 +1059,10 @@ export function analyzeParty(party, options = {}) {
     const exhaustion = Number(member.exhaustion ?? 0);
     return sum + conditions * .035 + exhaustion * .055 + (member.concentration ? .01 : 0);
   }, 0) / members.length;
+  const fragilityPenalty = wounded / members.length * .04 + critical / members.length * .12;
   const readiness = clamp(
-    hpRatio * 0.58 + resourceRatio * 0.27 + defenseFactor * 0.15 - afflictionLoad,
+    hpRatio * 0.58 + resourceRatio * 0.27 + defenseFactor * 0.15 - afflictionLoad -
+      fragilityPenalty,
     0,
     1,
   );
@@ -1076,9 +1081,6 @@ export function analyzeParty(party, options = {}) {
     return totals;
   }, { aoe: 0, control: 0, healing: 0, ranged: 0 });
   for (const key of Object.keys(capabilities)) capabilities[key] /= members.length;
-  const wounded = members.filter((member) => Number(member.hp) / Number(member.maxHp) < 0.5).length;
-  const critical =
-    members.filter((member) => Number(member.hp) / Number(member.maxHp) < 0.25).length;
   const capacity = members.reduce((sum, member) => {
     const memberDefense = clamp((Number(member.ac || 10) - 10) / 12, 0, 1);
     const resource = options.trackResources === false
@@ -1101,6 +1103,7 @@ export function analyzeParty(party, options = {}) {
       ...memberResources[index],
     })),
     afflictionLoad,
+    fragilityPenalty,
     capabilities,
     defense,
     readiness,
@@ -1121,10 +1124,13 @@ export function buildEncounterForecast(
 ) {
   const profile = analyzeParty(party, modelContext.settings ?? {});
   const calibration = clamp(Number(modelContext.calibration ?? 1), .72, 1.35);
-  const planningReadiness = clamp(profile.readiness / calibration, 0, 1);
+  // Learned performance can nudge planning, but it must never overpower current attrition.
+  const learnedAdjustment = clamp((1 - calibration) * .2, -.07, .07);
+  const planningReadiness = clamp(profile.readiness + learnedAdjustment, 0, 1);
   const awarenessPressure = clamp(Number(modelContext.awareness ?? 0) * .025, 0, .16);
   profile.planningReadiness = planningReadiness;
   profile.calibration = calibration;
+  profile.learnedAdjustment = learnedAdjustment;
   const rng = createRng(
     `${seed}:encounters:${completed}:${Math.round(profile.hpRatio * 20)}:${
       Math.round(profile.resourceRatio * 20)

@@ -1,5 +1,5 @@
 import { applyForecastControls, buildEncounterForecast } from "./public/lib/adventure.js";
-import { enrichWithSrd, getClassProfile, hydratePartyResources } from "./srd.ts";
+import { enrichWithSrd, getClassProfile, getConditions, hydratePartyResources } from "./srd.ts";
 
 const ROOT = new URL("./public/", import.meta.url);
 const MIME: Record<string, string> = {
@@ -117,6 +117,17 @@ Deno.serve({ port }, async (request) => {
     } catch (error) {
       return json(
         { error: error instanceof Error ? error.message : "Unable to load class data" },
+        502,
+      );
+    }
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/srd/conditions") {
+    try {
+      return json(await getConditions());
+    } catch (error) {
+      return json(
+        { error: error instanceof Error ? error.message : "Unable to load conditions" },
         502,
       );
     }

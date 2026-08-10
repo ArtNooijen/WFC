@@ -61,6 +61,7 @@ const DEFAULT_PARTY = [
 
 const $ = (selector) => document.querySelector(selector);
 const state = loadState();
+state.encounterBaseline ??= createEncounterBaseline(state.party);
 let dungeon = generateDungeon(state.seed, 55, 31, dungeonGenerationOptions());
 let forecast = null;
 let animationFrame = null;
@@ -73,6 +74,7 @@ let selectedRoomIndex = null;
 let roomEditMode = false;
 let roomDrag = null;
 let suppressMapClickUntil = 0;
+let conditionRequest = null;
 
 function loadState() {
   try {
@@ -141,6 +143,18 @@ function saveState() {
   $("#undo-action")?.toggleAttribute("disabled", !state.undoStack.length);
 }
 
+function createEncounterBaseline(party = state.party) {
+  return Object.fromEntries(party.map((member) => [member.id, {
+    hp: Number(member.hp ?? 0),
+    tempHp: Number(member.tempHp ?? 0),
+    resource: Number(member.resource ?? 0),
+  }]));
+}
+
+function resetEncounterBaseline() {
+  state.encounterBaseline = createEncounterBaseline();
+}
+
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
@@ -172,6 +186,7 @@ function checkpoint(label) {
       forecastChanges: state.forecastChanges,
       themeOrder: state.themeOrder,
       storyVariant: state.storyVariant,
+      encounterBaseline: state.encounterBaseline,
     }),
   });
   state.undoStack = state.undoStack.slice(-30);
@@ -258,6 +273,27 @@ function resourceSummary(member) {
   return `${member.resources.length} pools · ${current}/${maximum}`;
 }
 
+function restoreResources(member, amount) {
+  let remaining = Math.max(0, Number(amount) || 0);
+  if (member.resources?.length) {
+    const resources = member.resources.map((pool) => {
+      const space = Math.max(0, Number(pool.maximum) - Number(pool.current));
+      const restored = Math.min(space, remaining);
+      remaining -= restored;
+      return { ...pool, current: Number(pool.current) + restored };
+    });
+    return {
+      ...member,
+      resources,
+      resource: resources.reduce((sum, pool) => sum + Number(pool.current), 0),
+    };
+  }
+  return {
+    ...member,
+    resource: Math.min(Number(member.maxResource ?? 0), Number(member.resource ?? 0) + remaining),
+  };
+}
+
 function renderParty() {
   const living = state.party.filter((member) => !member.dead);
   const profile = living.length ? analyzeParty(state.party, state.settings) : null;
@@ -288,13 +324,31 @@ function renderParty() {
     hitDiceState(member).maximum
   } · ${resourceSummary(member)}</span></div>
       <div class="quick-member-actions" aria-label="Quick updates for ${escapeHtml(member.name)}">
-        <button type="button" data-quick-action="hp" data-member-id="${member.id}" ${
+        <div class="member-hp-controls"><span class="control-label">HP</span>
+          <button type="button" data-member-hp-delta="-1" data-member-id="${member.id}" ${
     member.dead || member.hp <= 0 ? "disabled" : ""
-  }>−1 HP</button>
-        <button type="button" data-quick-action="resource" data-member-id="${member.id}" ${
+  }>−</button>
+          <input class="member-hp-input" data-member-hp-input data-member-id="${member.id}" type="number" min="0" max="${member.maxHp}" value="${member.hp}" aria-label="Current HP for ${
+    escapeHtml(member.name)
+  }">
+          <button type="button" data-member-hp-delta="1" data-member-id="${member.id}" ${
+    member.dead || member.hp >= member.maxHp ? "disabled" : ""
+  }>+</button>
+          <input class="member-hp-slider" data-member-hp-slider data-member-id="${member.id}" type="range" min="0" max="${member.maxHp}" value="${member.hp}" aria-label="Quick HP for ${
+    escapeHtml(member.name)
+  }">
+          <output class="member-hp-output">${member.hp}/${member.maxHp}</output>
+        </div>
+        <div class="member-resource-controls"><span class="control-label">RESOURCES · ${
+    member.resource ?? 0
+  }/${member.maxResource ?? 0}</span>
+          <button type="button" data-quick-action="resource" data-resource-delta="-1" data-member-id="${member.id}" ${
     member.dead ? "disabled" : ""
-  }>−1 RES</button>
-        <button class="kill-member ${
+  }>−</button>
+          <button type="button" data-quick-action="resource" data-resource-delta="1" data-member-id="${member.id}" ${
+    member.dead ? "disabled" : ""
+  }>+</button>
+          <button class="kill-member ${
     member.dead ? "revive-member" : ""
   }" type="button" data-quick-action="kill" data-member-id="${member.id}" aria-label="${
     member.dead ? "Revive" : "Mark"
@@ -303,26 +357,46 @@ function renderParty() {
       ? "Revive at 1 HP and include in difficulty"
       : "Mark dead and exclude from difficulty"
   }">☠</button>
+        </div>
       </div>
-      ${
-    state.settings.trackAfflictions && !member.dead
-      ? `<div class="member-statuses">${
-        Number(member.tempHp) > 0 ? `<span>+${member.tempHp} temp HP</span>` : ""
-      }${member.concentration ? "<span>Concentrating</span>" : ""}${
-        member.inspiration ? "<span>Inspiration</span>" : ""
-      }${Number(member.exhaustion) > 0 ? `<span>Exhaustion ${member.exhaustion}</span>` : ""}${
-        member.hp <= 0 && member.deathSaves
-          ? `<span>Death saves ${member.deathSaves.successes}✓/${member.deathSaves.failures}✕</span>`
-          : ""
-      }${
-        (member.conditions ?? []).map((condition) =>
-          `<span>${escapeHtml(condition)}${
-            Number(member.conditionRounds) > 0 ? ` · ${member.conditionRounds}r` : ""
-          }</span>`
-        ).join("")
-      }</div>`
+      <div class="member-statuses">${
+    state.settings.trackAfflictions && !member.dead && Number(member.tempHp) > 0
+      ? `<span>+${member.tempHp} temp HP</span>`
+      : ""
+  }${member.concentration ? "<span>Concentrating</span>" : ""}${
+    member.inspiration ? "<span>Inspiration</span>" : ""
+  }${Number(member.exhaustion) > 0 ? `<span>Exhaustion ${member.exhaustion}</span>` : ""}${
+    member.hp <= 0 && member.deathSaves
+      ? `<span>Death saves ${member.deathSaves.successes}✓/${member.deathSaves.failures}✕</span>`
+      : ""
+  }${
+    state.settings.trackAfflictions
+      ? (member.conditions ?? []).map((condition) =>
+        `<span class="editable-tag">${escapeHtml(condition)}${
+          Number(member.conditionRounds) > 0 ? ` · ${member.conditionRounds}r` : ""
+        }<button type="button" data-remove-member-tag="condition" data-tag-value="${
+          escapeHtml(condition)
+        }" data-member-id="${member.id}" aria-label="Remove ${
+          escapeHtml(condition)
+        }">×</button></span>`
+      ).join("")
+      : ""
+  }${
+    (member.customFeatures ?? []).map((feature) =>
+      `<span class="editable-tag feature-tag">${
+        escapeHtml(feature)
+      }<button type="button" data-remove-member-tag="feature" data-tag-value="${
+        escapeHtml(feature)
+      }" data-member-id="${member.id}" aria-label="Remove ${escapeHtml(feature)}">×</button></span>`
+    ).join("")
+  }
+        ${
+    state.settings.trackAfflictions
+      ? `<button type="button" class="add-member-tag" data-add-member-tag="condition" data-member-id="${member.id}">+ condition</button>`
       : ""
   }
+        <button type="button" class="add-member-tag" data-add-member-tag="feature" data-member-id="${member.id}">+ feature</button>
+      </div>
     </article>`).join("");
   document.querySelectorAll(".member-card").forEach((card) => {
     card.addEventListener("click", () => openMemberDialog(card.dataset.memberId));
@@ -339,7 +413,70 @@ function renderParty() {
   document.querySelectorAll("[data-quick-action]").forEach((button) => {
     button.addEventListener("click", (event) => {
       event.stopPropagation();
-      quickUpdateMember(button.dataset.memberId, button.dataset.quickAction);
+      quickUpdateMember(
+        button.dataset.memberId,
+        button.dataset.quickAction,
+        Number(button.dataset.resourceDelta ?? -1),
+      );
+    });
+  });
+  document.querySelectorAll("[data-member-hp-delta]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      changeMemberHp(button.dataset.memberId, Number(button.dataset.memberHpDelta));
+    });
+  });
+  document.querySelectorAll("[data-member-hp-input]").forEach((input) => {
+    input.addEventListener("click", (event) => event.stopPropagation());
+    input.addEventListener("change", (event) => {
+      event.stopPropagation();
+      setMemberHp(input.dataset.memberId, Number(input.value));
+    });
+  });
+  document.querySelectorAll("[data-member-hp-slider]").forEach((slider) => {
+    slider.addEventListener("click", (event) => event.stopPropagation());
+    slider.addEventListener("pointerdown", (event) => {
+      event.stopPropagation();
+      const member = state.party.find((item) => item.id === slider.dataset.memberId);
+      if (member) checkpoint(`Change ${member.name}'s HP`);
+    });
+    slider.addEventListener("keydown", (event) => {
+      event.stopPropagation();
+      if (
+        event.repeat ||
+        !["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)
+      ) return;
+      const member = state.party.find((item) => item.id === slider.dataset.memberId);
+      if (member) checkpoint(`Change ${member.name}'s HP`);
+    });
+    slider.addEventListener("input", (event) => {
+      event.stopPropagation();
+      previewMemberHp(slider.dataset.memberId, Number(slider.value));
+    });
+    slider.addEventListener("change", (event) => {
+      event.stopPropagation();
+      const member = state.party.find((item) => item.id === slider.dataset.memberId);
+      if (member) {
+        saveState();
+        renderParty();
+        queueQuickForecast(`${member.name} is now at ${member.hp}/${member.maxHp} HP`);
+      }
+    });
+  });
+  document.querySelectorAll("[data-add-member-tag]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      addMemberTag(button.dataset.memberId, button.dataset.addMemberTag);
+    });
+  });
+  document.querySelectorAll("[data-remove-member-tag]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      removeMemberTag(
+        button.dataset.memberId,
+        button.dataset.removeMemberTag,
+        button.dataset.tagValue,
+      );
     });
   });
 }
@@ -349,15 +486,138 @@ function queueQuickForecast(message) {
   quickForecastTimer = setTimeout(() => updateForecast(message), 280);
 }
 
-function quickUpdateMember(id, action) {
+function setMemberHp(id, value) {
   const member = state.party.find((item) => item.id === id);
+  if (!member || member.dead) return;
+  const next = Math.max(0, Math.min(Number(member.maxHp), Number(value) || 0));
+  if (next === Number(member.hp)) return;
+  checkpoint(`Change ${member.name}'s HP`);
+  const previous = Number(member.hp);
+  member.hp = next;
+  saveState();
+  renderParty();
+  queueQuickForecast(`${member.name}: ${previous} → ${next} HP`);
+}
+
+function previewMemberHp(id, value) {
+  const member = state.party.find((item) => item.id === id);
+  const card = document.querySelector(`.member-card[data-member-id="${id}"]`);
+  if (!member || !card || member.dead) return;
+  member.hp = Math.max(0, Math.min(Number(member.maxHp), Number(value) || 0));
+  card.querySelector(".member-hp-input").value = member.hp;
+  card.querySelector(".member-hp-output").textContent = `${member.hp}/${member.maxHp}`;
+  card.querySelector(".hp-number b").textContent = member.hp;
+  card.querySelector(".hp-bar i").style.width = `${Math.min(100, member.hp / member.maxHp * 100)}%`;
+  card.classList.toggle("critical", member.hp / member.maxHp < .3);
+  card.classList.toggle(
+    "wounded",
+    member.hp / member.maxHp >= .3 && member.hp / member.maxHp < .65,
+  );
+  saveState();
+}
+
+function changeMemberHp(id, delta) {
+  const member = state.party.find((item) => item.id === id);
+  if (member) setMemberHp(id, Number(member.hp) + delta);
+}
+
+function addMemberTag(id, type) {
+  const member = state.party.find((item) => item.id === id);
+  if (!member) return;
+  if (type === "condition") {
+    openConditionDialog(id);
+    return;
+  }
+  const value = globalThis.prompt(`Add a ${type} for ${member.name}:`)?.trim();
+  if (!value) return;
+  addMemberTagValue(member, type, value);
+}
+
+function addMemberTagValue(member, type, value) {
+  const field = type === "condition" ? "conditions" : "customFeatures";
+  const tags = member[field] ?? [];
+  if (tags.some((tag) => tag.toLowerCase() === value.toLowerCase())) return;
+  checkpoint(`Add ${type} to ${member.name}`);
+  member[field] = [...tags, value];
+  saveState();
+  renderParty();
+}
+
+async function loadConditionOptions() {
+  if (conditionRequest) return conditionRequest;
+  conditionRequest = fetch("/api/srd/conditions").then(async (response) => {
+    if (!response.ok) throw new Error("SRD conditions unavailable");
+    const data = await response.json();
+    $("#condition-options").innerHTML = data.conditions.map((condition) =>
+      `<option value="${escapeHtml(condition.name)}"></option>`
+    ).join("");
+    $("#condition-source").textContent =
+      `${data.conditions.length} official conditions · live 2014 SRD`;
+    return data.conditions;
+  }).catch(() => {
+    const fallback = [
+      "Blinded",
+      "Charmed",
+      "Deafened",
+      "Exhaustion",
+      "Frightened",
+      "Grappled",
+      "Incapacitated",
+      "Invisible",
+      "Paralyzed",
+      "Petrified",
+      "Poisoned",
+      "Prone",
+      "Restrained",
+      "Stunned",
+      "Unconscious",
+    ];
+    $("#condition-options").innerHTML = fallback.map((name) => `<option value="${name}"></option>`)
+      .join("");
+    $("#condition-source").textContent = "Offline SRD condition list";
+    return fallback;
+  });
+  return conditionRequest;
+}
+
+function openConditionDialog(memberId) {
+  const form = $("#condition-form");
+  form.reset();
+  form.elements.memberId.value = memberId;
+  $("#condition-dialog").showModal();
+  loadConditionOptions();
+  setTimeout(() => form.elements.condition.focus(), 30);
+}
+
+function saveCondition(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const member = state.party.find((item) => item.id === form.elements.memberId.value);
+  const value = form.elements.condition.value.trim();
+  if (!member || !value) return;
+  addMemberTagValue(member, "condition", value);
+  $("#condition-dialog").close();
+}
+
+function removeMemberTag(id, type, value) {
+  const member = state.party.find((item) => item.id === id);
+  if (!member) return;
+  const field = type === "condition" ? "conditions" : "customFeatures";
+  checkpoint(`Remove ${type} from ${member.name}`);
+  member[field] = (member[field] ?? []).filter((tag) => tag !== value);
+  saveState();
+  renderParty();
+}
+
+function quickUpdateMember(id, action, delta = -1) {
+  let member = state.party.find((item) => item.id === id);
   if (!member || (member.dead && action !== "kill")) return;
   let message = `${member.name} updated`;
   checkpoint(message);
   if (action === "hp") {
     member.hp = Math.max(0, Number(member.hp) - 1);
     message = `${member.name} loses 1 HP`;
-  } else if (action === "resource") {
+  } else if (action === "resource" && delta < 0) {
     if (member.resources?.length) {
       const pool = member.resources.find((candidate) => Number(candidate.current) > 0);
       if (!pool) {
@@ -380,6 +640,17 @@ function quickUpdateMember(id, action) {
       member.resource = Number(member.resource) - 1;
       message = `${member.name} spends 1 resource use`;
     }
+  } else if (action === "resource") {
+    const before = Number(member.resource ?? 0);
+    member = restoreResources(member, delta);
+    const restored = Number(member.resource ?? 0) - before;
+    if (!restored) {
+      state.undoStack.pop();
+      showToast(`${member.name}'s resources are already full`);
+      return;
+    }
+    state.party[state.party.findIndex((item) => item.id === id)] = member;
+    message = `${member.name} recovers ${restored} resource use`;
   } else if (action === "kill") {
     if (member.dead) {
       member.dead = false;
@@ -409,6 +680,7 @@ function removeMember(id) {
   if (!globalThis.confirm(`Remove ${member.name} from the party?`)) return;
   checkpoint(`Remove ${member.name}`);
   state.party = state.party.filter((item) => item.id !== id);
+  delete state.encounterBaseline?.[id];
   logEvent("party", `Removed ${member.name}`);
   saveState();
   renderParty();
@@ -420,6 +692,12 @@ function escapeHtml(value) {
     /[&<>'"]/g,
     (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[char],
   );
+}
+
+function formatMonsterSpeed(speed) {
+  if (!speed) return "—";
+  if (typeof speed === "string") return speed;
+  return Object.entries(speed).map(([mode, value]) => `${mode} ${value}`).join(" · ");
 }
 
 function buildMapCells() {
@@ -879,9 +1157,10 @@ function renderForecast() {
   );
   const calibration = Number(forecast.profile.calibration ?? 1);
   $("#model-score-value").textContent = `${modelPercent}%`;
-  $("#model-score-context").textContent = `${
-    forecast.learning?.samples ?? 0
-  } outcomes · class-weighted supplies ${
+  const learnedAdjustment = Math.round(Number(forecast.profile.learnedAdjustment ?? 0) * 100);
+  $("#model-score-context").textContent = `${forecast.learning?.samples ?? 0} outcomes · learned ${
+    learnedAdjustment >= 0 ? "+" : ""
+  }${learnedAdjustment} · weighted supplies ${
     Math.round(Number(forecast.profile.weightedResourceRatio ?? 1) * 100)
   }% · calibration ${calibration.toFixed(2)}`;
   $("#readiness-label").textContent = percent > 76
@@ -925,17 +1204,35 @@ function renderForecast() {
       }</b></div>
           <div class="combat-groups">${
         combatGroups.map((group) =>
-          `<div><b>${group.count} × ${
+          `<div class="${group.spawned ? "spawned-group" : ""}"><b>${group.count} × ${
             escapeHtml(group.monster.name)
+          }${
+            group.role ? ` · ${escapeHtml(group.role)}` : ""
           }</b><span>CR ${group.monster.cr} · AC ${group.monster.ac} · HP ${group.monster.hp} each · ${
             escapeHtml(group.monster.size)
           } ${escapeHtml(group.monster.type)}<small>${
             escapeHtml(group.monster.actions.join(" · ") || "See stat block")
-          }</small></span><a href="${
+          }</small></span>
+            <details class="monster-statblock"><summary>Show stat block</summary>
+              <div><b>AC ${group.monster.ac}</b><b>HP ${group.monster.hp} (${
+            escapeHtml(group.monster.hitDice ?? "—")
+          })</b><b>Speed ${escapeHtml(formatMonsterSpeed(group.monster.speed))}</b></div>
+              <p><strong>Traits</strong> ${
+            escapeHtml(group.monster.traits.join(" · ") || "None listed")
+          }</p>
+              <p><strong>Actions</strong> ${
+            escapeHtml(group.monster.actions.join(" · ") || "See full SRD entry")
+          }</p>
+            </details><a href="${
             escapeHtml(group.monster.source)
           }" target="_blank" rel="noreferrer">Stat block ↗</a></div>`
         ).join("")
       }</div>
+          ${
+        combat.spawnRule
+          ? `<p class="spawn-rule"><b>Minion spawning:</b> ${escapeHtml(combat.spawnRule)}</p>`
+          : ""
+      }
           ${
         combatGroups.filter((group) => group.monster.themedReskin).map((group) =>
           `<p class="theme-reskin">${escapeHtml(group.monster.name)}: ${
@@ -1102,6 +1399,7 @@ function beginInitiative(event) {
   const monsterGroups = encounter.combat?.groups?.length
     ? encounter.combat.groups
     : [{ count, monster: encounter.combat?.monster ?? { name: "Enemy", hp: 1 } }];
+  const minionGroup = monsterGroups.find((group) => group.spawned);
   if (encounter.boss && encounter.lairActions?.length) {
     entries.push({
       id: crypto.randomUUID(),
@@ -1111,7 +1409,7 @@ function beginInitiative(event) {
       actions: encounter.lairActions,
     });
   }
-  for (const group of monsterGroups) {
+  for (const group of monsterGroups.filter((candidate) => !candidate.spawned)) {
     const groupCount = Math.max(1, Number(group.count));
     const monsterName = group.monster.name ?? "Enemy";
     const modifier = Number(group.monster.initiativeModifier ?? 0);
@@ -1139,6 +1437,9 @@ function beginInitiative(event) {
     activeIndex: 0,
     position: state.initiative?.position ?? null,
     themeSignature: dungeon.themeSignature,
+    minionPool: minionGroup
+      ? { remaining: minionGroup.count, monster: clone(minionGroup.monster) }
+      : null,
   };
   saveState();
   $("#initiative-dialog").close();
@@ -1153,6 +1454,12 @@ function renderInitiativeTracker() {
   }
   tracker.hidden = false;
   $("#initiative-encounter-title").textContent = state.initiative.encounterTitle;
+  const spawnButton = $("#spawn-initiative-minion");
+  const minionPool = state.initiative.minionPool;
+  spawnButton.hidden = !minionPool || minionPool.remaining <= 0;
+  if (minionPool) {
+    spawnButton.textContent = `Spawn ${minionPool.monster.name} (${minionPool.remaining})`;
+  }
   if (state.initiative.position) {
     tracker.style.left = `${state.initiative.position.x}px`;
     tracker.style.top = `${state.initiative.position.y}px`;
@@ -1169,11 +1476,15 @@ function renderInitiativeTracker() {
       <input class="initiative-score" type="number" min="-10" max="99" value="${entry.initiative}" aria-label="Initiative score">
       ${
       entry.side === "monster"
-        ? `<label class="initiative-hp"><span>HP</span><input type="number" min="0" max="9999" value="${
-          Number(entry.hp ?? entry.maxHp ?? 1)
-        }" aria-label="Current HP for ${escapeHtml(entry.name)}"><small>/ ${
+        ? `<div class="initiative-hp"><button type="button" data-init-hp-delta="-1" aria-label="Remove one HP">−</button><input class="initiative-hp-number" type="number" min="0" max="${
           Number(entry.maxHp ?? entry.hp ?? 1)
-        }</small></label>`
+        }" value="${Number(entry.hp ?? entry.maxHp ?? 1)}" aria-label="Current HP for ${
+          escapeHtml(entry.name)
+        }"><button type="button" data-init-hp-delta="1" aria-label="Add one HP">+</button><input class="initiative-hp-slider" type="range" min="0" max="${
+          Number(entry.maxHp ?? entry.hp ?? 1)
+        }" value="${Number(entry.hp ?? entry.maxHp ?? 1)}" aria-label="Quick HP for ${
+          escapeHtml(entry.name)
+        }"><small>/ ${Number(entry.maxHp ?? entry.hp ?? 1)}</small></div>`
         : `<span class="initiative-hp-empty">—</span>`
     }
       <span class="initiative-roll">${
@@ -1203,9 +1514,19 @@ function renderInitiativeTracker() {
       "change",
       (event) => editInitiativeEntry(id, "initiative", Number(event.target.value)),
     );
-    row.querySelector(".initiative-hp input")?.addEventListener(
+    row.querySelector(".initiative-hp-number")?.addEventListener(
       "change",
-      (event) => editInitiativeEntry(id, "hp", Math.max(0, Number(event.target.value))),
+      (event) => setInitiativeHp(id, Number(event.target.value)),
+    );
+    row.querySelector(".initiative-hp-slider")?.addEventListener(
+      "input",
+      (event) => setInitiativeHp(id, Number(event.target.value), false),
+    );
+    row.querySelectorAll("[data-init-hp-delta]").forEach((button) =>
+      button.addEventListener("click", () => {
+        const entry = state.initiative?.entries.find((candidate) => candidate.id === id);
+        if (entry) setInitiativeHp(id, Number(entry.hp) + Number(button.dataset.initHpDelta));
+      })
     );
     row.querySelectorAll("[data-init-move]").forEach((button) =>
       button.addEventListener("click", () => moveInitiativeEntry(id, button.dataset.initMove))
@@ -1215,6 +1536,18 @@ function renderInitiativeTracker() {
       () => removeInitiativeEntry(id),
     );
   });
+}
+
+function setInitiativeHp(id, value, rerender = true) {
+  const entry = state.initiative?.entries.find((candidate) => candidate.id === id);
+  if (!entry) return;
+  entry.hp = Math.max(0, Math.min(Number(entry.maxHp ?? 9999), Number(value) || 0));
+  saveState();
+  if (rerender) renderInitiativeTracker();
+  else {
+    const row = document.querySelector(`[data-initiative-id="${id}"]`);
+    if (row) row.querySelector(".initiative-hp-number").value = entry.hp;
+  }
 }
 
 function editInitiativeEntry(id, field, value) {
@@ -1259,6 +1592,30 @@ function addInitiativeEntry() {
     initiative: 10,
     side: "other",
   });
+  saveState();
+  renderInitiativeTracker();
+}
+
+function spawnInitiativeMinion() {
+  const pool = state.initiative?.minionPool;
+  if (!pool || pool.remaining <= 0) return;
+  const natural = rollD20();
+  const modifier = Number(pool.monster.initiativeModifier ?? 0);
+  const sequence = Number(pool.spawned ?? 0) + 1;
+  pool.spawned = sequence;
+  pool.remaining -= 1;
+  state.initiative.entries.push({
+    id: crypto.randomUUID(),
+    name: `${pool.monster.name} ${sequence}`,
+    initiative: natural + modifier,
+    roll: natural,
+    modifier,
+    side: "monster",
+    hp: Number(pool.monster.hp),
+    maxHp: Number(pool.monster.hp),
+    monsterIndex: pool.monster.index,
+  });
+  state.initiative.entries.sort((a, b) => Number(b.initiative) - Number(a.initiative));
   saveState();
   renderInitiativeTracker();
 }
@@ -1373,19 +1730,36 @@ function openResolveDialog(index) {
   form.elements.encounterIndex.value = index;
   form.elements.rounds.value = encounter.rounds ?? 3;
   $("#resolve-title").textContent = encounter.title;
-  $("#resolution-members").innerHTML = state.party.filter((member) => !member.dead).map((member) =>
-    `<section class="resolution-member"><b>${
-      escapeHtml(member.name)
-    }</b><span>${member.hp}/${member.maxHp} HP</span>
+  $("#resolution-members").innerHTML = state.party.filter((member) => !member.dead).map(
+    (member) => {
+      const baseline = state.encounterBaseline?.[member.id] ?? {
+        hp: Number(member.hp),
+        tempHp: Number(member.tempHp ?? 0),
+        resource: Number(member.resource ?? 0),
+      };
+      const hpLost = Math.max(
+        0,
+        Number(baseline.hp) + Number(baseline.tempHp ?? 0) -
+          Number(member.hp) - Number(member.tempHp ?? 0),
+      );
+      const resourcesSpent = Math.max(0, Number(baseline.resource) - Number(member.resource ?? 0));
+      return `<section class="resolution-member"><b>${
+        escapeHtml(member.name)
+      }</b><span>${member.hp}/${member.maxHp} HP${
+        hpLost ? ` · ${hpLost} loss already entered` : ""
+      }</span>
       <label>HP lost<input type="number" min="0" max="${
-      member.hp + Number(member.tempHp ?? 0)
-    }" value="0" data-resolution-member="${member.id}" data-field="hpLost"></label>
+        Number(baseline.hp) + Number(baseline.tempHp ?? 0)
+      }" value="${hpLost}" data-resolution-member="${member.id}" data-field="hpLost"></label>
+      <input type="hidden" value="${hpLost}" data-resolution-member="${member.id}" data-field="hpAlreadyApplied">
       <label class="resolution-resource">Resources spent<input type="number" min="0" max="${
-      member.resource ?? 0
-    }" value="0" data-resolution-member="${member.id}" data-field="resourcesSpent"></label>
+        baseline.resource ?? 0
+      }" value="${resourcesSpent}" data-resolution-member="${member.id}" data-field="resourcesSpent"></label>
+      <input type="hidden" value="${resourcesSpent}" data-resolution-member="${member.id}" data-field="resourcesAlreadyApplied">
       <label class="check-field"><input type="checkbox" data-resolution-member="${member.id}" data-field="downed"> Downed</label>
       <label class="check-field"><input type="checkbox" data-resolution-member="${member.id}" data-field="killed"> Killed</label>
-    </section>`
+    </section>`;
+    },
   ).join("");
   $("#resolve-dialog").showModal();
 }
@@ -1419,11 +1793,14 @@ function resolveEncounter(event) {
     const result = members[member.id];
     if (!result || member.dead) return member;
     const loss = Math.max(0, Number(result.hpLost));
-    const tempAbsorbed = Math.min(Number(member.tempHp ?? 0), loss);
+    const newLoss = loss - Math.max(0, Number(result.hpAlreadyApplied));
+    const tempAbsorbed = Math.min(Number(member.tempHp ?? 0), Math.max(0, newLoss));
     let updated = {
       ...member,
       tempHp: Number(member.tempHp ?? 0) - tempAbsorbed,
-      hp: Math.max(0, Number(member.hp) - (loss - tempAbsorbed)),
+      hp: newLoss >= 0
+        ? Math.max(0, Number(member.hp) - (newLoss - tempAbsorbed))
+        : Math.min(Number(member.maxHp), Number(member.hp) - newLoss),
     };
     if (Number(member.conditionRounds) > 0) {
       updated.conditionRounds = Math.max(
@@ -1437,7 +1814,13 @@ function resolveEncounter(event) {
       updated.concentration = false;
     }
     if (result.killed) updated.dead = true;
-    if (state.settings.trackResources) updated = spendResources(updated, result.resourcesSpent);
+    if (state.settings.trackResources) {
+      const resourceDifference = Number(result.resourcesSpent) -
+        Number(result.resourcesAlreadyApplied);
+      updated = resourceDifference >= 0
+        ? spendResources(updated, resourceDifference)
+        : restoreResources(updated, -resourceDifference);
+    }
     return updated;
   });
   state.forecastChanges = state.party.flatMap((member) => {
@@ -1497,6 +1880,7 @@ function resolveEncounter(event) {
       withoutCombat: report.withoutCombat,
     },
   };
+  resetEncounterBaseline();
   $("#resolve-dialog").close();
   saveState();
   renderParty();
@@ -1649,6 +2033,7 @@ function saveMember(event) {
     inspiration: data.inspiration === "on",
     resource: Number(data.resource),
     maxResource: Number(data.maxResource),
+    customFeatures: existingMember?.customFeatures ?? [],
   };
   if (dialogClassProfile?.resources?.length) {
     member.resources = dialogClassProfile.resources.map((pool) => ({
@@ -1670,7 +2055,10 @@ function saveMember(event) {
       hitDice: state.party[index].hitDice,
     });
     state.party[index] = member;
-  } else state.party.push(member);
+  } else {
+    state.party.push(member);
+    state.encounterBaseline[member.id] = createEncounterBaseline([member])[member.id];
+  }
   logEvent("party", existingMember ? `Updated ${member.name}` : `Added ${member.name}`);
   saveState();
   dialogClose();
@@ -1730,6 +2118,7 @@ function applyShortRest(event) {
   const selections = Object.fromEntries(new FormData($("#short-rest-form")));
   const result = takeShortRest(state.party, selections);
   state.party = result.party;
+  resetEncounterBaseline();
   saveState();
   $("#short-rest-dialog").close();
   renderParty();
@@ -1752,6 +2141,7 @@ function applyLongRest() {
     return;
   }
   state.party = takeLongRest(state.party);
+  resetEncounterBaseline();
   const reoccupied = maybeReoccupyRoom();
   logEvent("rest", "Long rest", `${rest.detail} · the living party was fully restored`);
   if (reoccupied) {
@@ -2008,6 +2398,7 @@ function resetDungeon() {
       hitDice: { ...hitDice, current: hitDice.maximum },
     };
   });
+  resetEncounterBaseline();
   state.history = [];
   state.clearedRooms = {};
   state.claimedLoot = [];
@@ -2051,6 +2442,119 @@ function exportSession() {
   anchor.click();
   URL.revokeObjectURL(anchor.href);
   showToast("Session exported");
+}
+
+function normalizeImportedSession(data) {
+  if (!data || typeof data !== "object" || !Array.isArray(data.party) || !data.party.length) {
+    throw new Error("This file does not contain a Delvewright party");
+  }
+  if (typeof data.seed !== "string" || !data.seed.trim()) {
+    throw new Error("The imported session has no dungeon seed");
+  }
+  const party = data.party.slice(0, 20).map((member, index) => {
+    if (!member || typeof member.name !== "string" || !member.name.trim()) {
+      throw new Error(`Party member ${index + 1} has no name`);
+    }
+    const maxHp = Number(member.maxHp);
+    const level = Number(member.level);
+    if (!Number.isFinite(maxHp) || maxHp < 1 || !Number.isFinite(level) || level < 1) {
+      throw new Error(`${member.name} has invalid HP or level data`);
+    }
+    return {
+      ...member,
+      id: typeof member.id === "string" && member.id ? member.id : crypto.randomUUID(),
+      name: member.name.trim().slice(0, 64),
+      level: Math.max(1, Math.min(20, level)),
+      maxHp: Math.max(1, maxHp),
+      hp: Math.max(0, Math.min(maxHp, Number(member.hp) || 0)),
+      ac: Math.max(1, Number(member.ac) || 10),
+      resource: Math.max(0, Number(member.resource) || 0),
+      maxResource: Math.max(0, Number(member.maxResource) || 0),
+    };
+  });
+  const encounterBaseline = data.encounterBaseline && typeof data.encounterBaseline === "object"
+    ? { ...data.encounterBaseline }
+    : createEncounterBaseline(party);
+  for (const member of party) {
+    encounterBaseline[member.id] ??= createEncounterBaseline([member])[member.id];
+  }
+  const knownThemes = ["moss-forest", "drowned-grotto", "ossuary", "infernal-foundry"];
+  const importedThemeOrder = Array.isArray(data.themeOrder)
+    ? data.themeOrder.filter((theme) => knownThemes.includes(theme))
+    : [];
+  const settings = { ...DEFAULT_SETTINGS, ...(data.settings ?? {}) };
+  if (!["arcs", "full-dungeon"].includes(settings.themeMode)) settings.themeMode = "arcs";
+  if (!["random", ...knownThemes].includes(settings.dungeonTheme)) {
+    settings.dungeonTheme = "random";
+  }
+  return {
+    party,
+    seed: data.seed.trim().slice(0, 128),
+    completed: Math.max(0, Number(data.completed) || 0),
+    expedition: Math.max(1, Number(data.expedition) || 1),
+    floor: Math.max(1, Math.min(999, Number(data.floor) || 1)),
+    history: Array.isArray(data.history) ? data.history.slice(0, 150) : [],
+    undoStack: [],
+    learningSamples: Array.isArray(data.learningSamples) ? data.learningSamples.slice(-24) : [],
+    encounterControls: {
+      rerolls: {},
+      ratings: {},
+      kinds: {},
+      ...(data.encounterControls ?? {}),
+    },
+    encounterLocks: data.encounterLocks ?? {},
+    settings,
+    awareness: Math.max(0, Number(data.awareness) || 0),
+    safeRoomsUsed: data.safeRoomsUsed ?? {},
+    inSafeRoom: Boolean(data.inSafeRoom),
+    restStats: { short: 0, long: 0, interrupted: 0, ...(data.restStats ?? {}) },
+    clearedRooms: data.clearedRooms ?? {},
+    claimedLoot: Array.isArray(data.claimedLoot) ? data.claimedLoot : [],
+    pendingRestEncounter: data.pendingRestEncounter ?? null,
+    initiative: data.initiative ?? null,
+    roomMoves: data.roomMoves ?? {},
+    forecastChanges: Array.isArray(data.forecastChanges) ? data.forecastChanges : [],
+    themeOrder: importedThemeOrder.length === knownThemes.length
+      ? importedThemeOrder
+      : randomThemeOrder(),
+    storyVariant: Number.isFinite(Number(data.storyVariant))
+      ? Number(data.storyVariant)
+      : randomStoryVariant(),
+    encounterBaseline,
+  };
+}
+
+async function importSession(event) {
+  const input = event.currentTarget;
+  const file = input.files?.[0];
+  if (!file) return;
+  try {
+    const imported = normalizeImportedSession(JSON.parse(await file.text()));
+    if (
+      !globalThis.confirm(
+        `Import ${file.name}? This replaces the current session with expedition ${imported.expedition}, floor ${imported.floor}.`,
+      )
+    ) return;
+    for (const key of Object.keys(state)) delete state[key];
+    Object.assign(state, imported);
+    forecast = null;
+    selectedRoomIndex = null;
+    roomEditMode = false;
+    roomDrag = null;
+    dungeon = generateDungeon(state.seed, 55, 31, dungeonGenerationOptions());
+    bindRoomEditor();
+    saveState();
+    renderMeta();
+    renderParty();
+    renderInitiativeTracker();
+    buildMapCells();
+    playCollapse();
+    updateForecast(`Imported ${file.name} · expedition ${state.expedition}, floor ${state.floor}`);
+  } catch (error) {
+    globalThis.alert(error instanceof Error ? error.message : "The session could not be imported");
+  } finally {
+    input.value = "";
+  }
 }
 
 function printMap() {
@@ -2109,11 +2613,18 @@ function setupInitiativeDrag() {
 $("#add-member").addEventListener("click", () => openMemberDialog());
 $("#add-member-wide").addEventListener("click", () => openMemberDialog());
 $("#save-member").addEventListener("click", saveMember);
+$("#condition-form").addEventListener("submit", saveCondition);
+$("#cancel-condition").addEventListener("click", () => $("#condition-dialog").close());
+$("#cancel-condition-secondary").addEventListener(
+  "click",
+  () => $("#condition-dialog").close(),
+);
 $("#resolve-form").addEventListener("submit", resolveEncounter);
 $("#start-initiative").addEventListener("click", openInitiativeDialog);
 $("#initiative-form").addEventListener("submit", beginInitiative);
 $("#close-initiative").addEventListener("click", closeInitiative);
 $("#add-initiative-entry").addEventListener("click", addInitiativeEntry);
+$("#spawn-initiative-minion").addEventListener("click", spawnInitiativeMinion);
 $("#sort-initiative").addEventListener("click", sortInitiative);
 $("#next-initiative-turn").addEventListener("click", nextInitiativeTurn);
 $("#open-settings").addEventListener("click", openSettings);
@@ -2148,6 +2659,8 @@ $("#copy-seed").addEventListener("click", async () => {
   showToast("Seed copied");
 });
 $("#export-button").addEventListener("click", exportSession);
+$("#import-button").addEventListener("click", () => $("#import-session-file").click());
+$("#import-session-file").addEventListener("change", importSession);
 $("#print-map").addEventListener("click", printMap);
 $("#theme-toggle").addEventListener("click", () => document.body.classList.toggle("high-contrast"));
 globalThis.addEventListener("afterprint", () => document.body.classList.remove("print-journal"));
@@ -2171,6 +2684,7 @@ renderMeta();
 renderParty();
 saveState();
 setupInitiativeDrag();
+loadConditionOptions();
 buildMapCells();
 playCollapse();
 updateForecast("");
