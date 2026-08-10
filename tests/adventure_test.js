@@ -1,6 +1,7 @@
 import {
   analyzeParty,
   applyForecastControls,
+  averageHitPointMaximum,
   buildEncounterForecast,
   classCapability,
   classResourceDependency,
@@ -33,6 +34,15 @@ Deno.test("party analysis produces a bounded readiness score", () => {
   const profile = analyzeParty(PARTY);
   if (profile.readiness <= 0 || profile.readiness >= 1) throw new Error("unbounded readiness");
   if (profile.budget <= 0) throw new Error("missing budget");
+});
+
+Deno.test("average character HP uses class Hit Die and CON at every level", () => {
+  if (averageHitPointMaximum({ class: "Fighter", level: 4, conModifier: 2 }) !== 36) {
+    throw new Error("fighter average HP was calculated incorrectly");
+  }
+  if (averageHitPointMaximum({ class: "Wizard", level: 4, conModifier: 1 }) !== 22) {
+    throw new Error("wizard average HP was calculated incorrectly");
+  }
 });
 
 Deno.test("visual condition reaches 100% when HP and supplies are full", () => {

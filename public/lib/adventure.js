@@ -893,6 +893,15 @@ export function hitDiceState(member) {
   };
 }
 
+export function averageHitPointMaximum(member) {
+  const level = Math.max(1, Math.min(20, Math.floor(Number(member.level) || 1)));
+  const constitution = Math.max(-5, Math.min(10, Math.floor(Number(member.conModifier) || 0)));
+  const die = CLASS_HIT_DIE[member.class] ?? 8;
+  const firstLevel = Math.max(1, die + constitution);
+  const laterLevel = Math.max(1, Math.floor(die / 2) + 1 + constitution);
+  return firstLevel + (level - 1) * laterLevel;
+}
+
 function syncResourceTotals(member) {
   if (!member.resources?.length) return member;
   return {

@@ -33,6 +33,32 @@ input,
 select {
   font: inherit;
 }
+
+#import-session-file {
+  display: none !important;
+}
+
+.hp-calculator {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 9px;
+  border: 1px solid var(--line-soft);
+  background: rgba(89, 61, 31, .14);
+}
+.hp-calculator button {
+  padding: 7px 9px;
+  border: 1px solid #76562f;
+  background: rgba(105, 72, 35, .28);
+  color: #e0c18a;
+  font: 8px var(--mono);
+  cursor: pointer;
+}
+.hp-calculator small {
+  color: var(--muted);
+  font: 7px/1.45 var(--mono);
+}
 button {
   color: inherit;
 }
@@ -1137,6 +1163,9 @@ dialog form {
   grid-template-columns: repeat(2,1fr);
   gap: 14px;
   margin-top: 14px;
+}
+.field-grid > .full-field {
+  grid-column: 1 / -1;
 }
 label {
   color: var(--muted);

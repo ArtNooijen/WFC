@@ -1,6 +1,7 @@
 import {
   analyzeParty,
   applyForecastControls,
+  averageHitPointMaximum,
   buildEncounterForecast,
   generateDungeon,
   hitDiceState,
@@ -1933,10 +1934,28 @@ function openMemberDialog(id = null) {
   form.elements.memberId.value = member?.id ?? "";
   form.elements.concentration.checked = Boolean(member?.concentration);
   form.elements.inspiration.checked = Boolean(member?.inspiration);
+  updateAverageHpPreview(!member);
   dialog.showModal();
   dialogClassProfile = null;
   loadClassProfile();
   setTimeout(() => form.elements.name.focus(), 50);
+}
+
+function updateAverageHpPreview(apply = false) {
+  const form = $("#member-form");
+  const details = {
+    class: form.elements.class.value,
+    level: Number(form.elements.level.value || 1),
+    conModifier: Number(form.elements.conModifier.value || 0),
+  };
+  const die = hitDiceState(details).size;
+  const average = Math.floor(die / 2) + 1;
+  const maximum = averageHitPointMaximum(details);
+  $("#average-hp-detail").textContent =
+    `d${die} · level 1 maximum, then ${average} + CON each level · ${maximum} HP`;
+  if (!apply) return;
+  form.elements.maxHp.value = maximum;
+  form.elements.hp.value = maximum;
 }
 
 async function loadClassProfile() {
@@ -2638,6 +2657,12 @@ $("#long-rest").addEventListener("click", applyLongRest);
 $("#safe-room-toggle").addEventListener("click", toggleSafeRoom);
 $("#member-form").elements.class.addEventListener("change", queueClassProfile);
 $("#member-form").elements.level.addEventListener("input", queueClassProfile);
+for (const field of ["class", "level", "conModifier"]) {
+  $("#member-form").elements[field].addEventListener("input", () => {
+    updateAverageHpPreview(!$("#member-form").elements.memberId.value);
+  });
+}
+$("#calculate-average-hp").addEventListener("click", () => updateAverageHpPreview(true));
 $("#new-expedition").addEventListener("click", newExpedition);
 $("#reset-dungeon").addEventListener("click", resetDungeon);
 $("#replay-collapse").addEventListener("click", playCollapse);
