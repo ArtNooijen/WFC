@@ -63,7 +63,8 @@
         <section class="map-stage">
           <div class="map-heading">
             <div>
-              <p class="eyebrow"><span class="crumb-muted">The Ember Vault</span> / Folio I</p>
+              <p
+                class="eyebrow"><span class="crumb-muted" id="floor-theme-name">The Ember Vault</span> / <span id="floor-folio">Folio I</span></p>
               <h2>The dungeon remembers.</h2>
             </div>
             <div class="map-actions">
@@ -71,6 +72,7 @@
                 <button id="zoom-out" aria-label="Zoom out">−</button><span id="zoom-label">100%</span><button id="zoom-in" aria-label="Zoom in">＋</button>
               </div>
               <button class="collapse-button" id="replay-collapse"><span>✎</span> Redraw</button>
+              <button class="collapse-button" id="edit-rooms">Move rooms</button>
             </div>
           </div>
 
@@ -83,7 +85,7 @@
             <div class="collapse-status"
               id="collapse-status"><span class="spinner">✎</span><span><b>INKING THE PASSAGES</b><small id="collapse-count">0 / 0 marks drawn</small></span></div>
             <div
-              class="map-legend"><span><i class="entry-symbol">@</i> Party</span><span><i class="event-symbol">1–3</i> Forecast rooms</span><span><i class="exit-symbol">&gt;</i> Deeper</span></div>
+              class="map-legend"><span><i class="entry-symbol">@</i> Party</span><span><i class="event-symbol">1–3</i> Forecast rooms</span><span><i class="exit-symbol">&gt;</i> Deeper / boss</span></div>
           </div>
 
           <div class="map-footer">
@@ -94,7 +96,7 @@
             </div>
           </div>
           <div class="atlas-key" aria-label="Dungeon map key">
-            <span><b>+</b> door</span><span><b>╬</b> locked</span><span><b>S</b> safe room</span><span><b>$</b> loot</span><span><b>^</b> trap</span><span><b>†</b> shrine</span><span><b>~</b> water</span><span><b>%</b> rubble</span><span><b>?</b> secret</span>
+            <span><b>+</b> door</span><span><b>╬</b> locked</span><span><b>S</b> safe room</span><span><b>$</b> loot</span><span><b>^</b> trap</span><span><b>†</b> shrine</span><span><b>~</b> water</span><span><b>*</b> fire</span><span><b>B</b> boss arena</span><span><b>%</b> rough terrain</span><span><b>?</b> secret</span>
           </div>
         </section>
 
@@ -107,6 +109,7 @@
             <div
               class="forecast-heading-actions"><button id="start-initiative" class="initiative-start">Start initiative</button><span class="model-pill" id="pacing-label">V2 · ATTRITION</span></div>
           </div>
+          <section id="adventure-premise" class="adventure-premise"></section>
           <div class="readiness-card">
             <div class="readiness-ring"
               id="readiness-ring"><span id="readiness-value">—</span></div>
@@ -115,10 +118,12 @@
           <div class="srd-status"
             id="srd-status"><span>◌</span><div><b>Loading 2014 SRD data</b><small>Classes · monsters · magic items</small></div></div>
           <div id="encounter-list" class="encounter-list"></div>
+          <section id="forecast-changes" class="forecast-changes"></section>
           <section class="dungeon-ledger">
             <div
               class="ledger-title"><span>Dungeon ledger</span><b id="room-count">— rooms</b></div>
             <div id="room-conditions" class="room-conditions"></div>
+            <div id="theme-restriction" class="theme-restriction"></div>
             <div
               class="loot-heading"><span>SRD loot suggestions</span><small>Items matched to party tier</small></div>
             <div id="loot-table" class="loot-table"></div>
@@ -137,7 +142,7 @@
 
     <section class="print-sheet" id="print-sheet" aria-hidden="true">
       <header class="print-header">
-        <div><span>DELVEWRIGHT ATLAS</span><h1>The Ember Vault</h1></div>
+        <div><span>DELVEWRIGHT ATLAS</span><h1 id="print-theme-name">The Ember Vault</h1></div>
         <dl>
           <div>
             <dt>Floor</dt>
@@ -153,7 +158,7 @@
         <pre id="print-map-content"></pre>
       </div>
       <div class="print-key">
-        <span><b>@</b> party</span><span><b>1–3</b> encounters</span><span><b>+</b> door</span><span><b>╬</b> locked</span><span><b>S</b> safe</span><span><b>$</b> loot</span><span><b>^</b> trap</span><span><b>†</b> shrine</span><span><b>~</b> water</span><span><b>%</b> rubble</span><span><b>?</b> secret</span><span><b>&gt;</b> deeper</span>
+        <span><b>@</b> party</span><span><b>1–3</b> encounters</span><span><b>+</b> door</span><span><b>╬</b> locked</span><span><b>S</b> safe</span><span><b>$</b> loot</span><span><b>^</b> trap</span><span><b>†</b> shrine</span><span><b>~</b> water</span><span><b>*</b> fire</span><span><b>B</b> boss</span><span><b>%</b> rough</span><span><b>?</b> secret</span><span><b>&gt;</b> deeper</span>
       </div>
       <footer
         class="print-footer"><span id="print-rooms">— rooms</span><span>Dungeon geometry is fixed to this seed.</span></footer>
@@ -162,7 +167,7 @@
     <dialog id="member-dialog">
       <form method="dialog" id="member-form">
         <div
-          class="dialog-heading"><div><p class="eyebrow">Character sheet</p><h2 id="dialog-title">Add adventurer</h2></div><button value="cancel" class="icon-button">×</button></div>
+          class="dialog-heading"><div><p class="eyebrow">Character sheet</p><h2 id="dialog-title">Add adventurer</h2></div><button value="cancel" formnovalidate class="icon-button">×</button></div>
         <input type="hidden" name="memberId" />
         <label
           class="full-field">Name<input name="name" placeholder="e.g. Mira Vale" required maxlength="32" /></label>
@@ -203,7 +208,7 @@
           <div id="srd-class-notes" class="srd-class-notes"></div>
         </section>
         <div
-          class="dialog-actions"><button value="cancel" class="ghost-button">Cancel</button><button value="default" id="save-member" class="primary-button">Save adventurer</button></div>
+          class="dialog-actions"><button value="cancel" formnovalidate class="ghost-button">Cancel</button><button value="default" id="save-member" class="primary-button">Save adventurer</button></div>
       </form>
     </dialog>
 
@@ -256,6 +261,8 @@
           <label><span><b>Class resources</b><small>Show pools and use them in readiness.</small></span><input name="trackResources" type="checkbox" /></label>
           <label><span><b>Afflictions</b><small>Show conditions and apply their model penalty.</small></span><input name="trackAfflictions" type="checkbox" /></label>
           <label><span><b>Safe-room rest rules</b><small>Resting consumes sanctuary and raises dungeon awareness.</small></span><input name="safeRestRules" type="checkbox" /></label>
+          <label><span><b>Dungeon theme structure</b><small>Use randomized biome arcs or one biome for a complete ten-floor story.</small></span><select name="themeMode"><option value="arcs">Randomized 3–5 floor arcs</option><option value="full-dungeon">Full 10-floor biome</option></select></label>
+          <label><span><b>Full-dungeon biome</b><small>Used for ten-floor campaigns; Random uses the first biome in this expedition's shuffled order.</small></span><select name="dungeonTheme"><option value="random">Random biome</option><option value="moss-forest">Moss Forest</option><option value="drowned-grotto">Drowned Grotto</option><option value="ossuary">Restless Ossuary</option><option value="infernal-foundry">Infernal Foundry</option></select></label>
         </div>
         <div
           class="dialog-actions"><button value="cancel" class="ghost-button">Cancel</button><button value="default" class="primary-button">Save settings</button></div>

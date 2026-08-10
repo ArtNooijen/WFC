@@ -41,6 +41,8 @@ Deno.serve({ port }, async (request) => {
           calibration: body.learning?.calibration,
           samples: body.learning?.samples,
           awareness: body.learning?.awareness,
+          themeOrder: body.learning?.themeOrder,
+          storyVariant: body.learning?.storyVariant,
           settings: body.settings,
         },
       );
@@ -55,6 +57,8 @@ Deno.serve({ port }, async (request) => {
           calibration: body.learning?.calibration,
           samples: body.learning?.samples,
           awareness: body.learning?.awareness,
+          themeOrder: body.learning?.themeOrder,
+          storyVariant: body.learning?.storyVariant,
           settings: body.settings,
         },
       );
@@ -69,6 +73,8 @@ Deno.serve({ port }, async (request) => {
             calibration: body.learning?.calibration,
             samples: body.learning?.samples,
             awareness: body.learning?.awareness,
+            themeOrder: body.learning?.themeOrder,
+            storyVariant: body.learning?.storyVariant,
             settings: body.settings,
           },
         );
@@ -83,6 +89,8 @@ Deno.serve({ port }, async (request) => {
             calibration: body.learning?.calibration,
             samples: body.learning?.samples,
             awareness: body.learning?.awareness,
+            themeOrder: body.learning?.themeOrder,
+            storyVariant: body.learning?.storyVariant,
             settings: body.settings,
           },
         );

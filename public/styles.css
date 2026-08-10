@@ -1463,6 +1463,12 @@ body.high-contrast {
   height: 18px;
   margin: 0;
 }
+.setting-list select {
+  width: min(220px, 42vw);
+  margin: 0;
+  padding: 8px;
+  color: var(--ink);
+}
 .journal-dialog {
   width: min(720px,calc(100vw - 32px));
 }
@@ -1920,6 +1926,209 @@ h1,
 }
 .map-cell.secret {
   color: #b98db0;
+}
+
+.map-cell.fire {
+  color: #d25a22;
+  text-shadow: 0 0 5px rgba(210, 90, 34, .6);
+}
+
+.map-cell.boss {
+  color: #f0a45f;
+  font-weight: 900;
+  text-shadow: 0 0 7px rgba(210, 90, 34, .72);
+}
+
+.collapse-button.active,
+#edit-rooms.active {
+  background: var(--ink, #21170f);
+  color: var(--paper, #f3ead8);
+}
+
+.map-frame.room-editing .map-cell {
+  cursor: crosshair;
+}
+
+.map-frame.room-editing .map-cell[data-room-index] {
+  background: rgba(184, 110, 42, .1);
+  cursor: grab;
+  touch-action: none;
+}
+
+.map-frame.room-editing .map-cell[data-room-center] {
+  outline: 1px solid rgba(220, 168, 86, .9);
+}
+
+.map-frame.room-editing .map-cell.dragging-room {
+  background: rgba(210, 90, 34, .38);
+  color: #f0c978;
+  cursor: grabbing;
+  z-index: 8;
+}
+
+.map-frame.room-editing .map-cell.drop-room {
+  background: rgba(127, 163, 91, .35);
+  outline: 1px solid rgba(174, 202, 123, .85);
+}
+
+.adventure-premise,
+.forecast-changes,
+.theme-restriction {
+  border: 1px solid #654927;
+  background:
+    linear-gradient(rgba(44, 31, 19, .94), rgba(31, 22, 14, .96)),
+    repeating-linear-gradient(0deg, transparent 0 3px, rgba(255, 255, 255, .012) 4px);
+  padding: 11px 12px;
+}
+
+.adventure-premise {
+  margin: 0 0 12px;
+}
+
+.adventure-premise div,
+.forecast-changes {
+  display: grid;
+  gap: 4px;
+}
+
+.adventure-premise span,
+.forecast-changes > b {
+  color: #c27a48;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .1em;
+}
+
+.adventure-premise b {
+  color: #eee3ca;
+  font-family: var(--serif);
+  line-height: 1.25;
+}
+
+.adventure-premise p,
+.adventure-premise small,
+.theme-restriction span,
+.theme-restriction small,
+.forecast-changes span {
+  color: #c2ae8a;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.adventure-premise p {
+  border-top: 1px dashed rgba(178, 135, 77, .35);
+  margin: 8px 0 0;
+  padding-top: 7px;
+}
+
+.adventure-premise ul {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0 0;
+  padding: 0 0 0 15px;
+  color: #c2ae8a;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.forecast-changes {
+  margin: 10px 0 14px;
+}
+
+.forecast-changes span::before {
+  content: "↳ ";
+}
+
+.theme-restriction {
+  display: grid;
+  gap: 3px;
+  margin: 8px 0 12px;
+}
+
+.boss-mechanic {
+  border-left: 3px solid var(--rust, #98502b);
+  background: rgba(152, 80, 43, .08);
+  padding: 7px 9px;
+}
+
+.boss-mechanic span {
+  color: #c2ae8a;
+  font-size: 10px;
+}
+
+.lair-actions {
+  display: grid;
+  gap: 5px;
+  margin-top: 7px;
+  padding: 8px 9px;
+  border: 1px solid #74462f;
+  background: rgba(105, 48, 27, .14);
+}
+
+.lair-actions b {
+  color: #d88950;
+  font: 8px var(--mono);
+  letter-spacing: .08em;
+}
+
+.lair-actions span {
+  color: #c8b99e;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.lair-actions span::before {
+  content: "◆ ";
+  color: #b66a40;
+}
+
+.theme-reskin {
+  color: #d59a67 !important;
+  font-style: italic;
+}
+
+.combat-groups {
+  display: grid;
+  gap: 5px;
+  margin: 7px 0;
+}
+
+.combat-groups > div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 8px;
+  padding: 6px 7px;
+  border: 1px solid rgba(137, 96, 53, .38);
+  background: rgba(82, 55, 29, .12);
+}
+
+.combat-groups b,
+.combat-groups span,
+.combat-groups a {
+  font-size: 8px;
+}
+
+.combat-groups b {
+  color: #d7b677;
+}
+
+.combat-groups span {
+  grid-column: 1;
+  color: var(--muted);
+}
+
+.combat-groups span small {
+  display: block;
+  margin-top: 2px;
+  color: var(--dim);
+  font: 7px var(--mono);
+}
+
+.combat-groups a {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  color: #c68d57;
 }
 
 .map-cell.encounter-marker {
@@ -2547,7 +2756,7 @@ select {
   z-index: 50;
   top: 90px;
   right: 22px;
-  width: min(390px,calc(100vw - 32px));
+  width: min(470px,calc(100vw - 32px));
   border: 1px solid #755832;
   background: #21170f;
   color: var(--ink);
@@ -2593,7 +2802,7 @@ select {
 }
 .initiative-entry {
   display: grid;
-  grid-template-columns: 14px minmax(90px,1fr) 48px 62px 24px 24px 24px;
+  grid-template-columns: 14px minmax(90px,1fr) 48px 88px 62px 24px 24px 24px;
   gap: 4px;
   align-items: center;
   padding: 5px;
@@ -2606,6 +2815,11 @@ select {
 .initiative-entry.monster {
   color: #c88a71;
 }
+.initiative-entry.lair {
+  color: #e0a05f;
+  background: rgba(125, 55, 28, .18);
+  border: 1px solid #75452d;
+}
 .initiative-entry input {
   min-width: 0;
   margin: 0;
@@ -2614,6 +2828,42 @@ select {
 }
 .initiative-entry .initiative-score {
   text-align: center;
+}
+.initiative-hp {
+  display: grid;
+  grid-template-columns: auto 42px auto;
+  align-items: center;
+  gap: 3px;
+  color: #b89a66;
+  font: 6px var(--mono);
+}
+.initiative-hp input {
+  color: #e9c17b;
+  text-align: center;
+}
+.initiative-hp small {
+  color: var(--dim);
+  font: inherit;
+}
+.initiative-hp-empty {
+  color: var(--dim);
+  text-align: center;
+}
+.initiative-lair-options {
+  grid-column: 2 / -1;
+  display: grid;
+  gap: 3px;
+  padding: 4px 5px 5px;
+  border-top: 1px dashed rgba(200, 138, 83, .32);
+}
+.initiative-lair-options span {
+  color: #c8b99e;
+  font: 7px var(--mono);
+  line-height: 1.35;
+}
+.initiative-lair-options span::before {
+  content: "◆ ";
+  color: #cf7f49;
 }
 .initiative-roll {
   color: var(--dim);

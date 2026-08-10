@@ -61,7 +61,7 @@ const DEFAULT_PARTY = [
 
 const $ = (selector) => document.querySelector(selector);
 const state = loadState();
-let dungeon = generateDungeon(state.seed);
+let dungeon = generateDungeon(state.seed, 55, 31, dungeonGenerationOptions());
 let forecast = null;
 let animationFrame = null;
 let zoom = 1;
@@ -69,6 +69,10 @@ let dialogClassProfile = null;
 let classProfileTimer = null;
 let classProfileRequest = 0;
 let quickForecastTimer = null;
+let selectedRoomIndex = null;
+let roomEditMode = false;
+let roomDrag = null;
+let suppressMapClickUntil = 0;
 
 function loadState() {
   try {
@@ -90,6 +94,10 @@ function loadState() {
         claimedLoot: [],
         pendingRestEncounter: null,
         initiative: null,
+        roomMoves: {},
+        forecastChanges: [],
+        themeOrder: randomThemeOrder(),
+        storyVariant: randomStoryVariant(),
         ...saved,
         settings: { ...DEFAULT_SETTINGS, ...(saved.settings ?? {}) },
         encounterControls: {
@@ -121,6 +129,10 @@ function loadState() {
     claimedLoot: [],
     pendingRestEncounter: null,
     initiative: null,
+    roomMoves: {},
+    forecastChanges: [],
+    themeOrder: randomThemeOrder(),
+    storyVariant: randomStoryVariant(),
   };
 }
 
@@ -156,6 +168,10 @@ function checkpoint(label) {
       claimedLoot: state.claimedLoot,
       pendingRestEncounter: state.pendingRestEncounter,
       initiative: state.initiative,
+      roomMoves: state.roomMoves,
+      forecastChanges: state.forecastChanges,
+      themeOrder: state.themeOrder,
+      storyVariant: state.storyVariant,
     }),
   });
   state.undoStack = state.undoStack.slice(-30);
@@ -180,6 +196,36 @@ function modelState() {
   return {
     ...learningModel(state.learningSamples, state.restStats),
     awareness: state.awareness,
+    themeOrder: state.themeOrder,
+    storyVariant: state.storyVariant,
+  };
+}
+
+function randomThemeOrder() {
+  const themes = ["moss-forest", "drowned-grotto", "ossuary", "infernal-foundry"];
+  for (let index = themes.length - 1; index > 0; index--) {
+    const swap = Math.floor(Math.random() * (index + 1));
+    [themes[index], themes[swap]] = [themes[swap], themes[index]];
+  }
+  return themes;
+}
+
+function randomStoryVariant() {
+  return Math.floor(Math.random() * 3);
+}
+
+function dungeonGenerationOptions(overrides = {}) {
+  const configuredTheme = state.settings?.dungeonTheme;
+  return {
+    floor: state.floor,
+    roomMoves: state.roomMoves,
+    themeMode: state.settings?.themeMode ?? "arcs",
+    dungeonTheme: configuredTheme && configuredTheme !== "random"
+      ? configuredTheme
+      : state.themeOrder?.[0],
+    themeOrder: state.themeOrder,
+    storyVariant: state.storyVariant,
+    ...overrides,
   };
 }
 
@@ -389,13 +435,143 @@ function buildMapCells() {
     })
   ).join("");
   for (const room of dungeon.rooms) {
+    const roomIndex = dungeon.rooms.indexOf(room);
     const coordinates = `${String.fromCharCode(65 + Math.floor(room.cx / 5))}${room.cy + 1}`;
-    if (!state.clearedRooms[coordinates]) continue;
+    for (let y = room.y; y < room.y + room.h; y++) {
+      for (let x = room.x; x < room.x + room.w; x++) {
+        const roomCell = document.querySelector(`.map-cell[data-x="${x}"][data-y="${y}"]`);
+        if (roomCell) roomCell.dataset.roomIndex = roomIndex;
+      }
+    }
     const cell = document.querySelector(`.map-cell[data-x="${room.cx}"][data-y="${room.cy}"]`);
+    if (cell) {
+      cell.dataset.roomCenter = "true";
+      cell.setAttribute(
+        "aria-label",
+        `${room.name}. ${roomEditMode ? "Drag to move or swap" : "Room"}`,
+      );
+    }
+    if (!state.clearedRooms[coordinates]) continue;
     cell?.classList.add("cleared-room");
   }
   renderDungeonLedger();
   renderSafeRoomToggle();
+  bindRoomEditor();
+}
+
+function bindRoomEditor() {
+  const button = $("#edit-rooms");
+  const map = $("#ascii-map");
+  button.classList.toggle("active", roomEditMode);
+  button.textContent = roomEditMode ? "Finish moving" : "Move rooms";
+  $("#map-frame").classList.toggle("room-editing", roomEditMode);
+  document.querySelectorAll(".map-cell").forEach((cell) => {
+    cell.tabIndex = roomEditMode && cell.dataset.roomCenter ? 0 : -1;
+  });
+  map.onpointerdown = (event) => {
+    if (!roomEditMode) return;
+    const cell = event.target.closest(".map-cell[data-room-index]");
+    if (!cell) return;
+    event.preventDefault();
+    const index = Number(cell.dataset.roomIndex);
+    roomDrag = { index, pointerId: event.pointerId };
+    selectedRoomIndex = index;
+    map.setPointerCapture(event.pointerId);
+    setRoomDragClass(index, "dragging-room");
+  };
+  map.onpointermove = (event) => {
+    if (!roomDrag) return;
+    document.querySelectorAll(".map-cell.drop-room").forEach((cell) =>
+      cell.classList.remove("drop-room")
+    );
+    const target = document.elementFromPoint(event.clientX, event.clientY)?.closest(".map-cell");
+    if (!target) return;
+    const targetIndex = target.dataset.roomIndex;
+    if (targetIndex !== undefined && Number(targetIndex) !== roomDrag.index) {
+      setRoomDragClass(Number(targetIndex), "drop-room");
+    } else target.classList.add("drop-room");
+  };
+  map.onpointerup = (event) => {
+    if (!roomDrag) return;
+    const target = document.elementFromPoint(event.clientX, event.clientY)?.closest(".map-cell");
+    const sourceIndex = roomDrag.index;
+    roomDrag = null;
+    suppressMapClickUntil = performance.now() + 250;
+    document.querySelectorAll(".map-cell.dragging-room, .map-cell.drop-room").forEach((cell) =>
+      cell.classList.remove("dragging-room", "drop-room")
+    );
+    if (!target) return;
+    moveSelectedRoom(
+      Number(target.dataset.x),
+      Number(target.dataset.y),
+      target.dataset.roomIndex === undefined ? null : Number(target.dataset.roomIndex),
+      sourceIndex,
+    );
+  };
+  map.onpointercancel = () => {
+    roomDrag = null;
+    document.querySelectorAll(".map-cell.dragging-room, .map-cell.drop-room").forEach((cell) =>
+      cell.classList.remove("dragging-room", "drop-room")
+    );
+  };
+}
+
+function setRoomDragClass(roomIndex, className) {
+  document.querySelectorAll(`.map-cell[data-room-index="${roomIndex}"]`).forEach((cell) =>
+    cell.classList.add(className)
+  );
+}
+
+function moveSelectedRoom(
+  centerX,
+  centerY,
+  targetRoomIndex = null,
+  sourceIndex = selectedRoomIndex,
+) {
+  const room = dungeon.rooms[sourceIndex];
+  if (!room) return;
+  const targetRoom = targetRoomIndex === null ? null : dungeon.rooms[targetRoomIndex];
+  if (targetRoomIndex === sourceIndex) return;
+  checkpoint(targetRoom ? `Swap ${room.name} and ${targetRoom.name}` : `Move ${room.name}`);
+  state.roomMoves ??= {};
+  const previousMoves = clone(state.roomMoves);
+  state.roomMoves[sourceIndex] = {
+    x: (targetRoom?.cx ?? centerX) - Math.floor(room.w / 2),
+    y: (targetRoom?.cy ?? centerY) - Math.floor(room.h / 2),
+  };
+  if (targetRoom) {
+    state.roomMoves[targetRoomIndex] = {
+      x: room.cx - Math.floor(targetRoom.w / 2),
+      y: room.cy - Math.floor(targetRoom.h / 2),
+    };
+  }
+  const previousCenter = `${room.cx}:${room.cy}`;
+  const next = generateDungeon(
+    state.seed,
+    dungeon.width,
+    dungeon.height,
+    dungeonGenerationOptions({ roomMoves: state.roomMoves }),
+  );
+  const moved = next.rooms[sourceIndex];
+  const swapped = !targetRoom ||
+    `${next.rooms[targetRoomIndex].cx}:${next.rooms[targetRoomIndex].cy}` ===
+      `${room.cx}:${room.cy}`;
+  if (`${moved.cx}:${moved.cy}` === previousCenter || !swapped) {
+    state.roomMoves = previousMoves;
+    state.undoStack.pop();
+    showToast("That drop would overlap another room or the map edge");
+    return;
+  }
+  dungeon = next;
+  selectedRoomIndex = null;
+  saveState();
+  buildMapCells();
+  playCollapse();
+  updateForecast(
+    targetRoom
+      ? "Rooms swapped · corridors and markers updated"
+      : "Room moved · corridors and markers updated",
+  );
 }
 
 function renderClearedRooms() {
@@ -414,13 +590,21 @@ function renderClearedRooms() {
 function renderSafeRoomToggle() {
   const button = $("#safe-room-toggle");
   const safeRoom = dungeon.rooms.find((room) => room.role === "safe");
+  if (!safeRoom) state.inSafeRoom = false;
+  button.disabled = !safeRoom;
   button.classList.toggle("active", Boolean(state.inSafeRoom));
-  button.querySelector("b").textContent = state.inSafeRoom
+  button.querySelector("b").textContent = !safeRoom
+    ? "No safe room on this floor"
+    : state.inSafeRoom
     ? `Inside ${safeRoom?.name ?? "a safe room"}`
     : "Party is not in a safe room";
 }
 
 function toggleSafeRoom() {
+  if (!dungeon.rooms.some((room) => room.role === "safe")) {
+    showToast("This floor offers no safe sanctuary");
+    return;
+  }
   checkpoint("Change party location");
   state.inSafeRoom = !state.inSafeRoom;
   saveState();
@@ -437,6 +621,11 @@ function renderDungeonLedger() {
   $("#room-conditions").innerHTML = Object.entries(counts).slice(0, 4).map(([name, count]) =>
     `<span>${escapeHtml(name)} <b>${count}</b></span>`
   ).join("");
+  $("#theme-restriction").innerHTML = `<b>${escapeHtml(dungeon.theme.name)}</b><span>${
+    escapeHtml(dungeon.restriction)
+  }</span><small>Exit distance ${dungeon.exitDistance} · ${dungeon.lootCount} cache${
+    dungeon.lootCount === 1 ? "" : "s"
+  }; loot increases with distance from the entrance.</small>`;
   const lootEntries = forecast?.loot?.length ? forecast.loot : dungeon.loot;
   $("#loot-table").innerHTML = lootEntries.length
     ? lootEntries.map((loot) =>
@@ -524,6 +713,7 @@ function playCollapse() {
 
 async function updateForecast(message = "Forecast updated") {
   const button = $("#refresh-forecast");
+  const previousForecast = forecast ? clone(forecast) : null;
   if (!state.party.some((member) => !member.dead)) {
     forecast = {
       profile: { readiness: 0 },
@@ -555,28 +745,49 @@ async function updateForecast(message = "Forecast updated") {
     if (!response.ok) throw new Error("Forecast API unavailable");
     forecast = await response.json();
   } catch {
-    forecast = buildEncounterForecast(state.party, state.seed, state.completed, state.floor, {
-      ...modelState(),
-      settings: state.settings,
-    });
-    forecast = applyForecastControls(
-      forecast,
-      state.party,
-      state.seed,
-      state.completed,
-      state.floor,
-      forecastControls(),
-      { ...modelState(), settings: state.settings },
-    );
+    forecast = buildLocalForecastForCurrentTheme();
     showToast("Running the local prediction model");
   } finally {
     button.disabled = false;
   }
+  forecast = synchronizeForecastTheme(forecast);
   applyClassProfiles(forecast.classProfiles);
   forecast.encounters = placeEncounters(forecast.encounters, dungeon, state.completed);
-  forecast.encounters = forecast.encounters.map((encounter, index) =>
-    state.encounterLocks[encounterKey(index)] ?? encounter
-  );
+  let removedStaleLock = false;
+  forecast.encounters = forecast.encounters.map((encounter, index) => {
+    const locked = state.encounterLocks[encounterKey(index)];
+    const lockMatchesTheme = locked?.themeId === dungeon.theme.id &&
+      locked?.storyTitle === dungeon.theme.story?.title;
+    if (locked && !lockMatchesTheme) {
+      delete state.encounterLocks[encounterKey(index)];
+      removedStaleLock = true;
+    }
+    return lockMatchesTheme ? locked : encounter;
+  });
+  if (state.initiative && state.initiative.themeSignature !== dungeon.themeSignature) {
+    state.initiative = null;
+    removedStaleLock = true;
+  }
+  if (removedStaleLock) saveState();
+  if (previousForecast && /resolved|re-read|controls|updated/i.test(message)) {
+    const encounterChanges = forecast.encounters.flatMap((encounter, index) => {
+      const before = previousForecast.encounters?.[index];
+      if (!before) return [`Room ${index + 1} added: ${encounter.title}`];
+      const changes = [];
+      if (before.title !== encounter.title) {
+        changes.push(`Room ${index + 1}: ${before.title} → ${encounter.title}`);
+      }
+      if (before.rating !== encounter.rating) {
+        changes.push(`Room ${index + 1} difficulty: ${before.rating} → ${encounter.rating}`);
+      }
+      if (before.budget !== encounter.budget) {
+        changes.push(`Room ${index + 1} pressure: ${before.budget} → ${encounter.budget}`);
+      }
+      return changes;
+    });
+    state.forecastChanges = [...(state.forecastChanges ?? []), ...encounterChanges].slice(-8);
+    saveState();
+  }
   if (state.pendingRestEncounter && forecast.encounters[0]) {
     const existing = forecast.encounters[0];
     forecast.encounters[0] = {
@@ -603,7 +814,41 @@ function forecastControls() {
   return controls;
 }
 
+function buildLocalForecastForCurrentTheme() {
+  let local = buildEncounterForecast(state.party, state.seed, state.completed, state.floor, {
+    ...modelState(),
+    settings: state.settings,
+  });
+  local = applyForecastControls(
+    local,
+    state.party,
+    state.seed,
+    state.completed,
+    state.floor,
+    forecastControls(),
+    { ...modelState(), settings: state.settings },
+  );
+  return local;
+}
+
+function synchronizeForecastTheme(candidate) {
+  if (candidate?.themeSignature === dungeon.themeSignature) return candidate;
+  const local = buildLocalForecastForCurrentTheme();
+  return {
+    ...local,
+    classProfiles: candidate?.classProfiles,
+    dataSource: "fallback",
+    warning:
+      "The forecast service had stale biome data. The browser resynchronized the story, encounters, and map.",
+  };
+}
+
 function renderForecast() {
+  const themeMatchesMap = forecast.themeSignature === dungeon.themeSignature;
+  const displayTheme = themeMatchesMap ? forecast.theme : dungeon.theme;
+  const displayProgress = themeMatchesMap
+    ? forecast.quest?.progress
+    : `Floor ${displayTheme.arcFloor} of ${displayTheme.arcLength}. The forecast is being synchronized.`;
   const percent = Math.round(
     Number(forecast.profile.displayCondition ?? forecast.profile.readiness) * 100,
   );
@@ -644,22 +889,60 @@ function renderForecast() {
     : percent > 55
     ? "Capable, with caution"
     : "Rest would be wise";
+  $("#adventure-premise").innerHTML = `<div><span>${
+    escapeHtml(
+      `${displayTheme.name} · ${displayTheme.story?.title ?? "Dungeon arc"}`,
+    )
+  }</span><b>${escapeHtml(displayTheme.hook)}</b><small>${
+    escapeHtml(displayProgress ?? displayTheme.tagline)
+  }</small></div><p>${escapeHtml(displayTheme.restriction)}</p><ul>${
+    (displayTheme.rules ?? []).map((rule) => `<li>${escapeHtml(rule)}</li>`).join("")
+  }</ul>`;
+  const changes = state.forecastChanges ?? [];
+  $("#forecast-changes").innerHTML = changes.length
+    ? `<b>CHANGED SINCE THE LAST ENCOUNTER</b>${
+      changes.map((change) => `<span>${escapeHtml(change)}</span>`).join("")
+    }`
+    : `<b>CHANGED SINCE THE LAST ENCOUNTER</b><span>No recorded changes yet.</span>`;
   $("#encounter-list").innerHTML = forecast.encounters.map((encounter, index) => {
     const combat = encounter.combat;
+    const combatGroups = combat?.groups?.length
+      ? combat.groups
+      : combat
+      ? [{ count: combat.count, monster: combat.monster }]
+      : [];
     const displayedRating = combat
       ? combat.difficulty[0].toUpperCase() + combat.difficulty.slice(1)
       : encounter.rating;
     const combatMarkup = combat
       ? `<div class="combat-roster">
-          <div class="combat-title"><span>SRD COMBAT</span><b>${combat.count} × ${
-        escapeHtml(combat.monster.name)
+          <div class="combat-title"><span>SRD COMBAT · ${
+        escapeHtml(combat.composition ?? "COMPOSITION")
+      }</span><b>${
+        combatGroups.map((group) => `${group.count} × ${escapeHtml(group.monster.name)}`).join(
+          " + ",
+        )
       }</b></div>
-          <div class="monster-stats"><span>CR ${combat.monster.cr}</span><span>AC ${combat.monster.ac}</span><span>HP ${combat.monster.hp} each</span><span>${
-        escapeHtml(combat.monster.type)
-      }</span></div>
-          <p>${escapeHtml(combat.monster.size)} ${escapeHtml(combat.monster.type)} · ${
-        escapeHtml(combat.monster.actions.join(" · ") || "See stat block")
-      }</p>
+          <div class="combat-groups">${
+        combatGroups.map((group) =>
+          `<div><b>${group.count} × ${
+            escapeHtml(group.monster.name)
+          }</b><span>CR ${group.monster.cr} · AC ${group.monster.ac} · HP ${group.monster.hp} each · ${
+            escapeHtml(group.monster.size)
+          } ${escapeHtml(group.monster.type)}<small>${
+            escapeHtml(group.monster.actions.join(" · ") || "See stat block")
+          }</small></span><a href="${
+            escapeHtml(group.monster.source)
+          }" target="_blank" rel="noreferrer">Stat block ↗</a></div>`
+        ).join("")
+      }</div>
+          ${
+        combatGroups.filter((group) => group.monster.themedReskin).map((group) =>
+          `<p class="theme-reskin">${escapeHtml(group.monster.name)}: ${
+            escapeHtml(group.monster.themedReskin)
+          } Base statistics: ${escapeHtml(group.monster.originalName)}.</p>`
+        ).join("")
+      }
           <div class="xp-proof"><span>${combat.baseXp.toLocaleString()} base XP</span><b>× ${combat.multiplier}</b><span>${combat.adjustedXp.toLocaleString()} adjusted XP</span></div>
           <small>${
         escapeHtml(combat.scaling)
@@ -667,9 +950,7 @@ function renderForecast() {
         escapeHtml(combat.rule)
       } · ${displayedRating} threshold ${
         combat.thresholds[combat.difficulty].toLocaleString()
-      } XP<br>${escapeHtml(combat.safety)} · <a href="${
-        escapeHtml(combat.monster.source)
-      }" target="_blank" rel="noreferrer">SRD stat block ↗</a></small>
+      } XP<br>${escapeHtml(combat.safety)}</small>
           ${
         combat.analysis
           ? `<div class="combat-analysis risk-${combat.analysis.risk}"><b>${combat.analysis.risk.toUpperCase()} TACTICAL RISK</b>${
@@ -697,6 +978,24 @@ function renderForecast() {
     } · ${encounter.room.coordinates}</button>
         <p><b>Objective:</b> ${escapeHtml(encounter.objective)}</p>
         <p class="encounter-twist"><b>Twist:</b> ${escapeHtml(encounter.twist)}</p>
+        ${
+      encounter.bossMechanic
+        ? `<p class="boss-mechanic"><b>Boss room mechanic:</b> ${
+          escapeHtml(encounter.bossMechanic)
+        }${
+          encounter.room.arenaRule
+            ? `<br><span>${escapeHtml(encounter.room.arenaVariant)}: ${
+              escapeHtml(encounter.room.arenaRule)
+            }</span>`
+            : ""
+        }</p>
+        <div class="lair-actions"><b>LAIR ACTIONS · INITIATIVE 20</b>${
+          (encounter.lairActions ?? []).map((action) => `<span>${escapeHtml(action)}</span>`).join(
+            "",
+          )
+        }</div>`
+        : ""
+    }
         ${combatMarkup}
         <div class="encounter-meta"><span>${encounter.tone}</span><span>${
       combat ? "Adjusted XP" : "Pressure"
@@ -761,7 +1060,9 @@ function openInitiativeDialog() {
     escapeHtml(encounter.title)
   }</b><span>Room ${encounter.marker} · ${escapeHtml(encounter.room.name)}</span><small>${
     encounter.combat
-      ? `${encounter.combat.count} × ${escapeHtml(encounter.combat.monster.name)}`
+      ? (encounter.combat.groups ??
+        [{ count: encounter.combat.count, monster: encounter.combat.monster }])
+        .map((group) => `${group.count} × ${escapeHtml(group.monster.name)}`).join(" + ")
       : `${encounter.foes || 1} enemies`
   }</small>`;
   $("#initiative-player-rolls").innerHTML = state.party.filter((member) => !member.dead).map((
@@ -798,18 +1099,37 @@ function beginInitiative(event) {
     });
   });
   const count = Math.max(1, Number(encounter.combat?.count ?? encounter.foes ?? 1));
-  const monsterName = encounter.combat?.monster?.name ?? "Enemy";
-  const modifier = Number(encounter.combat?.monster?.initiativeModifier ?? 0);
-  for (let number = 1; number <= count; number++) {
-    const natural = rollD20();
+  const monsterGroups = encounter.combat?.groups?.length
+    ? encounter.combat.groups
+    : [{ count, monster: encounter.combat?.monster ?? { name: "Enemy", hp: 1 } }];
+  if (encounter.boss && encounter.lairActions?.length) {
     entries.push({
       id: crypto.randomUUID(),
-      name: count > 1 ? `${monsterName} ${number}` : monsterName,
-      initiative: natural + modifier,
-      roll: natural,
-      modifier,
-      side: "monster",
+      name: `Lair actions — ${encounter.title}`,
+      initiative: 20,
+      side: "lair",
+      actions: encounter.lairActions,
     });
+  }
+  for (const group of monsterGroups) {
+    const groupCount = Math.max(1, Number(group.count));
+    const monsterName = group.monster.name ?? "Enemy";
+    const modifier = Number(group.monster.initiativeModifier ?? 0);
+    const monsterHp = Math.max(1, Number(group.monster.hp ?? 1));
+    for (let number = 1; number <= groupCount; number++) {
+      const natural = rollD20();
+      entries.push({
+        id: crypto.randomUUID(),
+        name: groupCount > 1 ? `${monsterName} ${number}` : monsterName,
+        initiative: natural + modifier,
+        roll: natural,
+        modifier,
+        side: "monster",
+        hp: monsterHp,
+        maxHp: monsterHp,
+        monsterIndex: group.monster.index,
+      });
+    }
   }
   entries.sort((a, b) => b.initiative - a.initiative || (a.side === "player" ? -1 : 1));
   state.initiative = {
@@ -818,6 +1138,7 @@ function beginInitiative(event) {
     entries,
     activeIndex: 0,
     position: state.initiative?.position ?? null,
+    themeSignature: dungeon.themeSignature,
   };
   saveState();
   $("#initiative-dialog").close();
@@ -846,12 +1167,30 @@ function renderInitiativeTracker() {
       escapeHtml(entry.name)
     }" aria-label="Participant name">
       <input class="initiative-score" type="number" min="-10" max="99" value="${entry.initiative}" aria-label="Initiative score">
-      <span class="initiative-roll">${
+      ${
       entry.side === "monster"
+        ? `<label class="initiative-hp"><span>HP</span><input type="number" min="0" max="9999" value="${
+          Number(entry.hp ?? entry.maxHp ?? 1)
+        }" aria-label="Current HP for ${escapeHtml(entry.name)}"><small>/ ${
+          Number(entry.maxHp ?? entry.hp ?? 1)
+        }</small></label>`
+        : `<span class="initiative-hp-empty">—</span>`
+    }
+      <span class="initiative-roll">${
+      entry.side === "lair"
+        ? "LAIR · INIT 20"
+        : entry.side === "monster"
         ? `d20 ${entry.roll ?? "—"} ${Number(entry.modifier) >= 0 ? "+" : ""}${entry.modifier ?? 0}`
         : "PLAYER"
     }</span>
       <button data-init-move="up" title="Move up">↑</button><button data-init-move="down" title="Move down">↓</button><button data-init-remove title="Remove">×</button>
+      ${
+      entry.side === "lair"
+        ? `<div class="initiative-lair-options">${
+          (entry.actions ?? []).map((action) => `<span>${escapeHtml(action)}</span>`).join("")
+        }</div>`
+        : ""
+    }
     </div>`
   ).join("");
   document.querySelectorAll(".initiative-entry").forEach((row) => {
@@ -863,6 +1202,10 @@ function renderInitiativeTracker() {
     row.querySelector(".initiative-score").addEventListener(
       "change",
       (event) => editInitiativeEntry(id, "initiative", Number(event.target.value)),
+    );
+    row.querySelector(".initiative-hp input")?.addEventListener(
+      "change",
+      (event) => editInitiativeEntry(id, "hp", Math.max(0, Number(event.target.value))),
     );
     row.querySelectorAll("[data-init-move]").forEach((button) =>
       button.addEventListener("click", () => moveInitiativeEntry(id, button.dataset.initMove))
@@ -969,7 +1312,10 @@ function renderEncounterMarkers() {
     if (encounter.resolved) marker.classList.add("resolved-marker");
     marker.dataset.encounter = encounter.marker;
     marker.tabIndex = 0;
-    marker.onclick = () => focusEncounter(encounter.marker, "card");
+    marker.onclick = () => {
+      if (performance.now() < suppressMapClickUntil) return;
+      focusEncounter(encounter.marker, "card");
+    };
   });
   renderClearedRooms();
   document.querySelectorAll(".locate-encounter").forEach((button) => {
@@ -1093,6 +1439,21 @@ function resolveEncounter(event) {
     if (result.killed) updated.dead = true;
     if (state.settings.trackResources) updated = spendResources(updated, result.resourcesSpent);
     return updated;
+  });
+  state.forecastChanges = state.party.flatMap((member) => {
+    const before = beforeParty.find((candidate) => candidate.id === member.id);
+    if (!before) return [];
+    const changes = [];
+    if (Number(before.hp) !== Number(member.hp)) {
+      changes.push(`${member.name}: ${before.hp} → ${member.hp} HP`);
+    }
+    if (Number(before.resource) !== Number(member.resource)) {
+      changes.push(`${member.name}: ${before.resource} → ${member.resource} supplies`);
+    }
+    if (!before.dead && member.dead) {
+      changes.push(`${member.name} is now fallen and excluded from difficulty`);
+    }
+    return changes;
   });
   const sample = outcomeSample(encounter, beforeParty, report);
   state.learningSamples.push(sample);
@@ -1486,7 +1847,9 @@ function maybeReoccupyRoom() {
 function openSettings() {
   const form = $("#settings-form");
   for (const [key, value] of Object.entries(state.settings)) {
-    if (form.elements[key]) form.elements[key].checked = Boolean(value);
+    if (!form.elements[key]) continue;
+    if (form.elements[key].type === "checkbox") form.elements[key].checked = Boolean(value);
+    else form.elements[key].value = value;
   }
   $("#settings-dialog").showModal();
 }
@@ -1495,15 +1858,34 @@ function saveSettings(event) {
   event.preventDefault();
   checkpoint("Change tracking settings");
   const form = $("#settings-form");
+  const previousThemeMode = state.settings.themeMode;
+  const previousDungeonTheme = state.settings.dungeonTheme;
   state.settings = {
     trackResources: form.elements.trackResources.checked,
     trackAfflictions: form.elements.trackAfflictions.checked,
     safeRestRules: form.elements.safeRestRules.checked,
+    themeMode: form.elements.themeMode.value,
+    dungeonTheme: form.elements.dungeonTheme.value,
   };
+  const themeChanged = previousThemeMode !== state.settings.themeMode ||
+    previousDungeonTheme !== state.settings.dungeonTheme;
+  if (themeChanged) {
+    state.roomMoves = {};
+    state.encounterLocks = {};
+    state.encounterControls = { rerolls: {}, ratings: {}, kinds: {} };
+    state.pendingRestEncounter = null;
+    state.inSafeRoom = false;
+    dungeon = generateDungeon(state.seed, 55, 31, dungeonGenerationOptions({ roomMoves: {} }));
+  }
   logEvent("settings", "Tracking settings changed");
   saveState();
   $("#settings-dialog").close();
   renderParty();
+  if (themeChanged) {
+    renderMeta();
+    buildMapCells();
+    playCollapse();
+  }
   updateForecast("DM tracking settings applied");
 }
 
@@ -1560,7 +1942,7 @@ function undoLastAction() {
   if (!entry) return;
   Object.assign(state, clone(entry.snapshot));
   saveState();
-  dungeon = generateDungeon(state.seed);
+  dungeon = generateDungeon(state.seed, 55, 31, dungeonGenerationOptions());
   renderMeta();
   renderParty();
   buildMapCells();
@@ -1577,7 +1959,9 @@ function newExpedition() {
   state.encounterLocks = {};
   state.pendingRestEncounter = null;
   state.initiative = null;
-  dungeon = generateDungeon(state.seed);
+  state.roomMoves = {};
+  state.forecastChanges = [];
+  dungeon = generateDungeon(state.seed, 55, 31, dungeonGenerationOptions({ roomMoves: {} }));
   logEvent("dungeon", `Descended to floor ${state.floor}`, `New seed ${state.seed}`);
   saveState();
   renderMeta();
@@ -1603,6 +1987,10 @@ function resetDungeon() {
   state.inSafeRoom = false;
   state.pendingRestEncounter = null;
   state.initiative = null;
+  state.roomMoves = {};
+  state.forecastChanges = [];
+  state.themeOrder = randomThemeOrder();
+  state.storyVariant = randomStoryVariant();
   state.party = takeLongRest(state.party).map((member) => {
     if (!member.dead) return member;
     const hitDice = hitDiceState(member);
@@ -1623,7 +2011,7 @@ function resetDungeon() {
   state.history = [];
   state.clearedRooms = {};
   state.claimedLoot = [];
-  dungeon = generateDungeon(state.seed);
+  dungeon = generateDungeon(state.seed, 55, 31, dungeonGenerationOptions({ roomMoves: {} }));
   saveState();
   renderMeta();
   buildMapCells();
@@ -1635,6 +2023,10 @@ function renderMeta() {
   $("#seed-label").textContent = state.seed.toUpperCase();
   $("#expedition-number").textContent = String(state.expedition).padStart(2, "0");
   $("#floor-number").textContent = state.floor;
+  $("#floor-theme-name").textContent = dungeon.theme.name;
+  $("#floor-folio").textContent = `Folio ${state.floor}`;
+  $("#print-theme-name").textContent = dungeon.theme.name;
+  document.body.dataset.floorTheme = dungeon.theme.id;
 }
 
 function showToast(text) {
@@ -1738,6 +2130,14 @@ $("#member-form").elements.level.addEventListener("input", queueClassProfile);
 $("#new-expedition").addEventListener("click", newExpedition);
 $("#reset-dungeon").addEventListener("click", resetDungeon);
 $("#replay-collapse").addEventListener("click", playCollapse);
+$("#edit-rooms").addEventListener("click", () => {
+  roomEditMode = !roomEditMode;
+  selectedRoomIndex = null;
+  bindRoomEditor();
+  showToast(
+    roomEditMode ? "Drag a full room onto empty space or another room" : "Room layout locked",
+  );
+});
 $("#refresh-forecast").addEventListener("click", () => {
   checkpoint("Read the party again");
   saveState();

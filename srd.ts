@@ -105,6 +105,12 @@ export function encounterMultiplier(count: number, partySize: number): number {
   return bands[Math.max(0, Math.min(bands.length - 1, index))];
 }
 
+export function splitEncounterCount(count: number): number[] {
+  const total = Math.max(1, Math.floor(Number(count)));
+  if (total < 2) return [total];
+  return [Math.ceil(total / 2), Math.floor(total / 2)];
+}
+
 export function classifyAdjustedXp(
   adjustedXp: number,
   thresholds: ReturnType<typeof partyThresholds>,
@@ -376,6 +382,28 @@ export async function hydratePartyResources(party: any[]) {
 
 function monsterNamePreferences(title: string) {
   const lowered = title.toLowerCase();
+  if (/goblin|spore-king/.test(lowered)) {
+    return ["goblin", "hobgoblin", "bugbear"];
+  }
+  if (/demon|devil|fiend|infernal|ashen foreman|chain-smith|furnace/.test(lowered)) {
+    return [
+      "demon",
+      "devil",
+      "imp",
+      "quasit",
+      "dretch",
+      "vrock",
+      "hezrou",
+      "glabrezu",
+      "balor",
+    ];
+  }
+  if (/drowned|silt|sluice|grotto|oracle/.test(lowered)) {
+    return ["merrow", "sahuagin", "water", "crocodile", "frog", "ooze", "chuul"];
+  }
+  if (/veyr|undead|zombie|grave|ossuary|bone/.test(lowered)) {
+    return ["skeleton", "zombie", "ghoul", "specter", "shadow", "wight", "mummy"];
+  }
   if (/bone|marrow|funeral|saint|death/.test(lowered)) {
     return ["skeleton", "zombie", "ghoul", "specter", "shadow", "wight"];
   }
@@ -391,15 +419,91 @@ function monsterNamePreferences(title: string) {
   return [];
 }
 
-async function getMonsterForCr(cr: number, seed: string, title: string) {
+const THEME_MONSTER_PREFERENCES: Record<string, string[]> = {
+  "moss-forest": [
+    "goblin",
+    "hobgoblin",
+    "bugbear",
+    "blight",
+    "fungus",
+    "dryad",
+    "tree",
+    "vine",
+    "shambling",
+    "spider",
+    "snake",
+    "frog",
+    "toad",
+    "wasp",
+    "wolf",
+    "boar",
+    "bear",
+    "ettercap",
+  ],
+  "drowned-grotto": [
+    "sahuagin",
+    "merrow",
+    "water",
+    "crocodile",
+    "frog",
+    "shark",
+    "octopus",
+    "crab",
+    "sea-horse",
+    "snake",
+    "chuul",
+    "ooze",
+    "whale",
+    "hydra",
+  ],
+  ossuary: [
+    "skeleton",
+    "zombie",
+    "ghoul",
+    "ghost",
+    "specter",
+    "shadow",
+    "wight",
+    "wraith",
+    "mummy",
+    "banshee",
+    "revenant",
+    "flameskull",
+    "death-knight",
+  ],
+  "infernal-foundry": [
+    "demon",
+    "devil",
+    "imp",
+    "quasit",
+    "dretch",
+    "vrock",
+    "hezrou",
+    "glabrezu",
+    "balor",
+  ],
+};
+
+async function getMonsterForCr(cr: number, seed: string, encounter: any, excluded: string[] = []) {
   const list = await api<any>(`/monsters?challenge_rating=${cr}`);
   if (!list.results?.length) throw new Error(`No SRD monsters found for CR ${cr}`);
   const rng = createRng(seed);
-  const preferences = monsterNamePreferences(title);
-  const thematic = list.results.filter((reference: any) =>
-    preferences.some((term) => reference.index.includes(term))
-  );
-  const pool = thematic.length ? thematic : list.results;
+  const preferences = [
+    ...monsterNamePreferences(encounter.title),
+    ...(THEME_MONSTER_PREFERENCES[encounter.themeId] ?? []),
+  ];
+  const thematic = list.results.filter((reference: any) => {
+    const tokens = String(reference.index).split("-");
+    return preferences.some((term) =>
+      term.includes("-") ? reference.index.includes(term) : tokens.includes(term)
+    );
+  });
+  const preferredPool = thematic.length ? thematic : list.results;
+  let pool = preferredPool.filter((reference: any) => !excluded.includes(reference.index));
+  if (!pool.length && thematic.length) {
+    pool = list.results.filter((reference: any) => !excluded.includes(reference.index));
+  }
+  if (!pool.length) throw new Error(`No additional SRD monsters found for CR ${cr}`);
   const reference = pool[Math.floor(rng() * pool.length)];
   const monster = await api<any>(reference.url.replace("/api/2014", ""));
   return {
@@ -408,6 +512,7 @@ async function getMonsterForCr(cr: number, seed: string, title: string) {
     cr: monster.challenge_rating,
     xp: monster.xp,
     type: monster.type,
+    subtype: monster.subtype,
     size: monster.size,
     ac: Array.isArray(monster.armor_class)
       ? Math.max(...monster.armor_class.map((entry: any) => entry.value))
@@ -422,6 +527,29 @@ async function getMonsterForCr(cr: number, seed: string, title: string) {
       action.attack_bonus || action.damage?.length
     ).slice(0, 2).map((action: any) => action.name),
     source: `${API_BASE}/monsters/${monster.index}`,
+    themeMatched: thematic.some((candidate: any) => candidate.index === reference.index),
+  };
+}
+
+function applyEncounterMonsterTheme(monster: any, encounter: any) {
+  if (monster.themeMatched) return monster;
+  const reskins: Record<string, { prefix: string; type?: string; subtype?: string }> = {
+    "moss-forest": { prefix: "Mossbound" },
+    "drowned-grotto": { prefix: "Drowned" },
+    ossuary: { prefix: "Risen", type: "undead" },
+    "infernal-foundry": { prefix: "Devilbound", type: "fiend", subtype: "devil" },
+  };
+  const reskin = reskins[encounter.themeId];
+  if (!reskin) return monster;
+  return {
+    ...monster,
+    originalName: monster.name,
+    name: `${reskin.prefix} ${monster.name}`,
+    type: reskin.type ?? monster.type,
+    subtype: reskin.subtype ?? monster.subtype,
+    themedReskin: `${
+      encounter.themeId.replaceAll("-", " ")
+    } reskin using the linked SRD statistics.`,
   };
 }
 
@@ -444,12 +572,39 @@ async function buildMonsterEncounter(
     seed,
     condition,
   );
-  const monster = await getMonsterForCr(composition.cr, seed, encounter.title);
-  const baseXp = monster.xp * composition.count;
+  let monster: any = applyEncounterMonsterTheme(
+    await getMonsterForCr(composition.cr, seed, encounter),
+    encounter,
+  );
+  let secondaryMonster: any = null;
+  if (composition.count >= 2 && !encounter.boss) {
+    try {
+      const candidate = applyEncounterMonsterTheme(
+        await getMonsterForCr(
+          composition.cr,
+          `${seed}:secondary`,
+          encounter,
+          [monster.index],
+        ),
+        encounter,
+      );
+      if (candidate.xp === monster.xp) secondaryMonster = candidate;
+    } catch {
+      // A CR with only one available stat block remains a single-creature-type encounter.
+    }
+  }
+  const groups = secondaryMonster
+    ? splitEncounterCount(composition.count).map((count, index) => ({
+      count,
+      monster: index === 0 ? monster : secondaryMonster,
+    }))
+    : [{ count: composition.count, monster }];
+  const baseXp = groups.reduce((sum, group) => sum + group.monster.xp * group.count, 0);
   const adjustedXp = Math.round(baseXp * composition.multiplier);
   const aoeRating = Number(condition.aoeRating ?? 3);
   const actionRatio = composition.count / Math.max(1, party.length);
-  const flying = Object.keys(monster.speed ?? {}).includes("fly");
+  const flying = groups.some((group) => Object.keys(group.monster.speed ?? {}).includes("fly"));
+  const groupTraits = [...new Set(groups.flatMap((group) => group.monster.traits ?? []))];
   const riskSignals = [
     actionRatio >= 1.5
       ? aoeRating >= 4
@@ -461,13 +616,15 @@ async function buildMonsterEncounter(
         ? "Flight covered by strong ranged capability"
         : "Flight may invalidate melee specialists"
       : null,
-    monster.traits?.length ? `Traits: ${monster.traits.join(", ")}` : null,
+    groupTraits.length ? `Traits: ${groupTraits.slice(0, 4).join(", ")}` : null,
   ].filter(Boolean);
   return {
     difficulty: classifyAdjustedXp(adjustedXp, thresholds),
     target: difficulty,
     count: composition.count,
     monster,
+    groups,
+    composition: groups.length > 1 ? "Mixed SRD group" : "Single SRD creature type",
     baseXp,
     adjustedXp,
     multiplier: composition.multiplier,
@@ -488,7 +645,9 @@ async function buildMonsterEncounter(
     scaling: `${Math.round(composition.band.conditionScore * 100)}% party condition targets the ${
       Math.round(composition.band.percentile * 100)
     }% point of the ${difficulty} XP band`,
-    safety: `CR ${monster.cr} checked against party average level ${averageLevel.toFixed(1)} (cap ${
+    safety: `${
+      groups.length > 1 ? `${groups.length} same-CR stat blocks; ` : ""
+    }CR ${monster.cr} checked against party average level ${averageLevel.toFixed(1)} (cap ${
       maximumCr.toFixed(1)
     })`,
   };

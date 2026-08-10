@@ -26,6 +26,8 @@ deno task check
 - Eleven map conditions including doors, locks, traps, loot, safe rooms, shrines, water, rubble, and
   secret passages.
 - Three adaptive encounter forecasts with pressure, budget, and expected-round estimates.
+- Shuffled three-to-five-floor biome arcs plus a selectable single-biome ten-floor campaign mode,
+  with persistent stories and themed bosses on floors 3, 6, and 10.
 - A library of 32 varied combat, social, puzzle, hazard, discovery, rescue, and bargain scenarios;
   each includes a concrete objective and a twist.
 - Numbered `1–3` map markers that bind each forecast card to a named room and atlas coordinate.
@@ -81,9 +83,10 @@ The prototype uses a transparent attrition planner. Its inputs are:
 Health is deliberately the dominant current-state signal. The planner chooses a pacing pattern—such
 as a hard opening followed by relief, a valley between two threats, or a measured build—based on
 party condition and deterministic encounter context. There is no forced easy-to-hard staircase.
-Every third floor does end in a hard guardian room. The `Deadly` tier is restricted to those
-milestone floors and only used when party condition makes it reasonable. Lower HP reduces the
-forecast's overall pressure and can introduce recovery or non-combat choices.
+Themes now span arcs of three to five floors, with a hard dedicated boss arena added on each arc's
+final floor. The `Deadly` tier is restricted to those boss floors and only used when party condition
+makes it reasonable. Lower HP reduces the forecast's overall pressure and can introduce recovery or
+non-combat choices.
 
 This remains an explainable model rather than an unsupported neural-network claim. The resolution
 form now captures a compact outcome row after every encounter:

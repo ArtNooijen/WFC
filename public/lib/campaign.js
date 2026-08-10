@@ -4,6 +4,8 @@ export const DEFAULT_SETTINGS = {
   trackResources: true,
   trackAfflictions: true,
   safeRestRules: true,
+  themeMode: "arcs",
+  dungeonTheme: "random",
 };
 
 export function outcomeSample(encounter, beforeParty, report) {

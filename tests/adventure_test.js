@@ -4,6 +4,7 @@ import {
   buildEncounterForecast,
   classCapability,
   classResourceDependency,
+  floorTheme,
   generateDungeon,
   hitDiceState,
   memberResourceState,
@@ -18,6 +19,7 @@ import {
   encounterMultiplier,
   normalizeClassLevel,
   partyThresholds,
+  splitEncounterCount,
 } from "../srd.ts";
 import { learningModel, outcomeSample } from "../public/lib/campaign.js";
 
@@ -88,14 +90,14 @@ Deno.test("encounters react to party state without touching geometry", () => {
   }
 });
 
-Deno.test("the model controls pacing while milestone floors end hard", () => {
+Deno.test("the model controls pacing while theme-ending boss floors end hard", () => {
   const firstFloor = buildEncounterForecast(PARTY, "vault-13", 0, 1);
-  const thirdFloor = buildEncounterForecast(PARTY, "vault-13", 0, 3);
+  const bossFloor = buildEncounterForecast(PARTY, "vault-13", 0, 4);
   if (firstFloor.encounters.some((encounter) => encounter.rating === "Deadly")) {
-    throw new Error("deadly encounter appeared outside a third floor");
+    throw new Error("deadly encounter appeared outside a boss floor");
   }
-  if (thirdFloor.encounters[2].rating !== "Hard") {
-    throw new Error("milestone floor did not end with a hard room");
+  if (bossFloor.encounters[2].rating !== "Hard") {
+    throw new Error("theme-ending floor did not end with a hard room");
   }
   const strongParty = PARTY.map((member) => ({
     ...member,
@@ -103,7 +105,7 @@ Deno.test("the model controls pacing while milestone floors end hard", () => {
     resource: member.maxResource,
     ac: 20,
   }));
-  const crucible = buildEncounterForecast(strongParty, "vault-13", 0, 3);
+  const crucible = buildEncounterForecast(strongParty, "vault-13", 0, 4);
   if (crucible.encounters[2].rating !== "Deadly") {
     throw new Error("healthy party did not unlock the optional deadly milestone finale");
   }
@@ -116,6 +118,201 @@ Deno.test("dungeon includes useful room features and conditions", () => {
     if (!tiles.has(expected)) throw new Error(`missing dungeon feature ${expected}`);
   }
   if (!dungeon.loot.length) throw new Error("missing loot table");
+});
+
+Deno.test("floors carry coherent themes, restrictions, and themed encounters", () => {
+  const mossFloors = [1, 2, 3, 4].map((floor) => floorTheme(floor).id);
+  if (mossFloors.some((id) => id !== "moss-forest")) throw new Error("theme arc ended early");
+  const infernal = generateDungeon("theme-vault", 55, 31, { floor: 13 });
+  if (infernal.theme.id !== "infernal-foundry") throw new Error("wrong floor theme");
+  if (infernal.grid.flat().includes("~")) throw new Error("fire floor generated water");
+  if (!infernal.grid.flat().includes("*")) throw new Error("fire floor lacks burning terrain");
+  const burningRooms = infernal.rooms.filter((room) => {
+    for (let y = room.y; y < room.y + room.h; y++) {
+      for (let x = room.x; x < room.x + room.w; x++) {
+        if (infernal.grid[y]?.[x] === "*") return true;
+      }
+    }
+    return false;
+  });
+  if (burningRooms.length < Math.floor(infernal.rooms.length * .75)) {
+    throw new Error("fire did not spread through enough infernal rooms");
+  }
+  if (!/no drinkable water/i.test(infernal.restriction)) {
+    throw new Error("special floor restriction is not explained");
+  }
+  const forecast = buildEncounterForecast(PARTY, "theme-vault", 0, 13);
+  if (!forecast.quest?.hook || forecast.theme.id !== infernal.theme.id) {
+    throw new Error("forecast and map theme disagree");
+  }
+  if (
+    forecast.encounters.some((encounter) =>
+      encounter.themeId !== "infernal-foundry" || !encounter.strictThemeEnemies
+    )
+  ) {
+    throw new Error("infernal forecast included an off-theme encounter");
+  }
+});
+
+Deno.test("theme-ending floors add a new dedicated boss arena and lair actions", () => {
+  const dungeon = generateDungeon("boss-vault", 55, 31, { floor: 4 });
+  const bossRoom = dungeon.rooms.find((room) => room.role === "boss");
+  if (!bossRoom?.dedicatedBoss || !bossRoom.bossMechanic || !bossRoom.lairActions?.length) {
+    throw new Error("boss arena lacks dedicated mechanics");
+  }
+  if (!dungeon.rooms.some((room) => room.role === "exit")) {
+    throw new Error("boss arena replaced the normal exit room");
+  }
+  const forecast = buildEncounterForecast(PARTY, "boss-vault", 0, 4);
+  const placed = placeEncounters(forecast.encounters, dungeon, 0);
+  const boss = placed[2];
+  if (
+    !boss.boss || !boss.bossMechanic || boss.lairActions.length < 3 || boss.room.x !== bossRoom.cx
+  ) {
+    throw new Error("dedicated boss was not placed in its arena");
+  }
+});
+
+Deno.test("boss arenas vary in shape and random map position", () => {
+  const variants = new Set();
+  const positions = new Set();
+  for (let index = 0; index < 18; index++) {
+    const dungeon = generateDungeon(`boss-variant-${index}`, 55, 31, { floor: 4 });
+    const boss = dungeon.rooms.find((room) => room.dedicatedBoss);
+    variants.add(boss.arenaVariant.id);
+    positions.add(`${boss.x}:${boss.y}`);
+  }
+  if (variants.size < 3) throw new Error("boss room variants are not varying");
+  if (positions.size < 8) throw new Error("boss rooms are not placed randomly");
+});
+
+Deno.test("each theme boss has its own lair actions", () => {
+  const moss = buildEncounterForecast(PARTY, "moss-boss", 0, 4).encounters[2];
+  const drowned = buildEncounterForecast(PARTY, "drowned-boss", 0, 7).encounters[2];
+  const ossuary = buildEncounterForecast(PARTY, "ossuary-boss", 0, 12).encounters[2];
+  const infernal = buildEncounterForecast(PARTY, "infernal-boss", 0, 16).encounters[2];
+  const actionSets = new Set(
+    [moss, drowned, ossuary, infernal].map((boss) => boss.lairActions.join("|")),
+  );
+  if (actionSets.size !== 4) throw new Error("boss themes reused the same lair actions");
+  if (!infernal.lairActions.some((action) => /lava|flame|fire/i.test(action))) {
+    throw new Error("infernal boss lacks fire-based lair actions");
+  }
+});
+
+Deno.test("theme arcs respect a campaign-specific randomized order", () => {
+  const order = ["infernal-foundry", "ossuary", "moss-forest", "drowned-grotto"];
+  if (floorTheme(1, { themeOrder: order }).id !== "infernal-foundry") {
+    throw new Error("custom theme order did not control the first arc");
+  }
+  if (floorTheme(5, { themeOrder: order }).id !== "ossuary") {
+    throw new Error("custom theme order did not advance to the second biome");
+  }
+  const alternate = ["drowned-grotto", "moss-forest", "infernal-foundry", "ossuary"];
+  if (floorTheme(1, { themeOrder: alternate }).id !== "drowned-grotto") {
+    throw new Error("different expeditions cannot vary their biome order");
+  }
+});
+
+Deno.test("map and forecast expose the same complete theme signature", () => {
+  const context = {
+    themeOrder: ["infernal-foundry", "moss-forest", "ossuary", "drowned-grotto"],
+    storyVariant: 1,
+    settings: { themeMode: "arcs", dungeonTheme: "random" },
+  };
+  const dungeon = generateDungeon("matching-theme", 55, 31, {
+    floor: 3,
+    themeOrder: context.themeOrder,
+    storyVariant: context.storyVariant,
+    ...context.settings,
+  });
+  const forecast = buildEncounterForecast(PARTY, "matching-theme", 0, 3, context);
+  if (dungeon.themeSignature !== forecast.themeSignature) {
+    throw new Error(`${dungeon.themeSignature} did not match ${forecast.themeSignature}`);
+  }
+  if (dungeon.theme.story.title !== forecast.theme.story.title) {
+    throw new Error("map and forecast selected different stories");
+  }
+});
+
+Deno.test("a full ten-floor biome keeps one story and uses three themed bosses", () => {
+  const context = {
+    themeMode: "full-dungeon",
+    dungeonTheme: "infernal-foundry",
+    storyVariant: 1,
+  };
+  const themes = [1, 4, 7, 10].map((floor) => floorTheme(floor, context));
+  if (
+    themes.some((theme) =>
+      theme.id !== "infernal-foundry" || theme.story.title !== themes[0].story.title
+    )
+  ) {
+    throw new Error("ten-floor mode changed biome or story");
+  }
+  const bossFloors = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].filter((floor) =>
+    floorTheme(floor, context).bossFloor
+  );
+  if (JSON.stringify(bossFloors) !== JSON.stringify([3, 6, 10])) {
+    throw new Error(`wrong full-dungeon boss floors: ${bossFloors}`);
+  }
+  const bossNames = [3, 6, 10].map((floor) =>
+    buildEncounterForecast(PARTY, `full-${floor}`, 0, floor, { settings: context }).encounters[2]
+      .title
+  );
+  if (new Set(bossNames).size !== 3) throw new Error("full dungeon reused the same boss");
+  const finalMap = generateDungeon("full-infernal", 55, 31, { floor: 10, ...context });
+  if (!finalMap.rooms.some((room) => room.dedicatedBoss) || finalMap.grid.flat().includes("~")) {
+    throw new Error("full-dungeon boss map broke biome rules");
+  }
+});
+
+Deno.test("saved room moves rebuild geometry deterministically", () => {
+  const original = generateDungeon("moving-vault");
+  const room = original.rooms[1];
+  let moved = null;
+  for (let y = 2; y < original.height - room.h - 2 && !moved; y++) {
+    for (let x = 2; x < original.width - room.w - 2; x++) {
+      const candidate = generateDungeon("moving-vault", 55, 31, {
+        roomMoves: { 1: { x, y } },
+      });
+      if (candidate.rooms[1].x !== room.x || candidate.rooms[1].y !== room.y) {
+        moved = candidate;
+        break;
+      }
+    }
+  }
+  if (!moved) throw new Error("could not move a room");
+  const repeated = generateDungeon("moving-vault", 55, 31, {
+    roomMoves: { 1: { x: moved.rooms[1].x, y: moved.rooms[1].y } },
+  });
+  if (JSON.stringify(moved.grid) !== JSON.stringify(repeated.grid)) {
+    throw new Error("edited room geometry is not deterministic");
+  }
+});
+
+Deno.test("two complete rooms can swap positions in one generation pass", () => {
+  const original = generateDungeon("swap-vault");
+  let swapped = null;
+  for (let first = 0; first < original.rooms.length && !swapped; first++) {
+    for (let second = first + 1; second < original.rooms.length; second++) {
+      const a = original.rooms[first];
+      const b = original.rooms[second];
+      const candidate = generateDungeon("swap-vault", 55, 31, {
+        roomMoves: {
+          [first]: { x: b.cx - Math.floor(a.w / 2), y: b.cy - Math.floor(a.h / 2) },
+          [second]: { x: a.cx - Math.floor(b.w / 2), y: a.cy - Math.floor(b.h / 2) },
+        },
+      });
+      if (
+        candidate.rooms[first].cx === b.cx && candidate.rooms[first].cy === b.cy &&
+        candidate.rooms[second].cx === a.cx && candidate.rooms[second].cy === a.cy
+      ) {
+        swapped = candidate;
+        break;
+      }
+    }
+  }
+  if (!swapped) throw new Error("no complete room pair could be swapped");
 });
 
 Deno.test("forecasts draw from a varied encounter library", () => {
@@ -155,6 +352,21 @@ Deno.test("2014 encounter thresholds reproduce the official mixed-party example"
   if (encounterMultiplier(4, 4) !== 2) throw new Error("incorrect group multiplier");
   if (classifyAdjustedXp(1000, thresholds) !== "hard") {
     throw new Error("incorrect XP classification");
+  }
+});
+
+Deno.test("mixed SRD groups preserve creature count and encounter multiplier", () => {
+  for (const count of [2, 3, 4, 5, 8]) {
+    const groups = splitEncounterCount(count);
+    if (groups.length !== 2 || groups.reduce((sum, value) => sum + value, 0) !== count) {
+      throw new Error(`invalid mixed composition for ${count} creatures`);
+    }
+    if (
+      encounterMultiplier(groups.reduce((sum, value) => sum + value, 0), 4) !==
+        encounterMultiplier(count, 4)
+    ) {
+      throw new Error("mixing same-CR creatures changed the official multiplier");
+    }
   }
 });
 
