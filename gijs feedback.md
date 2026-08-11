@@ -24,6 +24,12 @@ dependent:paladin wizard, sorcerer, bard, cleric
 not: fighter, barbarian, rogue, ranger,
 apply resources to damage of players,
 
+
+fix floating doors. 
+
+reverse locking behavior maybe.
+
+give different spells slot different powerrlevels
 # biome ideas
 
 ## Ossuary
