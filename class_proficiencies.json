@@ -1,0 +1,240 @@
+{
+  "_notes": {
+    "scoring": {
+      "singleTarget": {
+        "range": "0-5",
+        "meaning": {
+          "0": "No meaningful single-target capability",
+          "1": "Very weak",
+          "2": "Below average",
+          "3": "Average",
+          "4": "Strong",
+          "5": "Excellent"
+        }
+      },
+      "aoe": {
+        "range": "0-5",
+        "meaning": {
+          "0": "No meaningful AoE capability",
+          "1": "Very weak",
+          "2": "Below average",
+          "3": "Average",
+          "4": "Strong",
+          "5": "Excellent"
+        }
+      },
+      "damage": {
+        "range": "0-5",
+        "meaning": {
+          "0": "Negligible damage",
+          "1": "Very low",
+          "2": "Low",
+          "3": "Medium",
+          "4": "High",
+          "5": "Very high"
+        }
+      },
+      "tank": {
+        "range": "0-5",
+        "meaning": {
+          "0": "Cannot effectively tank",
+          "1": "Very fragile",
+          "2": "Below average durability",
+          "3": "Average durability",
+          "4": "Strong tank",
+          "5": "Excellent tank"
+        }
+      },
+      "support": {
+        "range": "0-5",
+        "meaning": {
+          "0": "No meaningful support",
+          "1": "Very limited",
+          "2": "Minor support",
+          "3": "Moderate support",
+          "4": "Strong support",
+          "5": "Excellent support"
+        }
+      },
+      "melee": {
+        "range": "0-5",
+        "meaning": {
+          "0": "Not viable in melee",
+          "1": "Very weak",
+          "2": "Below average",
+          "3": "Viable",
+          "4": "Strong",
+          "5": "Excellent"
+        }
+      },
+      "ranged": {
+        "range": "0-5",
+        "meaning": {
+          "0": "No meaningful ranged capability",
+          "1": "Very weak",
+          "2": "Below average",
+          "3": "Viable",
+          "4": "Strong",
+          "5": "Excellent"
+        }
+      },
+      "resourceDependency": {
+        "range": "0-5",
+        "meaning": {
+          "0": "Almost no limited resources required",
+          "1": "Very low dependency",
+          "2": "Low dependency",
+          "3": "Moderate dependency",
+          "4": "High dependency",
+          "5": "Very high dependency"
+        },
+        "note": "Higher resourceDependency is not necessarily better. It means the class loses more effectiveness as limited resources such as spell slots, class features, or rest-based abilities are consumed."
+      }
+    }
+  },
+
+  "classes": {
+    "barbarian": {
+      "singleTarget": 5,
+      "aoe": 1,
+      "damage": 5,
+      "tank": 5,
+      "support": 1,
+      "melee": 5,
+      "ranged": 1,
+      "resourceDependency": 2
+    },
+
+    "bard": {
+      "singleTarget": 2,
+      "aoe": 3,
+      "damage": 2,
+      "tank": 1,
+      "support": 5,
+      "melee": 2,
+      "ranged": 4,
+      "resourceDependency": 4
+    },
+
+    "cleric": {
+      "singleTarget": 4,
+      "aoe": 4,
+      "damage": 4,
+      "tank": 4,
+      "support": 5,
+      "melee": 4,
+      "ranged": 3,
+      "resourceDependency": 4
+    },
+
+    "artificer": {
+      "singleTarget": 4,
+      "aoe": 3,
+      "damage": 3,
+      "tank": 4,
+      "support": 4,
+      "melee": 3,
+      "ranged": 4,
+      "resourceDependency": 3
+    },
+
+    "druid": {
+      "singleTarget": 3,
+      "aoe": 5,
+      "damage": 3,
+      "tank": 2,
+      "support": 5,
+      "melee": 2,
+      "ranged": 5,
+      "resourceDependency": 4
+    },
+
+    "fighter": {
+      "singleTarget": 5,
+      "aoe": 1,
+      "damage": 4,
+      "tank": 5,
+      "support": 1,
+      "melee": 5,
+      "ranged": 4,
+      "resourceDependency": 1
+    },
+
+    "monk": {
+      "singleTarget": 5,
+      "aoe": 1,
+      "damage": 3,
+      "tank": 2,
+      "support": 1,
+      "melee": 5,
+      "ranged": 1,
+      "resourceDependency": 2
+    },
+
+    "paladin": {
+      "singleTarget": 5,
+      "aoe": 1,
+      "damage": 5,
+      "tank": 5,
+      "support": 4,
+      "melee": 5,
+      "ranged": 1,
+      "resourceDependency": 2
+    },
+
+    "sorcerer": {
+      "singleTarget": 3,
+      "aoe": 5,
+      "damage": 5,
+      "tank": 1,
+      "support": 3,
+      "melee": 1,
+      "ranged": 5,
+      "resourceDependency": 5
+    },
+
+    "wizard": {
+      "singleTarget": 3,
+      "aoe": 5,
+      "damage": 5,
+      "tank": 1,
+      "support": 3,
+      "melee": 1,
+      "ranged": 5,
+      "resourceDependency": 5
+    },
+
+    "warlock": {
+      "singleTarget": 5,
+      "aoe": 3,
+      "damage": 5,
+      "tank": 2,
+      "support": 2,
+      "melee": 3,
+      "ranged": 5,
+      "resourceDependency": 3
+    },
+
+    "rogue": {
+      "singleTarget": 5,
+      "aoe": 1,
+      "damage": 4,
+      "tank": 1,
+      "support": 1,
+      "melee": 4,
+      "ranged": 4,
+      "resourceDependency": 0
+    },
+
+    "ranger": {
+      "singleTarget": 5,
+      "aoe": 2,
+      "damage": 4,
+      "tank": 2,
+      "support": 3,
+      "melee": 4,
+      "ranged": 5,
+      "resourceDependency": 2
+    }
+  }
+}
