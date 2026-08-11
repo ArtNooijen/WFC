@@ -1298,6 +1298,42 @@ h1,
   color: var(--ember);
   border-color: #5d3b29;
 }
+.rating.near-deadly {
+  border-width: 2px;
+  border-color: var(--enemy);
+  background: var(--enemy-soft);
+  color: #f0c0c4;
+  white-space: nowrap;
+}
+.locked-calculation-note {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  gap: 7px;
+  margin: 0 0 9px !important;
+  padding: 7px 8px;
+  border-left: 2px solid #858397;
+  background: rgba(171, 169, 195, .09);
+}
+.locked-calculation-note svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: #c9c7d8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+.locked-calculation-note span,
+.locked-calculation-note b {
+  display: block;
+  font: 7px/1.45 var(--mono);
+}
+.locked-calculation-note b {
+  margin-bottom: 2px;
+  color: #dedce8;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
 .rating.Low {
   color: var(--acid);
 }
@@ -1731,6 +1767,14 @@ body.high-contrast {
   margin: 3px 0 0;
   color: #b9aa90;
   font: 7px/1.5 var(--mono);
+}
+.monster-defenses p {
+  margin: 4px 0 0 !important;
+  color: var(--muted) !important;
+  font: 7px/1.45 var(--mono) !important;
+}
+.monster-defenses p b {
+  color: var(--enemy);
 }
 .encounter-controls {
   display: grid;

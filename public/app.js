@@ -1039,6 +1039,20 @@ function renderMonsterAbilities(scores) {
   }</dl>`;
 }
 
+function renderMonsterDefenses(monster) {
+  const rows = [
+    ["Immune", monster.damageImmunities],
+    ["Resistant", monster.damageResistances],
+    ["Condition immune", monster.conditionImmunities],
+  ].filter(([, values]) => values?.length);
+  if (!rows.length) return "";
+  return `<section class="monster-defenses"><strong>Defenses</strong>${
+    rows.map(([label, values]) =>
+      `<p><b>${escapeHtml(label)}</b> ${escapeHtml(values.join(", "))}</p>`
+    ).join("")
+  }</section>`;
+}
+
 function randomDie(sides) {
   const value = new Uint32Array(1);
   crypto.getRandomValues(value);
@@ -1446,6 +1460,25 @@ function synchronizeForecastTheme(candidate) {
 }
 
 function renderForecast() {
+  const currentProfile = state.party.some((member) => !member.dead)
+    ? analyzeParty(state.party, state.settings)
+    : null;
+  const currentLearning = modelState();
+  if (currentProfile) {
+    const calibration = Math.max(.72, Math.min(1.35, Number(currentLearning.calibration ?? 1)));
+    const learnedAdjustment = Math.max(-.07, Math.min(.07, (1 - calibration) * .2));
+    forecast.profile = {
+      ...(forecast.profile ?? {}),
+      ...currentProfile,
+      calibration,
+      learnedAdjustment,
+      planningReadiness: Math.max(
+        0,
+        Math.min(1, Number(currentProfile.readiness) + learnedAdjustment),
+      ),
+    };
+    forecast.learning = { ...(forecast.learning ?? {}), ...currentLearning };
+  }
   const themeMatchesMap = forecast.themeSignature === dungeon.themeSignature;
   const displayTheme = themeMatchesMap ? forecast.theme : dungeon.theme;
   const displayProgress = themeMatchesMap
@@ -1492,9 +1525,6 @@ function renderForecast() {
     : percent > 55
     ? "Capable, with caution"
     : "Rest would be wise";
-  const currentProfile = state.party.some((member) => !member.dead)
-    ? analyzeParty(state.party, state.settings)
-    : null;
   renderEncounterAugmenters(currentProfile);
   $("#adventure-premise").innerHTML = `<div><span>${
     escapeHtml(
@@ -1528,6 +1558,29 @@ function renderForecast() {
     const displayedRating = combat
       ? combat.difficulty[0].toUpperCase() + combat.difficulty.slice(1)
       : encounter.rating;
+    const nearDeadly = Boolean(
+      combat?.difficulty === "hard" &&
+        Number(combat.adjustedXp) / Math.max(1, Number(combat.thresholds?.deadly)) >= .9,
+    );
+    const displayedRatingLabel = nearDeadly
+      ? "Hard — near Deadly"
+      : combat?.difficultyLabel ?? displayedRating;
+    const effectiveRisk = nearDeadly && combat?.analysis?.risk !== "high"
+      ? "high"
+      : combat?.analysis?.risk;
+    const analysisSignals = combat?.analysis
+      ? [
+        ...(nearDeadly &&
+            !(combat.analysis.signals ?? []).some((signal) => /near deadly/i.test(signal))
+          ? [
+            `Near Deadly: ${combat.adjustedXp.toLocaleString()} adjusted XP is ${
+              Math.round(combat.adjustedXp / combat.thresholds.deadly * 100)
+            }% of the ${combat.thresholds.deadly.toLocaleString()} Deadly threshold`,
+          ]
+          : []),
+        ...(combat.analysis.signals ?? []),
+      ]
+      : [];
     const combatMarkup = combat
       ? `<div class="combat-roster">
           <div class="combat-title"><span>SRD COMBAT · ${
@@ -1555,6 +1608,7 @@ function renderForecast() {
             escapeHtml(group.monster.hitDice ?? "—")
           })</b><b>Speed ${escapeHtml(formatMonsterSpeed(group.monster.speed))}</b></div>
               ${renderMonsterAbilities(group.monster.abilityScores)}
+              ${renderMonsterDefenses(group.monster)}
               <section><strong>Traits</strong>${
             renderMonsterFeatures(
               group.monster.traitDetails,
@@ -1589,13 +1643,15 @@ function renderForecast() {
         escapeHtml(combat.scaling)
       } · target ${combat.conditionTargetXp.toLocaleString()} XP<br>${
         escapeHtml(combat.rule)
-      } · ${displayedRating} threshold ${
-        combat.thresholds[combat.difficulty].toLocaleString()
-      } XP<br>${escapeHtml(combat.safety)}</p></details>
+      } · ${displayedRating} threshold ${combat.thresholds[combat.difficulty].toLocaleString()} XP${
+        combat.difficulty === "hard"
+          ? ` · Deadly threshold ${combat.thresholds.deadly.toLocaleString()} XP`
+          : ""
+      }<br>${escapeHtml(combat.safety)}</p></details>
           ${
         combat.analysis
-          ? `<div class="combat-analysis risk-${combat.analysis.risk}"><b>${combat.analysis.risk.toUpperCase()} TACTICAL RISK</b>${
-            combat.analysis.signals.map((signal) => `<span>${escapeHtml(signal)}</span>`).join("")
+          ? `<div class="combat-analysis risk-${effectiveRisk}"><b>${effectiveRisk.toUpperCase()} TACTICAL RISK</b>${
+            analysisSignals.map((signal) => `<span>${escapeHtml(signal)}</span>`).join("")
           }${
             combat.analysis.details?.length
               ? `<details><summary>Why these abilities matter</summary>${
@@ -1626,8 +1682,21 @@ function renderForecast() {
       isLocked
         ? `<span class="encounter-lock-badge"><svg aria-hidden="true" viewBox="0 0 16 16"><rect x="3" y="7" width="10" height="7" rx="1"></rect><path d="M5 7V5a3 3 0 0 1 6 0v2"></path></svg>Locked</span>`
         : ""
-    }<span class="rating ${displayedRating}">${displayedRating}</span></div></div>
+    }<span class="rating ${displayedRating} ${nearDeadly ? "near-deadly" : ""}">${
+      escapeHtml(displayedRatingLabel)
+    }</span></div></div>
         <h3>${escapeHtml(encounter.title)}</h3>
+        ${
+      isLocked
+        ? `<p class="locked-calculation-note"><svg aria-hidden="true" viewBox="0 0 16 16"><rect x="3" y="7" width="10" height="7" rx="1"></rect><path d="M5 7V5a3 3 0 0 1 6 0v2"></path></svg><span><b>Party snapshot frozen</b>${
+          encounter.lockedFor
+            ? `${encounter.lockedFor.members} members · average level ${
+              Number(encounter.lockedFor.averageLevel).toFixed(1)
+            } · ${Math.round(Number(encounter.lockedFor.planningReadiness) * 100)}% planning`
+            : "Difficulty and roster use the party state from when this encounter was locked."
+        }</span></p>`
+        : ""
+    }
         <button class="encounter-location locate-encounter" data-encounter="${encounter.marker}"><b>ROOM ${encounter.marker}</b> ${
       escapeHtml(encounter.room.name)
     } · ${encounter.room.coordinates}</button>
@@ -2160,7 +2229,17 @@ function bindEncounterControls() {
           delete state.encounterLocks[key];
           logEvent("forecast", `Unlocked ${forecast.encounters[index].title}`);
         } else {
-          state.encounterLocks[key] = clone(forecast.encounters[index]);
+          state.encounterLocks[key] = {
+            ...clone(forecast.encounters[index]),
+            lockedAt: new Date().toISOString(),
+            lockedFor: {
+              members: Number(forecast.profile?.members ?? 0),
+              averageLevel: Number(forecast.profile?.averageLevel ?? 0),
+              planningReadiness: Number(
+                forecast.profile?.planningReadiness ?? forecast.profile?.readiness ?? 0,
+              ),
+            },
+          };
           logEvent("forecast", `Locked ${forecast.encounters[index].title}`);
         }
       } else if (action === "rating") {

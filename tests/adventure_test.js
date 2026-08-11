@@ -19,6 +19,7 @@ import {
   classifyAdjustedXp,
   conditionBudgetBand,
   desiredCreatureCount,
+  encounterDifficultyInfo,
   encounterMultiplier,
   monsterPreferenceWeight,
   normalizeClassLevel,
@@ -563,6 +564,20 @@ Deno.test("2014 encounter thresholds reproduce the official mixed-party example"
   if (encounterMultiplier(4, 4) !== 2) throw new Error("incorrect group multiplier");
   if (classifyAdjustedXp(1000, thresholds) !== "hard") {
     throw new Error("incorrect XP classification");
+  }
+});
+
+Deno.test("hard encounters close to the deadly threshold are identified", () => {
+  const thresholds = partyThresholds(Array.from({ length: 4 }, () => ({ level: 10 })));
+  const nearDeadly = encounterDifficultyInfo(10_800, thresholds);
+  if (
+    nearDeadly.difficulty !== "hard" || !nearDeadly.nearDeadly ||
+    nearDeadly.label !== "Hard — near Deadly"
+  ) {
+    throw new Error("near-deadly hard encounter was not identified");
+  }
+  if (encounterDifficultyInfo(10_000, thresholds).nearDeadly) {
+    throw new Error("near-deadly warning activated below 90% of the deadly threshold");
   }
 });
 

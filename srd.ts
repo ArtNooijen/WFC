@@ -122,6 +122,21 @@ export function classifyAdjustedXp(
   return "easy";
 }
 
+export function encounterDifficultyInfo(
+  adjustedXp: number,
+  thresholds: ReturnType<typeof partyThresholds>,
+) {
+  const difficulty = classifyAdjustedXp(adjustedXp, thresholds);
+  const deadlyProximity = adjustedXp / Math.max(1, thresholds.deadly);
+  const nearDeadly = difficulty === "hard" && deadlyProximity >= .9;
+  return {
+    difficulty,
+    deadlyProximity,
+    nearDeadly,
+    label: nearDeadly ? "Hard — near Deadly" : null,
+  };
+}
+
 function desiredDifficulty(rating: string): Difficulty {
   return rating === "Deadly"
     ? "deadly"
@@ -653,6 +668,11 @@ async function getMonsterForCr(
     initiativeModifier: Math.floor((Number(monster.dexterity) - 10) / 2),
     hitDice: monster.hit_dice,
     speed: monster.speed,
+    damageResistances: monster.damage_resistances ?? [],
+    damageImmunities: monster.damage_immunities ?? [],
+    conditionImmunities: (monster.condition_immunities ?? []).map((entry: any) =>
+      entry.name ?? entry
+    ),
     traits: traitDetails.map((trait: any) => trait.name),
     traitDetails,
     actions: actionDetails.map((action: any) => action.name),
@@ -717,12 +737,12 @@ async function buildMonsterEncounter(
   seed: string,
   condition: PartyCondition,
 ) {
-  const difficulty = desiredDifficulty(encounter.rating);
+  const targetDifficulty = desiredDifficulty(encounter.rating);
   const averageLevel = party.reduce((sum, member) => sum + Number(member.level), 0) /
     party.length;
-  const maximumCr = difficulty === "deadly" ? averageLevel + 2 : averageLevel;
+  const maximumCr = targetDifficulty === "deadly" ? averageLevel + 2 : averageLevel;
   const regularComposition = chooseComposition(
-    difficulty,
+    targetDifficulty,
     thresholds,
     party.length,
     maximumCr,
@@ -730,7 +750,7 @@ async function buildMonsterEncounter(
     condition,
   );
   const composition: any = encounter.boss
-    ? chooseBossComposition(difficulty, thresholds, party.length, maximumCr, condition) ??
+    ? chooseBossComposition(targetDifficulty, thresholds, party.length, maximumCr, condition) ??
       regularComposition
     : regularComposition;
   let monster: any = applyEncounterMonsterTheme(
@@ -790,12 +810,52 @@ async function buildMonsterEncounter(
     : [{ count: composition.count, monster }];
   const baseXp = groups.reduce((sum, group) => sum + group.monster.xp * group.count, 0);
   const adjustedXp = Math.round(baseXp * composition.multiplier);
+  const difficultyInfo = encounterDifficultyInfo(adjustedXp, thresholds);
+  const { difficulty, deadlyProximity, nearDeadly } = difficultyInfo;
   const aoeRating = Number(condition.aoeRating ?? 3);
   const actionRatio = composition.count / Math.max(1, party.length);
   const flying = groups.some((group) => Object.keys(group.monster.speed ?? {}).includes("fly"));
   const savePressure = groups.some((group) => group.monster.forcesPlayerSave);
   const groupTraits = [...new Set(groups.flatMap((group) => group.monster.traits ?? []))];
+  const damageImmunities = [
+    ...new Set(groups.flatMap((group) => group.monster.damageImmunities ?? [])),
+  ];
+  const damageResistances = [
+    ...new Set(groups.flatMap((group) => group.monster.damageResistances ?? [])),
+  ];
+  const controlPressure = groups.some((group) =>
+    group.monster.mechanics?.control || group.monster.mechanics?.conditions?.length
+  );
+  const traitPressure = groupTraits.some((trait) =>
+    /absorption|regeneration|magic resistance|incorporeal|shapechanger/i.test(trait)
+  );
+  const situationalPressure = /cover|chok|poison|obscur|blind|restrain|difficult terrain|hazard/i
+    .test(`${encounter.twist ?? ""} ${encounter.bossMechanic ?? ""}`);
+  let riskScore = 0;
+  if (nearDeadly) riskScore += 2;
+  if (actionRatio >= 1.5 && aoeRating < 3) riskScore += 2;
+  else if (actionRatio > 1) riskScore += 1;
+  if (damageImmunities.length || damageResistances.length >= 2 || traitPressure) riskScore += 1;
+  if (controlPressure || savePressure) riskScore += 1;
+  if (situationalPressure) riskScore += 1;
+  const tacticalRisk = riskScore >= 3 ? "high" : riskScore >= 1 ? "watch" : "controlled";
   const riskDetails = groups.flatMap((group) => [
+    ...(group.monster.damageImmunities?.length
+      ? [{
+        monster: group.monster.name,
+        kind: "Immunity",
+        name: "Damage immunity",
+        description: group.monster.damageImmunities.join(", "),
+      }]
+      : []),
+    ...(group.monster.damageResistances?.length
+      ? [{
+        monster: group.monster.name,
+        kind: "Resistance",
+        name: "Damage resistance",
+        description: group.monster.damageResistances.join(", "),
+      }]
+      : []),
     ...(group.monster.traitDetails ?? []).map((trait: any) => ({
       monster: group.monster.name,
       kind: "Trait",
@@ -819,6 +879,11 @@ async function buildMonsterEncounter(
     ) === index
   ).slice(0, 6);
   const riskSignals = [
+    nearDeadly
+      ? `Near Deadly: ${adjustedXp.toLocaleString()} adjusted XP is ${
+        Math.round(deadlyProximity * 100)
+      }% of the ${thresholds.deadly.toLocaleString()} Deadly threshold`
+      : null,
     actionRatio >= 1.5
       ? aoeRating >= 4
         ? `Horde pressure moderated by party AoE ${aoeRating.toFixed(1)}/5`
@@ -832,11 +897,23 @@ async function buildMonsterEncounter(
     savePressure && armorPressure(condition) > 0
       ? `High armour counterplay: selected actions force player saving throws`
       : null,
+    damageImmunities.length
+      ? `Damage immunities: ${damageImmunities.slice(0, 3).join(", ")}`
+      : null,
+    damageResistances.length
+      ? `Damage resistances: ${damageResistances.slice(0, 3).join(", ")}`
+      : null,
+    situationalPressure
+      ? `The encounter complication may give the enemies a situational advantage`
+      : null,
     groupTraits.length ? `Traits: ${groupTraits.slice(0, 4).join(", ")}` : null,
   ].filter(Boolean);
   return {
-    difficulty: classifyAdjustedXp(adjustedXp, thresholds),
-    target: difficulty,
+    difficulty,
+    difficultyLabel: difficultyInfo.label,
+    nearDeadly,
+    deadlyProximity,
+    target: targetDifficulty,
     count: composition.count,
     monster,
     groups,
@@ -859,7 +936,8 @@ async function buildMonsterEncounter(
     analysis: {
       aoeRating,
       actionRatio,
-      risk: actionRatio >= 1.5 && aoeRating < 3 ? "high" : actionRatio > 1 ? "watch" : "controlled",
+      risk: tacticalRisk,
+      riskScore,
       signals: riskSignals,
       details: riskDetails,
     },
@@ -868,7 +946,7 @@ async function buildMonsterEncounter(
     } × ${composition.multiplier} encounter multiplier`,
     scaling: `${Math.round(composition.band.conditionScore * 100)}% party condition targets the ${
       Math.round(composition.band.percentile * 100)
-    }% point of the ${difficulty} XP band`,
+    }% point of the ${targetDifficulty} XP band`,
     safety: `${
       groups.length > 1 ? `${groups.length} same-CR stat blocks; ` : ""
     }CR ${monster.cr} checked against party average level ${averageLevel.toFixed(1)} (cap ${
