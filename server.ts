@@ -43,6 +43,7 @@ Deno.serve({ port }, async (request) => {
           awareness: body.learning?.awareness,
           themeOrder: body.learning?.themeOrder,
           storyVariant: body.learning?.storyVariant,
+          dungeonSeed: body.learning?.dungeonSeed,
           settings: body.settings,
         },
       );
@@ -59,6 +60,7 @@ Deno.serve({ port }, async (request) => {
           awareness: body.learning?.awareness,
           themeOrder: body.learning?.themeOrder,
           storyVariant: body.learning?.storyVariant,
+          dungeonSeed: body.learning?.dungeonSeed,
           settings: body.settings,
         },
       );
@@ -75,6 +77,7 @@ Deno.serve({ port }, async (request) => {
             awareness: body.learning?.awareness,
             themeOrder: body.learning?.themeOrder,
             storyVariant: body.learning?.storyVariant,
+            dungeonSeed: body.learning?.dungeonSeed,
             settings: body.settings,
           },
         );
@@ -91,6 +94,7 @@ Deno.serve({ port }, async (request) => {
             awareness: body.learning?.awareness,
             themeOrder: body.learning?.themeOrder,
             storyVariant: body.learning?.storyVariant,
+            dungeonSeed: body.learning?.dungeonSeed,
             settings: body.settings,
           },
         );

@@ -6,6 +6,14 @@ export const DEFAULT_SETTINGS = {
   safeRestRules: true,
   themeMode: "arcs",
   dungeonTheme: "random",
+  floorSize: "medium",
+  roomCount: 11,
+  biomeOptions: {
+    "moss-forest": ["random"],
+    "drowned-grotto": ["random"],
+    "ossuary": ["random"],
+    "infernal-foundry": ["random"],
+  },
 };
 
 export function outcomeSample(encounter, beforeParty, report) {

@@ -1,0 +1,9070 @@
+{
+  "generatedAt": "2026-08-11T13:30:55.412Z",
+  "source": "https://www.dnd5eapi.co/api/2014",
+  "entries": [
+    {
+      "index": "aboleth",
+      "name": "Aboleth",
+      "cr": 10,
+      "attackRoll": true,
+      "saves": [
+        "CON",
+        "WIS"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "charmed"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "acolyte",
+      "name": "Acolyte",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "adult-black-dragon",
+      "name": "Adult Black Dragon",
+      "cr": 14,
+      "attackRoll": true,
+      "saves": [
+        "DEX",
+        "WIS"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "frightened",
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "adult-blue-dragon",
+      "name": "Adult Blue Dragon",
+      "cr": 16,
+      "attackRoll": true,
+      "saves": [
+        "DEX",
+        "WIS"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "frightened",
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "adult-brass-dragon",
+      "name": "Adult Brass Dragon",
+      "cr": 13,
+      "attackRoll": true,
+      "saves": [
+        "DEX",
+        "CON",
+        "WIS"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "frightened",
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "adult-bronze-dragon",
+      "name": "Adult Bronze Dragon",
+      "cr": 15,
+      "attackRoll": true,
+      "saves": [
+        "STR",
+        "DEX",
+        "WIS"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "frightened",
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "adult-copper-dragon",
+      "name": "Adult Copper Dragon",
+      "cr": 14,
+      "attackRoll": true,
+      "saves": [
+        "DEX",
+        "CON",
+        "WIS"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "frightened",
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "adult-gold-dragon",
+      "name": "Adult Gold Dragon",
+      "cr": 17,
+      "attackRoll": true,
+      "saves": [
+        "STR",
+        "DEX",
+        "WIS"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "frightened",
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "adult-green-dragon",
+      "name": "Adult Green Dragon",
+      "cr": 15,
+      "attackRoll": true,
+      "saves": [
+        "DEX",
+        "CON",
+        "WIS"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "frightened",
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "adult-red-dragon",
+      "name": "Adult Red Dragon",
+      "cr": 17,
+      "attackRoll": true,
+      "saves": [
+        "DEX",
+        "WIS"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "frightened",
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "adult-silver-dragon",
+      "name": "Adult Silver Dragon",
+      "cr": 16,
+      "attackRoll": true,
+      "saves": [
+        "DEX",
+        "CON",
+        "WIS"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "frightened",
+        "paralyzed",
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "adult-white-dragon",
+      "name": "Adult White Dragon",
+      "cr": 13,
+      "attackRoll": true,
+      "saves": [
+        "DEX",
+        "CON",
+        "WIS"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "frightened",
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "air-elemental",
+      "name": "Air Elemental",
+      "cr": 5,
+      "attackRoll": true,
+      "saves": [
+        "STR",
+        "DEX"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "ancient-black-dragon",
+      "name": "Ancient Black Dragon",
+      "cr": 21,
+      "attackRoll": true,
+      "saves": [
+        "DEX",
+        "WIS"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "frightened",
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "ancient-blue-dragon",
+      "name": "Ancient Blue Dragon",
+      "cr": 23,
+      "attackRoll": true,
+      "saves": [
+        "DEX",
+        "WIS"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "frightened",
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "ancient-brass-dragon",
+      "name": "Ancient Brass Dragon",
+      "cr": 20,
+      "attackRoll": true,
+      "saves": [
+        "DEX",
+        "CON",
+        "WIS"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "frightened",
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "ancient-bronze-dragon",
+      "name": "Ancient Bronze Dragon",
+      "cr": 22,
+      "attackRoll": true,
+      "saves": [
+        "STR",
+        "DEX",
+        "WIS"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "frightened",
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "ancient-copper-dragon",
+      "name": "Ancient Copper Dragon",
+      "cr": 21,
+      "attackRoll": true,
+      "saves": [
+        "DEX",
+        "CON",
+        "WIS"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "frightened",
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "ancient-gold-dragon",
+      "name": "Ancient Gold Dragon",
+      "cr": 24,
+      "attackRoll": true,
+      "saves": [
+        "STR",
+        "DEX",
+        "WIS"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "frightened",
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "ancient-green-dragon",
+      "name": "Ancient Green Dragon",
+      "cr": 22,
+      "attackRoll": true,
+      "saves": [
+        "DEX",
+        "CON",
+        "WIS"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "frightened",
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "ancient-red-dragon",
+      "name": "Ancient Red Dragon",
+      "cr": 24,
+      "attackRoll": true,
+      "saves": [
+        "DEX",
+        "WIS"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "frightened",
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "ancient-silver-dragon",
+      "name": "Ancient Silver Dragon",
+      "cr": 23,
+      "attackRoll": true,
+      "saves": [
+        "DEX",
+        "CON",
+        "WIS"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "frightened",
+        "paralyzed",
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "ancient-white-dragon",
+      "name": "Ancient White Dragon",
+      "cr": 20,
+      "attackRoll": true,
+      "saves": [
+        "DEX",
+        "CON",
+        "WIS"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "frightened",
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "androsphinx",
+      "name": "Androsphinx",
+      "cr": 17,
+      "attackRoll": true,
+      "saves": [
+        "CON",
+        "WIS"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "frightened",
+        "paralyzed",
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "animated-armor",
+      "name": "Animated Armor",
+      "cr": 1,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "ankheg",
+      "name": "Ankheg",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [
+        "DEX"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "grappled"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "ape",
+      "name": "Ape",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "archmage",
+      "name": "Archmage",
+      "cr": 12,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "assassin",
+      "name": "Assassin",
+      "cr": 8,
+      "attackRoll": true,
+      "saves": [
+        "DEX",
+        "CON"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "awakened-shrub",
+      "name": "Awakened Shrub",
+      "cr": 0,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "awakened-tree",
+      "name": "Awakened Tree",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "axe-beak",
+      "name": "Axe Beak",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "azer",
+      "name": "Azer",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "baboon",
+      "name": "Baboon",
+      "cr": 0,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "badger",
+      "name": "Badger",
+      "cr": 0,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "balor",
+      "name": "Balor",
+      "cr": 19,
+      "attackRoll": true,
+      "saves": [
+        "STR",
+        "DEX"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "bandit",
+      "name": "Bandit",
+      "cr": 0.125,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "bandit-captain",
+      "name": "Bandit Captain",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "barbed-devil",
+      "name": "Barbed Devil",
+      "cr": 5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "basilisk",
+      "name": "Basilisk",
+      "cr": 3,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "restrained"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "bat",
+      "name": "Bat",
+      "cr": 0,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "bearded-devil",
+      "name": "Bearded Devil",
+      "cr": 3,
+      "attackRoll": true,
+      "saves": [
+        "CON",
+        "WIS"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "poisoned",
+        "frightened"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "behir",
+      "name": "Behir",
+      "cr": 11,
+      "attackRoll": true,
+      "saves": [
+        "DEX",
+        "CON"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "grappled",
+        "restrained",
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "berserker",
+      "name": "Berserker",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "black-bear",
+      "name": "Black Bear",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "black-dragon-wyrmling",
+      "name": "Black Dragon Wyrmling",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [
+        "DEX"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "black-pudding",
+      "name": "Black Pudding",
+      "cr": 4,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "blink-dog",
+      "name": "Blink Dog",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "blood-hawk",
+      "name": "Blood Hawk",
+      "cr": 0.125,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "blue-dragon-wyrmling",
+      "name": "Blue Dragon Wyrmling",
+      "cr": 3,
+      "attackRoll": true,
+      "saves": [
+        "DEX"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "boar",
+      "name": "Boar",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [
+        "STR"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "bone-devil",
+      "name": "Bone Devil",
+      "cr": 9,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "poisoned"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "brass-dragon-wyrmling",
+      "name": "Brass Dragon Wyrmling",
+      "cr": 1,
+      "attackRoll": true,
+      "saves": [
+        "DEX",
+        "CON"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "bronze-dragon-wyrmling",
+      "name": "Bronze Dragon Wyrmling",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [
+        "STR",
+        "DEX"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "brown-bear",
+      "name": "Brown Bear",
+      "cr": 1,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "bugbear",
+      "name": "Bugbear",
+      "cr": 1,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "bulette",
+      "name": "Bulette",
+      "cr": 5,
+      "attackRoll": true,
+      "saves": [
+        "STR",
+        "DEX"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "camel",
+      "name": "Camel",
+      "cr": 0.125,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "cat",
+      "name": "Cat",
+      "cr": 0,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "centaur",
+      "name": "Centaur",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "chain-devil",
+      "name": "Chain Devil",
+      "cr": 8,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "grappled",
+        "restrained"
+      ],
+      "bypassesAc": false
+    },
+    {
+      "index": "chimera",
+      "name": "Chimera",
+      "cr": 6,
+      "attackRoll": true,
+      "saves": [
+        "DEX"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "chuul",
+      "name": "Chuul",
+      "cr": 4,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "grappled",
+        "poisoned",
+        "paralyzed"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "clay-golem",
+      "name": "Clay Golem",
+      "cr": 9,
+      "attackRoll": true,
+      "saves": [
+        "DEX",
+        "CON"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "cloaker",
+      "name": "Cloaker",
+      "cr": 8,
+      "attackRoll": true,
+      "saves": [
+        "STR",
+        "WIS"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "frightened"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "cloud-giant",
+      "name": "Cloud Giant",
+      "cr": 9,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "cockatrice",
+      "name": "Cockatrice",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "restrained"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "commoner",
+      "name": "Commoner",
+      "cr": 0,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "constrictor-snake",
+      "name": "Constrictor Snake",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "grappled",
+        "restrained"
+      ],
+      "bypassesAc": false
+    },
+    {
+      "index": "copper-dragon-wyrmling",
+      "name": "Copper Dragon Wyrmling",
+      "cr": 1,
+      "attackRoll": true,
+      "saves": [
+        "DEX",
+        "CON"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "couatl",
+      "name": "Couatl",
+      "cr": 4,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "poisoned",
+        "grappled",
+        "restrained"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "crab",
+      "name": "Crab",
+      "cr": 0,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "crocodile",
+      "name": "Crocodile",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "grappled",
+        "restrained"
+      ],
+      "bypassesAc": false
+    },
+    {
+      "index": "cult-fanatic",
+      "name": "Cult Fanatic",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "charmed",
+        "frightened"
+      ],
+      "bypassesAc": false
+    },
+    {
+      "index": "cultist",
+      "name": "Cultist",
+      "cr": 0.125,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "charmed",
+        "frightened"
+      ],
+      "bypassesAc": false
+    },
+    {
+      "index": "darkmantle",
+      "name": "Darkmantle",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [
+        "STR"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "death-dog",
+      "name": "Death Dog",
+      "cr": 1,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "poisoned",
+        "charmed",
+        "frightened",
+        "stunned"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "deep-gnome-svirfneblin",
+      "name": "Deep Gnome (Svirfneblin)",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [
+        "CON",
+        "CHA"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "poisoned"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "deer",
+      "name": "Deer",
+      "cr": 0,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "deva",
+      "name": "Deva",
+      "cr": 10,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "dire-wolf",
+      "name": "Dire Wolf",
+      "cr": 1,
+      "attackRoll": true,
+      "saves": [
+        "STR"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "djinni",
+      "name": "Djinni",
+      "cr": 11,
+      "attackRoll": true,
+      "saves": [
+        "STR"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "restrained"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "doppelganger",
+      "name": "Doppelganger",
+      "cr": 3,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "draft-horse",
+      "name": "Draft Horse",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "dragon-turtle",
+      "name": "Dragon Turtle",
+      "cr": 17,
+      "attackRoll": true,
+      "saves": [
+        "STR",
+        "CON"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "dretch",
+      "name": "Dretch",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "poisoned"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "drider",
+      "name": "Drider",
+      "cr": 6,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "charmed"
+      ],
+      "bypassesAc": false
+    },
+    {
+      "index": "drow",
+      "name": "Drow",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "poisoned",
+        "charmed"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "druid",
+      "name": "Druid",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "dryad",
+      "name": "Dryad",
+      "cr": 1,
+      "attackRoll": true,
+      "saves": [
+        "WIS"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "charmed"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "duergar",
+      "name": "Duergar",
+      "cr": 1,
+      "attackRoll": true,
+      "saves": [
+        "STR"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "charmed",
+        "paralyzed"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "dust-mephit",
+      "name": "Dust Mephit",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [
+        "DEX",
+        "CON"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "eagle",
+      "name": "Eagle",
+      "cr": 0,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "earth-elemental",
+      "name": "Earth Elemental",
+      "cr": 5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "efreeti",
+      "name": "Efreeti",
+      "cr": 11,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "elephant",
+      "name": "Elephant",
+      "cr": 4,
+      "attackRoll": true,
+      "saves": [
+        "STR"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "elk",
+      "name": "Elk",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [
+        "STR"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "erinyes",
+      "name": "Erinyes",
+      "cr": 12,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "poisoned"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "ettercap",
+      "name": "Ettercap",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [
+        "STR",
+        "CON"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "poisoned",
+        "restrained"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "ettin",
+      "name": "Ettin",
+      "cr": 4,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "charmed",
+        "frightened",
+        "stunned"
+      ],
+      "bypassesAc": false
+    },
+    {
+      "index": "fire-elemental",
+      "name": "Fire Elemental",
+      "cr": 5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "fire-giant",
+      "name": "Fire Giant",
+      "cr": 9,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "flesh-golem",
+      "name": "Flesh Golem",
+      "cr": 5,
+      "attackRoll": true,
+      "saves": [
+        "CHA"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "flying-snake",
+      "name": "Flying Snake",
+      "cr": 0.125,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "flying-sword",
+      "name": "Flying Sword",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "frog",
+      "name": "Frog",
+      "cr": 0,
+      "attackRoll": false,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "frost-giant",
+      "name": "Frost Giant",
+      "cr": 8,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "gargoyle",
+      "name": "Gargoyle",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "gelatinous-cube",
+      "name": "Gelatinous Cube",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [
+        "STR",
+        "DEX",
+        "WIS"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "restrained"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "ghast",
+      "name": "Ghast",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "paralyzed",
+        "poisoned"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "ghost",
+      "name": "Ghost",
+      "cr": 4,
+      "attackRoll": true,
+      "saves": [
+        "WIS",
+        "CHA"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "frightened",
+        "charmed"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "ghoul",
+      "name": "Ghoul",
+      "cr": 1,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "paralyzed"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "giant-ape",
+      "name": "Giant Ape",
+      "cr": 7,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "giant-badger",
+      "name": "Giant Badger",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "giant-bat",
+      "name": "Giant Bat",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "giant-boar",
+      "name": "Giant Boar",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [
+        "STR"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "giant-centipede",
+      "name": "Giant Centipede",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "poisoned",
+        "paralyzed"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "giant-constrictor-snake",
+      "name": "Giant Constrictor Snake",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "grappled",
+        "restrained"
+      ],
+      "bypassesAc": false
+    },
+    {
+      "index": "giant-crab",
+      "name": "Giant Crab",
+      "cr": 0.125,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "grappled"
+      ],
+      "bypassesAc": false
+    },
+    {
+      "index": "giant-crocodile",
+      "name": "Giant Crocodile",
+      "cr": 5,
+      "attackRoll": true,
+      "saves": [
+        "STR"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "grappled",
+        "restrained",
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "giant-eagle",
+      "name": "Giant Eagle",
+      "cr": 1,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "giant-elk",
+      "name": "Giant Elk",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [
+        "STR"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "giant-fire-beetle",
+      "name": "Giant Fire Beetle",
+      "cr": 0,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "giant-frog",
+      "name": "Giant Frog",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "grappled",
+        "restrained",
+        "prone"
+      ],
+      "bypassesAc": false
+    },
+    {
+      "index": "giant-goat",
+      "name": "Giant Goat",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [
+        "STR",
+        "DEX"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "giant-hyena",
+      "name": "Giant Hyena",
+      "cr": 1,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "giant-lizard",
+      "name": "Giant Lizard",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "giant-octopus",
+      "name": "Giant Octopus",
+      "cr": 1,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "grappled",
+        "restrained"
+      ],
+      "bypassesAc": false
+    },
+    {
+      "index": "giant-owl",
+      "name": "Giant Owl",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "giant-poisonous-snake",
+      "name": "Giant Poisonous Snake",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "giant-rat",
+      "name": "Giant Rat",
+      "cr": 0.125,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "giant-rat-diseased",
+      "name": "Giant Rat (Diseased)",
+      "cr": 0.125,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "giant-scorpion",
+      "name": "Giant Scorpion",
+      "cr": 3,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "grappled"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "giant-sea-horse",
+      "name": "Giant Sea Horse",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [
+        "STR"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "giant-shark",
+      "name": "Giant Shark",
+      "cr": 5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "giant-spider",
+      "name": "Giant Spider",
+      "cr": 1,
+      "attackRoll": true,
+      "saves": [
+        "STR",
+        "CON"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "poisoned",
+        "paralyzed",
+        "restrained"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "giant-toad",
+      "name": "Giant Toad",
+      "cr": 1,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "grappled",
+        "restrained",
+        "prone"
+      ],
+      "bypassesAc": false
+    },
+    {
+      "index": "giant-vulture",
+      "name": "Giant Vulture",
+      "cr": 1,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "giant-wasp",
+      "name": "Giant Wasp",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "poisoned",
+        "paralyzed"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "giant-weasel",
+      "name": "Giant Weasel",
+      "cr": 0.125,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "giant-wolf-spider",
+      "name": "Giant Wolf Spider",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "poisoned",
+        "paralyzed"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "gibbering-mouther",
+      "name": "Gibbering Mouther",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [
+        "STR",
+        "DEX",
+        "WIS"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "glabrezu",
+      "name": "Glabrezu",
+      "cr": 9,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "grappled"
+      ],
+      "bypassesAc": false
+    },
+    {
+      "index": "gladiator",
+      "name": "Gladiator",
+      "cr": 5,
+      "attackRoll": true,
+      "saves": [
+        "STR"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone",
+        "frightened"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "gnoll",
+      "name": "Gnoll",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "goat",
+      "name": "Goat",
+      "cr": 0,
+      "attackRoll": true,
+      "saves": [
+        "STR",
+        "DEX"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "goblin",
+      "name": "Goblin",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "gold-dragon-wyrmling",
+      "name": "Gold Dragon Wyrmling",
+      "cr": 3,
+      "attackRoll": true,
+      "saves": [
+        "STR",
+        "DEX"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "gorgon",
+      "name": "Gorgon",
+      "cr": 5,
+      "attackRoll": true,
+      "saves": [
+        "STR",
+        "CON"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "restrained",
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "gray-ooze",
+      "name": "Gray Ooze",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "green-dragon-wyrmling",
+      "name": "Green Dragon Wyrmling",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "green-hag",
+      "name": "Green Hag",
+      "cr": 3,
+      "attackRoll": true,
+      "saves": [
+        "INT",
+        "WIS"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "grick",
+      "name": "Grick",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "griffon",
+      "name": "Griffon",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "grimlock",
+      "name": "Grimlock",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "guard",
+      "name": "Guard",
+      "cr": 0.125,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "guardian-naga",
+      "name": "Guardian Naga",
+      "cr": 10,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "gynosphinx",
+      "name": "Gynosphinx",
+      "cr": 11,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "half-red-dragon-veteran",
+      "name": "Half-Red Dragon Veteran",
+      "cr": 5,
+      "attackRoll": true,
+      "saves": [
+        "DEX"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "harpy",
+      "name": "Harpy",
+      "cr": 1,
+      "attackRoll": true,
+      "saves": [
+        "WIS"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "charmed"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "hawk",
+      "name": "Hawk",
+      "cr": 0,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "hell-hound",
+      "name": "Hell Hound",
+      "cr": 3,
+      "attackRoll": true,
+      "saves": [
+        "DEX"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "hezrou",
+      "name": "Hezrou",
+      "cr": 8,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "poisoned"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "hill-giant",
+      "name": "Hill Giant",
+      "cr": 5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "hippogriff",
+      "name": "Hippogriff",
+      "cr": 1,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "hobgoblin",
+      "name": "Hobgoblin",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "homunculus",
+      "name": "Homunculus",
+      "cr": 0,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "poisoned"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "horned-devil",
+      "name": "Horned Devil",
+      "cr": 11,
+      "attackRoll": true,
+      "saves": [
+        "CON",
+        "WIS"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "hunter-shark",
+      "name": "Hunter Shark",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "hydra",
+      "name": "Hydra",
+      "cr": 8,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "charmed",
+        "frightened",
+        "stunned"
+      ],
+      "bypassesAc": false
+    },
+    {
+      "index": "hyena",
+      "name": "Hyena",
+      "cr": 0,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "ice-devil",
+      "name": "Ice Devil",
+      "cr": 14,
+      "attackRoll": true,
+      "saves": [
+        "DEX",
+        "CON"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "ice-mephit",
+      "name": "Ice Mephit",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [
+        "DEX"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "imp",
+      "name": "Imp",
+      "cr": 1,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "invisible-stalker",
+      "name": "Invisible Stalker",
+      "cr": 6,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "iron-golem",
+      "name": "Iron Golem",
+      "cr": 16,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "jackal",
+      "name": "Jackal",
+      "cr": 0,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "killer-whale",
+      "name": "Killer Whale",
+      "cr": 3,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "knight",
+      "name": "Knight",
+      "cr": 3,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "frightened"
+      ],
+      "bypassesAc": false
+    },
+    {
+      "index": "kobold",
+      "name": "Kobold",
+      "cr": 0.125,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "kraken",
+      "name": "Kraken",
+      "cr": 23,
+      "attackRoll": true,
+      "saves": [
+        "DEX",
+        "CON"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "grappled",
+        "restrained",
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "lamia",
+      "name": "Lamia",
+      "cr": 4,
+      "attackRoll": true,
+      "saves": [
+        "WIS"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "lemure",
+      "name": "Lemure",
+      "cr": 0,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "lich",
+      "name": "Lich",
+      "cr": 21,
+      "attackRoll": true,
+      "saves": [
+        "CON",
+        "WIS"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "paralyzed",
+        "frightened"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "lion",
+      "name": "Lion",
+      "cr": 1,
+      "attackRoll": true,
+      "saves": [
+        "STR"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "lizard",
+      "name": "Lizard",
+      "cr": 0,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "lizardfolk",
+      "name": "Lizardfolk",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "mage",
+      "name": "Mage",
+      "cr": 6,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "magma-mephit",
+      "name": "Magma Mephit",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [
+        "DEX"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "magmin",
+      "name": "Magmin",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [
+        "DEX"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "mammoth",
+      "name": "Mammoth",
+      "cr": 6,
+      "attackRoll": true,
+      "saves": [
+        "STR"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "manticore",
+      "name": "Manticore",
+      "cr": 3,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "marilith",
+      "name": "Marilith",
+      "cr": 16,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "grappled",
+        "restrained"
+      ],
+      "bypassesAc": false
+    },
+    {
+      "index": "mastiff",
+      "name": "Mastiff",
+      "cr": 0.125,
+      "attackRoll": true,
+      "saves": [
+        "STR"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "medusa",
+      "name": "Medusa",
+      "cr": 6,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "restrained"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "merfolk",
+      "name": "Merfolk",
+      "cr": 0.125,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "merrow",
+      "name": "Merrow",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "mimic",
+      "name": "Mimic",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "grappled"
+      ],
+      "bypassesAc": false
+    },
+    {
+      "index": "minotaur",
+      "name": "Minotaur",
+      "cr": 3,
+      "attackRoll": true,
+      "saves": [
+        "STR"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "minotaur-skeleton",
+      "name": "Minotaur Skeleton",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [
+        "STR"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "mule",
+      "name": "Mule",
+      "cr": 0.125,
+      "attackRoll": true,
+      "saves": [
+        "DEX"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "mummy",
+      "name": "Mummy",
+      "cr": 3,
+      "attackRoll": true,
+      "saves": [
+        "CON",
+        "WIS"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "frightened",
+        "paralyzed"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "mummy-lord",
+      "name": "Mummy Lord",
+      "cr": 15,
+      "attackRoll": true,
+      "saves": [
+        "CON",
+        "WIS"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "frightened",
+        "paralyzed",
+        "stunned",
+        "grappled",
+        "prone",
+        "restrained"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "nalfeshnee",
+      "name": "Nalfeshnee",
+      "cr": 13,
+      "attackRoll": true,
+      "saves": [
+        "WIS"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "frightened"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "night-hag",
+      "name": "Night Hag",
+      "cr": 5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "nightmare",
+      "name": "Nightmare",
+      "cr": 3,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "noble",
+      "name": "Noble",
+      "cr": 0.125,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "ochre-jelly",
+      "name": "Ochre Jelly",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "octopus",
+      "name": "Octopus",
+      "cr": 0,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "grappled"
+      ],
+      "bypassesAc": false
+    },
+    {
+      "index": "ogre",
+      "name": "Ogre",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "ogre-zombie",
+      "name": "Ogre Zombie",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "oni",
+      "name": "Oni",
+      "cr": 7,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "orc",
+      "name": "Orc",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "otyugh",
+      "name": "Otyugh",
+      "cr": 5,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "poisoned",
+        "grappled",
+        "restrained",
+        "stunned"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "owl",
+      "name": "Owl",
+      "cr": 0,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "owlbear",
+      "name": "Owlbear",
+      "cr": 3,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "panther",
+      "name": "Panther",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [
+        "STR"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "pegasus",
+      "name": "Pegasus",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "phase-spider",
+      "name": "Phase Spider",
+      "cr": 3,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "poisoned",
+        "paralyzed"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "pit-fiend",
+      "name": "Pit Fiend",
+      "cr": 20,
+      "attackRoll": true,
+      "saves": [
+        "CON",
+        "WIS"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "poisoned",
+        "frightened"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "planetar",
+      "name": "Planetar",
+      "cr": 16,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "plesiosaurus",
+      "name": "Plesiosaurus",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "poisonous-snake",
+      "name": "Poisonous Snake",
+      "cr": 0.125,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "polar-bear",
+      "name": "Polar Bear",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "pony",
+      "name": "Pony",
+      "cr": 0.125,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "priest",
+      "name": "Priest",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "pseudodragon",
+      "name": "Pseudodragon",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "poisoned"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "purple-worm",
+      "name": "Purple Worm",
+      "cr": 15,
+      "attackRoll": true,
+      "saves": [
+        "DEX",
+        "CON"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "restrained",
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "quasit",
+      "name": "Quasit",
+      "cr": 1,
+      "attackRoll": true,
+      "saves": [
+        "CON",
+        "WIS"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "poisoned",
+        "frightened"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "quipper",
+      "name": "Quipper",
+      "cr": 0,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "rakshasa",
+      "name": "Rakshasa",
+      "cr": 13,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "rat",
+      "name": "Rat",
+      "cr": 0,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "raven",
+      "name": "Raven",
+      "cr": 0,
+      "attackRoll": true,
+      "saves": [
+        "WIS"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "red-dragon-wyrmling",
+      "name": "Red Dragon Wyrmling",
+      "cr": 4,
+      "attackRoll": true,
+      "saves": [
+        "DEX"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "reef-shark",
+      "name": "Reef Shark",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "remorhaz",
+      "name": "Remorhaz",
+      "cr": 11,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "grappled",
+        "restrained",
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "rhinoceros",
+      "name": "Rhinoceros",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [
+        "STR"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "riding-horse",
+      "name": "Riding Horse",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "roc",
+      "name": "Roc",
+      "cr": 11,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "grappled",
+        "restrained"
+      ],
+      "bypassesAc": false
+    },
+    {
+      "index": "roper",
+      "name": "Roper",
+      "cr": 5,
+      "attackRoll": true,
+      "saves": [
+        "STR"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "grappled",
+        "restrained"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "rug-of-smothering",
+      "name": "Rug of Smothering",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "grappled",
+        "restrained"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "rust-monster",
+      "name": "Rust Monster",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [
+        "DEX"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "saber-toothed-tiger",
+      "name": "Saber-Toothed Tiger",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [
+        "STR"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "sahuagin",
+      "name": "Sahuagin",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "salamander",
+      "name": "Salamander",
+      "cr": 5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "grappled",
+        "restrained"
+      ],
+      "bypassesAc": false
+    },
+    {
+      "index": "satyr",
+      "name": "Satyr",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "scorpion",
+      "name": "Scorpion",
+      "cr": 0,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "scout",
+      "name": "Scout",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "sea-hag",
+      "name": "Sea Hag",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [
+        "INT",
+        "WIS"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "frightened"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "sea-horse",
+      "name": "Sea Horse",
+      "cr": 0,
+      "attackRoll": false,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "shadow",
+      "name": "Shadow",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "shambling-mound",
+      "name": "Shambling Mound",
+      "cr": 5,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "grappled",
+        "restrained"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "shield-guardian",
+      "name": "Shield Guardian",
+      "cr": 7,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "shrieker",
+      "name": "Shrieker",
+      "cr": 0,
+      "attackRoll": false,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "silver-dragon-wyrmling",
+      "name": "Silver Dragon Wyrmling",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "paralyzed"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "skeleton",
+      "name": "Skeleton",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "solar",
+      "name": "Solar",
+      "cr": 21,
+      "attackRoll": true,
+      "saves": [
+        "DEX",
+        "CON"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "specter",
+      "name": "Specter",
+      "cr": 1,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "spider",
+      "name": "Spider",
+      "cr": 0,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "spirit-naga",
+      "name": "Spirit Naga",
+      "cr": 8,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "sprite",
+      "name": "Sprite",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [
+        "CON",
+        "CHA"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "poisoned"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "spy",
+      "name": "Spy",
+      "cr": 1,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "steam-mephit",
+      "name": "Steam Mephit",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [
+        "DEX"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "stirge",
+      "name": "Stirge",
+      "cr": 0.125,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "stone-giant",
+      "name": "Stone Giant",
+      "cr": 7,
+      "attackRoll": true,
+      "saves": [
+        "STR"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "stone-golem",
+      "name": "Stone Golem",
+      "cr": 10,
+      "attackRoll": true,
+      "saves": [
+        "WIS"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "storm-giant",
+      "name": "Storm Giant",
+      "cr": 13,
+      "attackRoll": true,
+      "saves": [
+        "DEX"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "succubus-incubus",
+      "name": "Succubus/Incubus",
+      "cr": 4,
+      "attackRoll": true,
+      "saves": [
+        "CON",
+        "WIS"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "charmed"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "swarm-of-bats",
+      "name": "Swarm of Bats",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "swarm-of-beetles",
+      "name": "Swarm of Beetles",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "swarm-of-centipedes",
+      "name": "Swarm of Centipedes",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "poisoned",
+        "paralyzed"
+      ],
+      "bypassesAc": false
+    },
+    {
+      "index": "swarm-of-insects",
+      "name": "Swarm of Insects",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "swarm-of-poisonous-snakes",
+      "name": "Swarm of Poisonous Snakes",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "swarm-of-quippers",
+      "name": "Swarm of Quippers",
+      "cr": 1,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "swarm-of-rats",
+      "name": "Swarm of Rats",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "swarm-of-ravens",
+      "name": "Swarm of Ravens",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "swarm-of-spiders",
+      "name": "Swarm of Spiders",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "swarm-of-wasps",
+      "name": "Swarm of Wasps",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "tarrasque",
+      "name": "Tarrasque",
+      "cr": 30,
+      "attackRoll": true,
+      "saves": [
+        "STR",
+        "CON",
+        "WIS"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "grappled",
+        "restrained",
+        "prone",
+        "frightened"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "thug",
+      "name": "Thug",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "tiger",
+      "name": "Tiger",
+      "cr": 1,
+      "attackRoll": true,
+      "saves": [
+        "STR"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "treant",
+      "name": "Treant",
+      "cr": 9,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "tribal-warrior",
+      "name": "Tribal Warrior",
+      "cr": 0.125,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "triceratops",
+      "name": "Triceratops",
+      "cr": 5,
+      "attackRoll": true,
+      "saves": [
+        "STR"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "troll",
+      "name": "Troll",
+      "cr": 5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "tyrannosaurus-rex",
+      "name": "Tyrannosaurus Rex",
+      "cr": 8,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "grappled",
+        "restrained"
+      ],
+      "bypassesAc": false
+    },
+    {
+      "index": "unicorn",
+      "name": "Unicorn",
+      "cr": 5,
+      "attackRoll": true,
+      "saves": [
+        "STR"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "vampire-bat",
+      "name": "Vampire, Bat Form",
+      "cr": 13,
+      "attackRoll": true,
+      "saves": [
+        "CON",
+        "WIS"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "grappled",
+        "restrained",
+        "charmed",
+        "paralyzed"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "vampire-mist",
+      "name": "Vampire, Mist Form",
+      "cr": 13,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "paralyzed"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "vampire-spawn",
+      "name": "Vampire Spawn",
+      "cr": 5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "grappled",
+        "restrained"
+      ],
+      "bypassesAc": false
+    },
+    {
+      "index": "vampire-vampire",
+      "name": "Vampire, Vampire Form",
+      "cr": 13,
+      "attackRoll": true,
+      "saves": [
+        "CON",
+        "WIS"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "grappled",
+        "restrained",
+        "charmed",
+        "paralyzed"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "veteran",
+      "name": "Veteran",
+      "cr": 3,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "violet-fungus",
+      "name": "Violet Fungus",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "vrock",
+      "name": "Vrock",
+      "cr": 6,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "poisoned",
+        "stunned"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "vulture",
+      "name": "Vulture",
+      "cr": 0,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "warhorse",
+      "name": "Warhorse",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [
+        "STR"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "warhorse-skeleton",
+      "name": "Warhorse Skeleton",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "water-elemental",
+      "name": "Water Elemental",
+      "cr": 5,
+      "attackRoll": true,
+      "saves": [
+        "STR"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "grappled",
+        "restrained"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "weasel",
+      "name": "Weasel",
+      "cr": 0,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "werebear-bear",
+      "name": "Werebear, Bear Form",
+      "cr": 5,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "werebear-human",
+      "name": "Werebear, Human Form",
+      "cr": 5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "werebear-hybrid",
+      "name": "Werebear, Hybrid Form",
+      "cr": 5,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "wereboar-boar",
+      "name": "Wereboar, Boar Form",
+      "cr": 4,
+      "attackRoll": true,
+      "saves": [
+        "STR",
+        "CON"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "wereboar-human",
+      "name": "Wereboar, Human Form",
+      "cr": 4,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "wereboar-hybrid",
+      "name": "Wereboar, Hybrid Form",
+      "cr": 4,
+      "attackRoll": true,
+      "saves": [
+        "STR",
+        "CON"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "wererat-human",
+      "name": "Wererat, Human Form",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "wererat-hybrid",
+      "name": "Wererat, Hybrid Form",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "wererat-rat",
+      "name": "Wererat, Rat Form",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "weretiger-human",
+      "name": "Weretiger, Human Form",
+      "cr": 4,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "weretiger-hybrid",
+      "name": "Weretiger, Hybrid Form",
+      "cr": 4,
+      "attackRoll": true,
+      "saves": [
+        "STR",
+        "CON"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "weretiger-tiger",
+      "name": "Weretiger, Tiger Form",
+      "cr": 4,
+      "attackRoll": true,
+      "saves": [
+        "STR",
+        "CON"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "werewolf-human",
+      "name": "Werewolf, Human Form",
+      "cr": 3,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "werewolf-hybrid",
+      "name": "Werewolf, Hybrid Form",
+      "cr": 3,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "werewolf-wolf",
+      "name": "Werewolf, Wolf Form",
+      "cr": 3,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "white-dragon-wyrmling",
+      "name": "White Dragon Wyrmling",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "wight",
+      "name": "Wight",
+      "cr": 3,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "will-o-wisp",
+      "name": "Will-o'-Wisp",
+      "cr": 2,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "winter-wolf",
+      "name": "Winter Wolf",
+      "cr": 3,
+      "attackRoll": true,
+      "saves": [
+        "STR",
+        "DEX"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "wolf",
+      "name": "Wolf",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [
+        "STR"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "worg",
+      "name": "Worg",
+      "cr": 0.5,
+      "attackRoll": true,
+      "saves": [
+        "STR"
+      ],
+      "aoe": false,
+      "control": true,
+      "conditions": [
+        "prone"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "wraith",
+      "name": "Wraith",
+      "cr": 5,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "wyvern",
+      "name": "Wyvern",
+      "cr": 6,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "xorn",
+      "name": "Xorn",
+      "cr": 5,
+      "attackRoll": true,
+      "saves": [],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": false
+    },
+    {
+      "index": "young-black-dragon",
+      "name": "Young Black Dragon",
+      "cr": 7,
+      "attackRoll": true,
+      "saves": [
+        "DEX"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "young-blue-dragon",
+      "name": "Young Blue Dragon",
+      "cr": 9,
+      "attackRoll": true,
+      "saves": [
+        "DEX"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "young-brass-dragon",
+      "name": "Young Brass Dragon",
+      "cr": 6,
+      "attackRoll": true,
+      "saves": [
+        "DEX",
+        "CON"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "young-bronze-dragon",
+      "name": "Young Bronze Dragon",
+      "cr": 8,
+      "attackRoll": true,
+      "saves": [
+        "STR",
+        "DEX"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "young-copper-dragon",
+      "name": "Young Copper Dragon",
+      "cr": 7,
+      "attackRoll": true,
+      "saves": [
+        "DEX",
+        "CON"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "young-gold-dragon",
+      "name": "Young Gold Dragon",
+      "cr": 10,
+      "attackRoll": true,
+      "saves": [
+        "STR",
+        "DEX"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "young-green-dragon",
+      "name": "Young Green Dragon",
+      "cr": 8,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "young-red-dragon",
+      "name": "Young Red Dragon",
+      "cr": 10,
+      "attackRoll": true,
+      "saves": [
+        "DEX"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "young-silver-dragon",
+      "name": "Young Silver Dragon",
+      "cr": 9,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": true,
+      "control": true,
+      "conditions": [
+        "paralyzed"
+      ],
+      "bypassesAc": true
+    },
+    {
+      "index": "young-white-dragon",
+      "name": "Young White Dragon",
+      "cr": 6,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": true,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    },
+    {
+      "index": "zombie",
+      "name": "Zombie",
+      "cr": 0.25,
+      "attackRoll": true,
+      "saves": [
+        "CON"
+      ],
+      "aoe": false,
+      "control": false,
+      "conditions": [],
+      "bypassesAc": true
+    }
+  ],
+  "byCr": {
+    "0": [
+      {
+        "index": "awakened-shrub",
+        "name": "Awakened Shrub",
+        "cr": 0,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "baboon",
+        "name": "Baboon",
+        "cr": 0,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "badger",
+        "name": "Badger",
+        "cr": 0,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "bat",
+        "name": "Bat",
+        "cr": 0,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "cat",
+        "name": "Cat",
+        "cr": 0,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "commoner",
+        "name": "Commoner",
+        "cr": 0,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "crab",
+        "name": "Crab",
+        "cr": 0,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "deer",
+        "name": "Deer",
+        "cr": 0,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "eagle",
+        "name": "Eagle",
+        "cr": 0,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "frog",
+        "name": "Frog",
+        "cr": 0,
+        "attackRoll": false,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "giant-fire-beetle",
+        "name": "Giant Fire Beetle",
+        "cr": 0,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "goat",
+        "name": "Goat",
+        "cr": 0,
+        "attackRoll": true,
+        "saves": [
+          "STR",
+          "DEX"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "hawk",
+        "name": "Hawk",
+        "cr": 0,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "homunculus",
+        "name": "Homunculus",
+        "cr": 0,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "poisoned"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "hyena",
+        "name": "Hyena",
+        "cr": 0,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "jackal",
+        "name": "Jackal",
+        "cr": 0,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "lemure",
+        "name": "Lemure",
+        "cr": 0,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "lizard",
+        "name": "Lizard",
+        "cr": 0,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "octopus",
+        "name": "Octopus",
+        "cr": 0,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "grappled"
+        ],
+        "bypassesAc": false
+      },
+      {
+        "index": "owl",
+        "name": "Owl",
+        "cr": 0,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "quipper",
+        "name": "Quipper",
+        "cr": 0,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "rat",
+        "name": "Rat",
+        "cr": 0,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "raven",
+        "name": "Raven",
+        "cr": 0,
+        "attackRoll": true,
+        "saves": [
+          "WIS"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "scorpion",
+        "name": "Scorpion",
+        "cr": 0,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "sea-horse",
+        "name": "Sea Horse",
+        "cr": 0,
+        "attackRoll": false,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "shrieker",
+        "name": "Shrieker",
+        "cr": 0,
+        "attackRoll": false,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "spider",
+        "name": "Spider",
+        "cr": 0,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "vulture",
+        "name": "Vulture",
+        "cr": 0,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "weasel",
+        "name": "Weasel",
+        "cr": 0,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      }
+    ],
+    "1": [
+      {
+        "index": "animated-armor",
+        "name": "Animated Armor",
+        "cr": 1,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "brass-dragon-wyrmling",
+        "name": "Brass Dragon Wyrmling",
+        "cr": 1,
+        "attackRoll": true,
+        "saves": [
+          "DEX",
+          "CON"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "brown-bear",
+        "name": "Brown Bear",
+        "cr": 1,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "bugbear",
+        "name": "Bugbear",
+        "cr": 1,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "copper-dragon-wyrmling",
+        "name": "Copper Dragon Wyrmling",
+        "cr": 1,
+        "attackRoll": true,
+        "saves": [
+          "DEX",
+          "CON"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "death-dog",
+        "name": "Death Dog",
+        "cr": 1,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "poisoned",
+          "charmed",
+          "frightened",
+          "stunned"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "dire-wolf",
+        "name": "Dire Wolf",
+        "cr": 1,
+        "attackRoll": true,
+        "saves": [
+          "STR"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "dryad",
+        "name": "Dryad",
+        "cr": 1,
+        "attackRoll": true,
+        "saves": [
+          "WIS"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "charmed"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "duergar",
+        "name": "Duergar",
+        "cr": 1,
+        "attackRoll": true,
+        "saves": [
+          "STR"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "charmed",
+          "paralyzed"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "ghoul",
+        "name": "Ghoul",
+        "cr": 1,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "paralyzed"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "giant-eagle",
+        "name": "Giant Eagle",
+        "cr": 1,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "giant-hyena",
+        "name": "Giant Hyena",
+        "cr": 1,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "giant-octopus",
+        "name": "Giant Octopus",
+        "cr": 1,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "grappled",
+          "restrained"
+        ],
+        "bypassesAc": false
+      },
+      {
+        "index": "giant-spider",
+        "name": "Giant Spider",
+        "cr": 1,
+        "attackRoll": true,
+        "saves": [
+          "STR",
+          "CON"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "poisoned",
+          "paralyzed",
+          "restrained"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "giant-toad",
+        "name": "Giant Toad",
+        "cr": 1,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "grappled",
+          "restrained",
+          "prone"
+        ],
+        "bypassesAc": false
+      },
+      {
+        "index": "giant-vulture",
+        "name": "Giant Vulture",
+        "cr": 1,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "harpy",
+        "name": "Harpy",
+        "cr": 1,
+        "attackRoll": true,
+        "saves": [
+          "WIS"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "charmed"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "hippogriff",
+        "name": "Hippogriff",
+        "cr": 1,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "imp",
+        "name": "Imp",
+        "cr": 1,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "lion",
+        "name": "Lion",
+        "cr": 1,
+        "attackRoll": true,
+        "saves": [
+          "STR"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "quasit",
+        "name": "Quasit",
+        "cr": 1,
+        "attackRoll": true,
+        "saves": [
+          "CON",
+          "WIS"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "poisoned",
+          "frightened"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "specter",
+        "name": "Specter",
+        "cr": 1,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "spy",
+        "name": "Spy",
+        "cr": 1,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "swarm-of-quippers",
+        "name": "Swarm of Quippers",
+        "cr": 1,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "tiger",
+        "name": "Tiger",
+        "cr": 1,
+        "attackRoll": true,
+        "saves": [
+          "STR"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      }
+    ],
+    "2": [
+      {
+        "index": "ankheg",
+        "name": "Ankheg",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [
+          "DEX"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "grappled"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "awakened-tree",
+        "name": "Awakened Tree",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "azer",
+        "name": "Azer",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "bandit-captain",
+        "name": "Bandit Captain",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "berserker",
+        "name": "Berserker",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "black-dragon-wyrmling",
+        "name": "Black Dragon Wyrmling",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [
+          "DEX"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "bronze-dragon-wyrmling",
+        "name": "Bronze Dragon Wyrmling",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [
+          "STR",
+          "DEX"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "centaur",
+        "name": "Centaur",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "cult-fanatic",
+        "name": "Cult Fanatic",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "charmed",
+          "frightened"
+        ],
+        "bypassesAc": false
+      },
+      {
+        "index": "druid",
+        "name": "Druid",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "ettercap",
+        "name": "Ettercap",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [
+          "STR",
+          "CON"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "poisoned",
+          "restrained"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "gargoyle",
+        "name": "Gargoyle",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "gelatinous-cube",
+        "name": "Gelatinous Cube",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [
+          "STR",
+          "DEX",
+          "WIS"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "restrained"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "ghast",
+        "name": "Ghast",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "paralyzed",
+          "poisoned"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "giant-boar",
+        "name": "Giant Boar",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [
+          "STR"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "giant-constrictor-snake",
+        "name": "Giant Constrictor Snake",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "grappled",
+          "restrained"
+        ],
+        "bypassesAc": false
+      },
+      {
+        "index": "giant-elk",
+        "name": "Giant Elk",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [
+          "STR"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "gibbering-mouther",
+        "name": "Gibbering Mouther",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [
+          "STR",
+          "DEX",
+          "WIS"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "green-dragon-wyrmling",
+        "name": "Green Dragon Wyrmling",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "grick",
+        "name": "Grick",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "griffon",
+        "name": "Griffon",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "hunter-shark",
+        "name": "Hunter Shark",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "merrow",
+        "name": "Merrow",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "mimic",
+        "name": "Mimic",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "grappled"
+        ],
+        "bypassesAc": false
+      },
+      {
+        "index": "minotaur-skeleton",
+        "name": "Minotaur Skeleton",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [
+          "STR"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "ochre-jelly",
+        "name": "Ochre Jelly",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "ogre",
+        "name": "Ogre",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "ogre-zombie",
+        "name": "Ogre Zombie",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "pegasus",
+        "name": "Pegasus",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "plesiosaurus",
+        "name": "Plesiosaurus",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "polar-bear",
+        "name": "Polar Bear",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "priest",
+        "name": "Priest",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "rhinoceros",
+        "name": "Rhinoceros",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [
+          "STR"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "rug-of-smothering",
+        "name": "Rug of Smothering",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "grappled",
+          "restrained"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "saber-toothed-tiger",
+        "name": "Saber-Toothed Tiger",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [
+          "STR"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "sea-hag",
+        "name": "Sea Hag",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [
+          "INT",
+          "WIS"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "frightened"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "silver-dragon-wyrmling",
+        "name": "Silver Dragon Wyrmling",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "paralyzed"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "swarm-of-poisonous-snakes",
+        "name": "Swarm of Poisonous Snakes",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "wererat-human",
+        "name": "Wererat, Human Form",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "wererat-hybrid",
+        "name": "Wererat, Hybrid Form",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "wererat-rat",
+        "name": "Wererat, Rat Form",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "white-dragon-wyrmling",
+        "name": "White Dragon Wyrmling",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "will-o-wisp",
+        "name": "Will-o'-Wisp",
+        "cr": 2,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      }
+    ],
+    "3": [
+      {
+        "index": "basilisk",
+        "name": "Basilisk",
+        "cr": 3,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "restrained"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "bearded-devil",
+        "name": "Bearded Devil",
+        "cr": 3,
+        "attackRoll": true,
+        "saves": [
+          "CON",
+          "WIS"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "poisoned",
+          "frightened"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "blue-dragon-wyrmling",
+        "name": "Blue Dragon Wyrmling",
+        "cr": 3,
+        "attackRoll": true,
+        "saves": [
+          "DEX"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "doppelganger",
+        "name": "Doppelganger",
+        "cr": 3,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "giant-scorpion",
+        "name": "Giant Scorpion",
+        "cr": 3,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "grappled"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "gold-dragon-wyrmling",
+        "name": "Gold Dragon Wyrmling",
+        "cr": 3,
+        "attackRoll": true,
+        "saves": [
+          "STR",
+          "DEX"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "green-hag",
+        "name": "Green Hag",
+        "cr": 3,
+        "attackRoll": true,
+        "saves": [
+          "INT",
+          "WIS"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "hell-hound",
+        "name": "Hell Hound",
+        "cr": 3,
+        "attackRoll": true,
+        "saves": [
+          "DEX"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "killer-whale",
+        "name": "Killer Whale",
+        "cr": 3,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "knight",
+        "name": "Knight",
+        "cr": 3,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "frightened"
+        ],
+        "bypassesAc": false
+      },
+      {
+        "index": "manticore",
+        "name": "Manticore",
+        "cr": 3,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "minotaur",
+        "name": "Minotaur",
+        "cr": 3,
+        "attackRoll": true,
+        "saves": [
+          "STR"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "mummy",
+        "name": "Mummy",
+        "cr": 3,
+        "attackRoll": true,
+        "saves": [
+          "CON",
+          "WIS"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "frightened",
+          "paralyzed"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "nightmare",
+        "name": "Nightmare",
+        "cr": 3,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "owlbear",
+        "name": "Owlbear",
+        "cr": 3,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "phase-spider",
+        "name": "Phase Spider",
+        "cr": 3,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "poisoned",
+          "paralyzed"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "veteran",
+        "name": "Veteran",
+        "cr": 3,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "werewolf-human",
+        "name": "Werewolf, Human Form",
+        "cr": 3,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "werewolf-hybrid",
+        "name": "Werewolf, Hybrid Form",
+        "cr": 3,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "werewolf-wolf",
+        "name": "Werewolf, Wolf Form",
+        "cr": 3,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "wight",
+        "name": "Wight",
+        "cr": 3,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "winter-wolf",
+        "name": "Winter Wolf",
+        "cr": 3,
+        "attackRoll": true,
+        "saves": [
+          "STR",
+          "DEX"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      }
+    ],
+    "4": [
+      {
+        "index": "black-pudding",
+        "name": "Black Pudding",
+        "cr": 4,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "chuul",
+        "name": "Chuul",
+        "cr": 4,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "grappled",
+          "poisoned",
+          "paralyzed"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "couatl",
+        "name": "Couatl",
+        "cr": 4,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "poisoned",
+          "grappled",
+          "restrained"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "elephant",
+        "name": "Elephant",
+        "cr": 4,
+        "attackRoll": true,
+        "saves": [
+          "STR"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "ettin",
+        "name": "Ettin",
+        "cr": 4,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "charmed",
+          "frightened",
+          "stunned"
+        ],
+        "bypassesAc": false
+      },
+      {
+        "index": "ghost",
+        "name": "Ghost",
+        "cr": 4,
+        "attackRoll": true,
+        "saves": [
+          "WIS",
+          "CHA"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "frightened",
+          "charmed"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "lamia",
+        "name": "Lamia",
+        "cr": 4,
+        "attackRoll": true,
+        "saves": [
+          "WIS"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "red-dragon-wyrmling",
+        "name": "Red Dragon Wyrmling",
+        "cr": 4,
+        "attackRoll": true,
+        "saves": [
+          "DEX"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "succubus-incubus",
+        "name": "Succubus/Incubus",
+        "cr": 4,
+        "attackRoll": true,
+        "saves": [
+          "CON",
+          "WIS"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "charmed"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "wereboar-boar",
+        "name": "Wereboar, Boar Form",
+        "cr": 4,
+        "attackRoll": true,
+        "saves": [
+          "STR",
+          "CON"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "wereboar-human",
+        "name": "Wereboar, Human Form",
+        "cr": 4,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "wereboar-hybrid",
+        "name": "Wereboar, Hybrid Form",
+        "cr": 4,
+        "attackRoll": true,
+        "saves": [
+          "STR",
+          "CON"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "weretiger-human",
+        "name": "Weretiger, Human Form",
+        "cr": 4,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "weretiger-hybrid",
+        "name": "Weretiger, Hybrid Form",
+        "cr": 4,
+        "attackRoll": true,
+        "saves": [
+          "STR",
+          "CON"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "weretiger-tiger",
+        "name": "Weretiger, Tiger Form",
+        "cr": 4,
+        "attackRoll": true,
+        "saves": [
+          "STR",
+          "CON"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      }
+    ],
+    "5": [
+      {
+        "index": "air-elemental",
+        "name": "Air Elemental",
+        "cr": 5,
+        "attackRoll": true,
+        "saves": [
+          "STR",
+          "DEX"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "barbed-devil",
+        "name": "Barbed Devil",
+        "cr": 5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "bulette",
+        "name": "Bulette",
+        "cr": 5,
+        "attackRoll": true,
+        "saves": [
+          "STR",
+          "DEX"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "earth-elemental",
+        "name": "Earth Elemental",
+        "cr": 5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "fire-elemental",
+        "name": "Fire Elemental",
+        "cr": 5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "flesh-golem",
+        "name": "Flesh Golem",
+        "cr": 5,
+        "attackRoll": true,
+        "saves": [
+          "CHA"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "giant-crocodile",
+        "name": "Giant Crocodile",
+        "cr": 5,
+        "attackRoll": true,
+        "saves": [
+          "STR"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "grappled",
+          "restrained",
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "giant-shark",
+        "name": "Giant Shark",
+        "cr": 5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "gladiator",
+        "name": "Gladiator",
+        "cr": 5,
+        "attackRoll": true,
+        "saves": [
+          "STR"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone",
+          "frightened"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "gorgon",
+        "name": "Gorgon",
+        "cr": 5,
+        "attackRoll": true,
+        "saves": [
+          "STR",
+          "CON"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "restrained",
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "half-red-dragon-veteran",
+        "name": "Half-Red Dragon Veteran",
+        "cr": 5,
+        "attackRoll": true,
+        "saves": [
+          "DEX"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "hill-giant",
+        "name": "Hill Giant",
+        "cr": 5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "night-hag",
+        "name": "Night Hag",
+        "cr": 5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "otyugh",
+        "name": "Otyugh",
+        "cr": 5,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "poisoned",
+          "grappled",
+          "restrained",
+          "stunned"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "roper",
+        "name": "Roper",
+        "cr": 5,
+        "attackRoll": true,
+        "saves": [
+          "STR"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "grappled",
+          "restrained"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "salamander",
+        "name": "Salamander",
+        "cr": 5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "grappled",
+          "restrained"
+        ],
+        "bypassesAc": false
+      },
+      {
+        "index": "shambling-mound",
+        "name": "Shambling Mound",
+        "cr": 5,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "grappled",
+          "restrained"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "triceratops",
+        "name": "Triceratops",
+        "cr": 5,
+        "attackRoll": true,
+        "saves": [
+          "STR"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "troll",
+        "name": "Troll",
+        "cr": 5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "unicorn",
+        "name": "Unicorn",
+        "cr": 5,
+        "attackRoll": true,
+        "saves": [
+          "STR"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "vampire-spawn",
+        "name": "Vampire Spawn",
+        "cr": 5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "grappled",
+          "restrained"
+        ],
+        "bypassesAc": false
+      },
+      {
+        "index": "water-elemental",
+        "name": "Water Elemental",
+        "cr": 5,
+        "attackRoll": true,
+        "saves": [
+          "STR"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "grappled",
+          "restrained"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "werebear-bear",
+        "name": "Werebear, Bear Form",
+        "cr": 5,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "werebear-human",
+        "name": "Werebear, Human Form",
+        "cr": 5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "werebear-hybrid",
+        "name": "Werebear, Hybrid Form",
+        "cr": 5,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "wraith",
+        "name": "Wraith",
+        "cr": 5,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "xorn",
+        "name": "Xorn",
+        "cr": 5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      }
+    ],
+    "6": [
+      {
+        "index": "chimera",
+        "name": "Chimera",
+        "cr": 6,
+        "attackRoll": true,
+        "saves": [
+          "DEX"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "drider",
+        "name": "Drider",
+        "cr": 6,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "charmed"
+        ],
+        "bypassesAc": false
+      },
+      {
+        "index": "invisible-stalker",
+        "name": "Invisible Stalker",
+        "cr": 6,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "mage",
+        "name": "Mage",
+        "cr": 6,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "mammoth",
+        "name": "Mammoth",
+        "cr": 6,
+        "attackRoll": true,
+        "saves": [
+          "STR"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "medusa",
+        "name": "Medusa",
+        "cr": 6,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "restrained"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "vrock",
+        "name": "Vrock",
+        "cr": 6,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "poisoned",
+          "stunned"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "wyvern",
+        "name": "Wyvern",
+        "cr": 6,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "young-brass-dragon",
+        "name": "Young Brass Dragon",
+        "cr": 6,
+        "attackRoll": true,
+        "saves": [
+          "DEX",
+          "CON"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "young-white-dragon",
+        "name": "Young White Dragon",
+        "cr": 6,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      }
+    ],
+    "7": [
+      {
+        "index": "giant-ape",
+        "name": "Giant Ape",
+        "cr": 7,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "oni",
+        "name": "Oni",
+        "cr": 7,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "shield-guardian",
+        "name": "Shield Guardian",
+        "cr": 7,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "stone-giant",
+        "name": "Stone Giant",
+        "cr": 7,
+        "attackRoll": true,
+        "saves": [
+          "STR"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "young-black-dragon",
+        "name": "Young Black Dragon",
+        "cr": 7,
+        "attackRoll": true,
+        "saves": [
+          "DEX"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "young-copper-dragon",
+        "name": "Young Copper Dragon",
+        "cr": 7,
+        "attackRoll": true,
+        "saves": [
+          "DEX",
+          "CON"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      }
+    ],
+    "8": [
+      {
+        "index": "assassin",
+        "name": "Assassin",
+        "cr": 8,
+        "attackRoll": true,
+        "saves": [
+          "DEX",
+          "CON"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "chain-devil",
+        "name": "Chain Devil",
+        "cr": 8,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "grappled",
+          "restrained"
+        ],
+        "bypassesAc": false
+      },
+      {
+        "index": "cloaker",
+        "name": "Cloaker",
+        "cr": 8,
+        "attackRoll": true,
+        "saves": [
+          "STR",
+          "WIS"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "frightened"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "frost-giant",
+        "name": "Frost Giant",
+        "cr": 8,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "hezrou",
+        "name": "Hezrou",
+        "cr": 8,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "poisoned"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "hydra",
+        "name": "Hydra",
+        "cr": 8,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "charmed",
+          "frightened",
+          "stunned"
+        ],
+        "bypassesAc": false
+      },
+      {
+        "index": "spirit-naga",
+        "name": "Spirit Naga",
+        "cr": 8,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "tyrannosaurus-rex",
+        "name": "Tyrannosaurus Rex",
+        "cr": 8,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "grappled",
+          "restrained"
+        ],
+        "bypassesAc": false
+      },
+      {
+        "index": "young-bronze-dragon",
+        "name": "Young Bronze Dragon",
+        "cr": 8,
+        "attackRoll": true,
+        "saves": [
+          "STR",
+          "DEX"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "young-green-dragon",
+        "name": "Young Green Dragon",
+        "cr": 8,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      }
+    ],
+    "9": [
+      {
+        "index": "bone-devil",
+        "name": "Bone Devil",
+        "cr": 9,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "poisoned"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "clay-golem",
+        "name": "Clay Golem",
+        "cr": 9,
+        "attackRoll": true,
+        "saves": [
+          "DEX",
+          "CON"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "cloud-giant",
+        "name": "Cloud Giant",
+        "cr": 9,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "fire-giant",
+        "name": "Fire Giant",
+        "cr": 9,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "glabrezu",
+        "name": "Glabrezu",
+        "cr": 9,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "grappled"
+        ],
+        "bypassesAc": false
+      },
+      {
+        "index": "treant",
+        "name": "Treant",
+        "cr": 9,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "young-blue-dragon",
+        "name": "Young Blue Dragon",
+        "cr": 9,
+        "attackRoll": true,
+        "saves": [
+          "DEX"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "young-silver-dragon",
+        "name": "Young Silver Dragon",
+        "cr": 9,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "paralyzed"
+        ],
+        "bypassesAc": true
+      }
+    ],
+    "10": [
+      {
+        "index": "aboleth",
+        "name": "Aboleth",
+        "cr": 10,
+        "attackRoll": true,
+        "saves": [
+          "CON",
+          "WIS"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "charmed"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "deva",
+        "name": "Deva",
+        "cr": 10,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "guardian-naga",
+        "name": "Guardian Naga",
+        "cr": 10,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "stone-golem",
+        "name": "Stone Golem",
+        "cr": 10,
+        "attackRoll": true,
+        "saves": [
+          "WIS"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "young-gold-dragon",
+        "name": "Young Gold Dragon",
+        "cr": 10,
+        "attackRoll": true,
+        "saves": [
+          "STR",
+          "DEX"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "young-red-dragon",
+        "name": "Young Red Dragon",
+        "cr": 10,
+        "attackRoll": true,
+        "saves": [
+          "DEX"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      }
+    ],
+    "11": [
+      {
+        "index": "behir",
+        "name": "Behir",
+        "cr": 11,
+        "attackRoll": true,
+        "saves": [
+          "DEX",
+          "CON"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "grappled",
+          "restrained",
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "djinni",
+        "name": "Djinni",
+        "cr": 11,
+        "attackRoll": true,
+        "saves": [
+          "STR"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "restrained"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "efreeti",
+        "name": "Efreeti",
+        "cr": 11,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "gynosphinx",
+        "name": "Gynosphinx",
+        "cr": 11,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "horned-devil",
+        "name": "Horned Devil",
+        "cr": 11,
+        "attackRoll": true,
+        "saves": [
+          "CON",
+          "WIS"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "remorhaz",
+        "name": "Remorhaz",
+        "cr": 11,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "grappled",
+          "restrained",
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "roc",
+        "name": "Roc",
+        "cr": 11,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "grappled",
+          "restrained"
+        ],
+        "bypassesAc": false
+      }
+    ],
+    "12": [
+      {
+        "index": "archmage",
+        "name": "Archmage",
+        "cr": 12,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "erinyes",
+        "name": "Erinyes",
+        "cr": 12,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "poisoned"
+        ],
+        "bypassesAc": true
+      }
+    ],
+    "13": [
+      {
+        "index": "adult-brass-dragon",
+        "name": "Adult Brass Dragon",
+        "cr": 13,
+        "attackRoll": true,
+        "saves": [
+          "DEX",
+          "CON",
+          "WIS"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "frightened",
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "adult-white-dragon",
+        "name": "Adult White Dragon",
+        "cr": 13,
+        "attackRoll": true,
+        "saves": [
+          "DEX",
+          "CON",
+          "WIS"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "frightened",
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "nalfeshnee",
+        "name": "Nalfeshnee",
+        "cr": 13,
+        "attackRoll": true,
+        "saves": [
+          "WIS"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "frightened"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "rakshasa",
+        "name": "Rakshasa",
+        "cr": 13,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "storm-giant",
+        "name": "Storm Giant",
+        "cr": 13,
+        "attackRoll": true,
+        "saves": [
+          "DEX"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "vampire-bat",
+        "name": "Vampire, Bat Form",
+        "cr": 13,
+        "attackRoll": true,
+        "saves": [
+          "CON",
+          "WIS"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "grappled",
+          "restrained",
+          "charmed",
+          "paralyzed"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "vampire-mist",
+        "name": "Vampire, Mist Form",
+        "cr": 13,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "paralyzed"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "vampire-vampire",
+        "name": "Vampire, Vampire Form",
+        "cr": 13,
+        "attackRoll": true,
+        "saves": [
+          "CON",
+          "WIS"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "grappled",
+          "restrained",
+          "charmed",
+          "paralyzed"
+        ],
+        "bypassesAc": true
+      }
+    ],
+    "14": [
+      {
+        "index": "adult-black-dragon",
+        "name": "Adult Black Dragon",
+        "cr": 14,
+        "attackRoll": true,
+        "saves": [
+          "DEX",
+          "WIS"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "frightened",
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "adult-copper-dragon",
+        "name": "Adult Copper Dragon",
+        "cr": 14,
+        "attackRoll": true,
+        "saves": [
+          "DEX",
+          "CON",
+          "WIS"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "frightened",
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "ice-devil",
+        "name": "Ice Devil",
+        "cr": 14,
+        "attackRoll": true,
+        "saves": [
+          "DEX",
+          "CON"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      }
+    ],
+    "15": [
+      {
+        "index": "adult-bronze-dragon",
+        "name": "Adult Bronze Dragon",
+        "cr": 15,
+        "attackRoll": true,
+        "saves": [
+          "STR",
+          "DEX",
+          "WIS"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "frightened",
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "adult-green-dragon",
+        "name": "Adult Green Dragon",
+        "cr": 15,
+        "attackRoll": true,
+        "saves": [
+          "DEX",
+          "CON",
+          "WIS"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "frightened",
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "mummy-lord",
+        "name": "Mummy Lord",
+        "cr": 15,
+        "attackRoll": true,
+        "saves": [
+          "CON",
+          "WIS"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "frightened",
+          "paralyzed",
+          "stunned",
+          "grappled",
+          "prone",
+          "restrained"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "purple-worm",
+        "name": "Purple Worm",
+        "cr": 15,
+        "attackRoll": true,
+        "saves": [
+          "DEX",
+          "CON"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "restrained",
+          "prone"
+        ],
+        "bypassesAc": true
+      }
+    ],
+    "16": [
+      {
+        "index": "adult-blue-dragon",
+        "name": "Adult Blue Dragon",
+        "cr": 16,
+        "attackRoll": true,
+        "saves": [
+          "DEX",
+          "WIS"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "frightened",
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "adult-silver-dragon",
+        "name": "Adult Silver Dragon",
+        "cr": 16,
+        "attackRoll": true,
+        "saves": [
+          "DEX",
+          "CON",
+          "WIS"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "frightened",
+          "paralyzed",
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "iron-golem",
+        "name": "Iron Golem",
+        "cr": 16,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "marilith",
+        "name": "Marilith",
+        "cr": 16,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "grappled",
+          "restrained"
+        ],
+        "bypassesAc": false
+      },
+      {
+        "index": "planetar",
+        "name": "Planetar",
+        "cr": 16,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      }
+    ],
+    "17": [
+      {
+        "index": "adult-gold-dragon",
+        "name": "Adult Gold Dragon",
+        "cr": 17,
+        "attackRoll": true,
+        "saves": [
+          "STR",
+          "DEX",
+          "WIS"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "frightened",
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "adult-red-dragon",
+        "name": "Adult Red Dragon",
+        "cr": 17,
+        "attackRoll": true,
+        "saves": [
+          "DEX",
+          "WIS"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "frightened",
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "androsphinx",
+        "name": "Androsphinx",
+        "cr": 17,
+        "attackRoll": true,
+        "saves": [
+          "CON",
+          "WIS"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "frightened",
+          "paralyzed",
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "dragon-turtle",
+        "name": "Dragon Turtle",
+        "cr": 17,
+        "attackRoll": true,
+        "saves": [
+          "STR",
+          "CON"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      }
+    ],
+    "19": [
+      {
+        "index": "balor",
+        "name": "Balor",
+        "cr": 19,
+        "attackRoll": true,
+        "saves": [
+          "STR",
+          "DEX"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      }
+    ],
+    "20": [
+      {
+        "index": "ancient-brass-dragon",
+        "name": "Ancient Brass Dragon",
+        "cr": 20,
+        "attackRoll": true,
+        "saves": [
+          "DEX",
+          "CON",
+          "WIS"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "frightened",
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "ancient-white-dragon",
+        "name": "Ancient White Dragon",
+        "cr": 20,
+        "attackRoll": true,
+        "saves": [
+          "DEX",
+          "CON",
+          "WIS"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "frightened",
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "pit-fiend",
+        "name": "Pit Fiend",
+        "cr": 20,
+        "attackRoll": true,
+        "saves": [
+          "CON",
+          "WIS"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "poisoned",
+          "frightened"
+        ],
+        "bypassesAc": true
+      }
+    ],
+    "21": [
+      {
+        "index": "ancient-black-dragon",
+        "name": "Ancient Black Dragon",
+        "cr": 21,
+        "attackRoll": true,
+        "saves": [
+          "DEX",
+          "WIS"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "frightened",
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "ancient-copper-dragon",
+        "name": "Ancient Copper Dragon",
+        "cr": 21,
+        "attackRoll": true,
+        "saves": [
+          "DEX",
+          "CON",
+          "WIS"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "frightened",
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "lich",
+        "name": "Lich",
+        "cr": 21,
+        "attackRoll": true,
+        "saves": [
+          "CON",
+          "WIS"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "paralyzed",
+          "frightened"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "solar",
+        "name": "Solar",
+        "cr": 21,
+        "attackRoll": true,
+        "saves": [
+          "DEX",
+          "CON"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      }
+    ],
+    "22": [
+      {
+        "index": "ancient-bronze-dragon",
+        "name": "Ancient Bronze Dragon",
+        "cr": 22,
+        "attackRoll": true,
+        "saves": [
+          "STR",
+          "DEX",
+          "WIS"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "frightened",
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "ancient-green-dragon",
+        "name": "Ancient Green Dragon",
+        "cr": 22,
+        "attackRoll": true,
+        "saves": [
+          "DEX",
+          "CON",
+          "WIS"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "frightened",
+          "prone"
+        ],
+        "bypassesAc": true
+      }
+    ],
+    "23": [
+      {
+        "index": "ancient-blue-dragon",
+        "name": "Ancient Blue Dragon",
+        "cr": 23,
+        "attackRoll": true,
+        "saves": [
+          "DEX",
+          "WIS"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "frightened",
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "ancient-silver-dragon",
+        "name": "Ancient Silver Dragon",
+        "cr": 23,
+        "attackRoll": true,
+        "saves": [
+          "DEX",
+          "CON",
+          "WIS"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "frightened",
+          "paralyzed",
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "kraken",
+        "name": "Kraken",
+        "cr": 23,
+        "attackRoll": true,
+        "saves": [
+          "DEX",
+          "CON"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "grappled",
+          "restrained",
+          "prone"
+        ],
+        "bypassesAc": true
+      }
+    ],
+    "24": [
+      {
+        "index": "ancient-gold-dragon",
+        "name": "Ancient Gold Dragon",
+        "cr": 24,
+        "attackRoll": true,
+        "saves": [
+          "STR",
+          "DEX",
+          "WIS"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "frightened",
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "ancient-red-dragon",
+        "name": "Ancient Red Dragon",
+        "cr": 24,
+        "attackRoll": true,
+        "saves": [
+          "DEX",
+          "WIS"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "frightened",
+          "prone"
+        ],
+        "bypassesAc": true
+      }
+    ],
+    "30": [
+      {
+        "index": "tarrasque",
+        "name": "Tarrasque",
+        "cr": 30,
+        "attackRoll": true,
+        "saves": [
+          "STR",
+          "CON",
+          "WIS"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "grappled",
+          "restrained",
+          "prone",
+          "frightened"
+        ],
+        "bypassesAc": true
+      }
+    ],
+    "0.25": [
+      {
+        "index": "acolyte",
+        "name": "Acolyte",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "axe-beak",
+        "name": "Axe Beak",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "blink-dog",
+        "name": "Blink Dog",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "boar",
+        "name": "Boar",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [
+          "STR"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "constrictor-snake",
+        "name": "Constrictor Snake",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "grappled",
+          "restrained"
+        ],
+        "bypassesAc": false
+      },
+      {
+        "index": "draft-horse",
+        "name": "Draft Horse",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "dretch",
+        "name": "Dretch",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": true,
+        "control": true,
+        "conditions": [
+          "poisoned"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "drow",
+        "name": "Drow",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "poisoned",
+          "charmed"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "elk",
+        "name": "Elk",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [
+          "STR"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "flying-sword",
+        "name": "Flying Sword",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "giant-badger",
+        "name": "Giant Badger",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "giant-bat",
+        "name": "Giant Bat",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "giant-centipede",
+        "name": "Giant Centipede",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "poisoned",
+          "paralyzed"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "giant-frog",
+        "name": "Giant Frog",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "grappled",
+          "restrained",
+          "prone"
+        ],
+        "bypassesAc": false
+      },
+      {
+        "index": "giant-lizard",
+        "name": "Giant Lizard",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "giant-owl",
+        "name": "Giant Owl",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "giant-poisonous-snake",
+        "name": "Giant Poisonous Snake",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "giant-wolf-spider",
+        "name": "Giant Wolf Spider",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "poisoned",
+          "paralyzed"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "goblin",
+        "name": "Goblin",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "grimlock",
+        "name": "Grimlock",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "panther",
+        "name": "Panther",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [
+          "STR"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "pseudodragon",
+        "name": "Pseudodragon",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "poisoned"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "riding-horse",
+        "name": "Riding Horse",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "skeleton",
+        "name": "Skeleton",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "sprite",
+        "name": "Sprite",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [
+          "CON",
+          "CHA"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "poisoned"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "steam-mephit",
+        "name": "Steam Mephit",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [
+          "DEX"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "swarm-of-bats",
+        "name": "Swarm of Bats",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "swarm-of-rats",
+        "name": "Swarm of Rats",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "swarm-of-ravens",
+        "name": "Swarm of Ravens",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "violet-fungus",
+        "name": "Violet Fungus",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "wolf",
+        "name": "Wolf",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [
+          "STR"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "zombie",
+        "name": "Zombie",
+        "cr": 0.25,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      }
+    ],
+    "0.5": [
+      {
+        "index": "ape",
+        "name": "Ape",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "black-bear",
+        "name": "Black Bear",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "cockatrice",
+        "name": "Cockatrice",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "restrained"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "crocodile",
+        "name": "Crocodile",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "grappled",
+          "restrained"
+        ],
+        "bypassesAc": false
+      },
+      {
+        "index": "darkmantle",
+        "name": "Darkmantle",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [
+          "STR"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "deep-gnome-svirfneblin",
+        "name": "Deep Gnome (Svirfneblin)",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [
+          "CON",
+          "CHA"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "poisoned"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "dust-mephit",
+        "name": "Dust Mephit",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [
+          "DEX",
+          "CON"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "giant-goat",
+        "name": "Giant Goat",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [
+          "STR",
+          "DEX"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "giant-sea-horse",
+        "name": "Giant Sea Horse",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [
+          "STR"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "giant-wasp",
+        "name": "Giant Wasp",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "poisoned",
+          "paralyzed"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "gnoll",
+        "name": "Gnoll",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "gray-ooze",
+        "name": "Gray Ooze",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "hobgoblin",
+        "name": "Hobgoblin",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "ice-mephit",
+        "name": "Ice Mephit",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [
+          "DEX"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "lizardfolk",
+        "name": "Lizardfolk",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "magma-mephit",
+        "name": "Magma Mephit",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [
+          "DEX"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "magmin",
+        "name": "Magmin",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [
+          "DEX"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "orc",
+        "name": "Orc",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "reef-shark",
+        "name": "Reef Shark",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "rust-monster",
+        "name": "Rust Monster",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [
+          "DEX"
+        ],
+        "aoe": true,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "sahuagin",
+        "name": "Sahuagin",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "satyr",
+        "name": "Satyr",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "scout",
+        "name": "Scout",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "shadow",
+        "name": "Shadow",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "swarm-of-beetles",
+        "name": "Swarm of Beetles",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "swarm-of-centipedes",
+        "name": "Swarm of Centipedes",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "poisoned",
+          "paralyzed"
+        ],
+        "bypassesAc": false
+      },
+      {
+        "index": "swarm-of-insects",
+        "name": "Swarm of Insects",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "swarm-of-spiders",
+        "name": "Swarm of Spiders",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "swarm-of-wasps",
+        "name": "Swarm of Wasps",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "thug",
+        "name": "Thug",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "warhorse",
+        "name": "Warhorse",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [
+          "STR"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "warhorse-skeleton",
+        "name": "Warhorse Skeleton",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "worg",
+        "name": "Worg",
+        "cr": 0.5,
+        "attackRoll": true,
+        "saves": [
+          "STR"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      }
+    ],
+    "0.125": [
+      {
+        "index": "bandit",
+        "name": "Bandit",
+        "cr": 0.125,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "blood-hawk",
+        "name": "Blood Hawk",
+        "cr": 0.125,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "camel",
+        "name": "Camel",
+        "cr": 0.125,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "cultist",
+        "name": "Cultist",
+        "cr": 0.125,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "charmed",
+          "frightened"
+        ],
+        "bypassesAc": false
+      },
+      {
+        "index": "flying-snake",
+        "name": "Flying Snake",
+        "cr": 0.125,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "giant-crab",
+        "name": "Giant Crab",
+        "cr": 0.125,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "grappled"
+        ],
+        "bypassesAc": false
+      },
+      {
+        "index": "giant-rat",
+        "name": "Giant Rat",
+        "cr": 0.125,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "giant-rat-diseased",
+        "name": "Giant Rat (Diseased)",
+        "cr": 0.125,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "giant-weasel",
+        "name": "Giant Weasel",
+        "cr": 0.125,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "guard",
+        "name": "Guard",
+        "cr": 0.125,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "kobold",
+        "name": "Kobold",
+        "cr": 0.125,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "mastiff",
+        "name": "Mastiff",
+        "cr": 0.125,
+        "attackRoll": true,
+        "saves": [
+          "STR"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "merfolk",
+        "name": "Merfolk",
+        "cr": 0.125,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "mule",
+        "name": "Mule",
+        "cr": 0.125,
+        "attackRoll": true,
+        "saves": [
+          "DEX"
+        ],
+        "aoe": false,
+        "control": true,
+        "conditions": [
+          "prone"
+        ],
+        "bypassesAc": true
+      },
+      {
+        "index": "noble",
+        "name": "Noble",
+        "cr": 0.125,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "poisonous-snake",
+        "name": "Poisonous Snake",
+        "cr": 0.125,
+        "attackRoll": true,
+        "saves": [
+          "CON"
+        ],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": true
+      },
+      {
+        "index": "pony",
+        "name": "Pony",
+        "cr": 0.125,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "stirge",
+        "name": "Stirge",
+        "cr": 0.125,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      },
+      {
+        "index": "tribal-warrior",
+        "name": "Tribal Warrior",
+        "cr": 0.125,
+        "attackRoll": true,
+        "saves": [],
+        "aoe": false,
+        "control": false,
+        "conditions": [],
+        "bypassesAc": false
+      }
+    ]
+  }
+}

@@ -2,10 +2,12 @@ import {
   analyzeParty,
   applyForecastControls,
   averageHitPointMaximum,
+  BIOME_MODIFIERS,
   buildEncounterForecast,
   generateDungeon,
   hitDiceState,
   placeEncounters,
+  removeTerrainFeature,
   takeLongRest,
   takeShortRest,
   TILE_INFO,
@@ -62,8 +64,11 @@ const DEFAULT_PARTY = [
 
 const $ = (selector) => document.querySelector(selector);
 const state = loadState();
+state.dungeonSeed ??= state.seed;
 state.encounterBaseline ??= createEncounterBaseline(state.party);
-let dungeon = generateDungeon(state.seed, 55, 31, dungeonGenerationOptions());
+state.floors ??= {};
+state.visitedRooms ??= {};
+let dungeon = ensureCurrentFloor();
 let forecast = null;
 let animationFrame = null;
 let zoom = 1;
@@ -71,10 +76,6 @@ let dialogClassProfile = null;
 let classProfileTimer = null;
 let classProfileRequest = 0;
 let quickForecastTimer = null;
-let selectedRoomIndex = null;
-let roomEditMode = false;
-let roomDrag = null;
-let suppressMapClickUntil = 0;
 let conditionRequest = null;
 
 function loadState() {
@@ -97,12 +98,22 @@ function loadState() {
         claimedLoot: [],
         pendingRestEncounter: null,
         initiative: null,
-        roomMoves: {},
         forecastChanges: [],
         themeOrder: randomThemeOrder(),
         storyVariant: randomStoryVariant(),
+        floors: {},
+        visitedRooms: {},
+        currentRoomId: null,
         ...saved,
-        settings: { ...DEFAULT_SETTINGS, ...(saved.settings ?? {}) },
+        undoStack: compactUndoStack(saved.undoStack),
+        settings: {
+          ...DEFAULT_SETTINGS,
+          ...(saved.settings ?? {}),
+          biomeOptions: {
+            ...DEFAULT_SETTINGS.biomeOptions,
+            ...(saved.settings?.biomeOptions ?? {}),
+          },
+        },
         encounterControls: {
           rerolls: {},
           ratings: {},
@@ -132,15 +143,92 @@ function loadState() {
     claimedLoot: [],
     pendingRestEncounter: null,
     initiative: null,
-    roomMoves: {},
     forecastChanges: [],
     themeOrder: randomThemeOrder(),
     storyVariant: randomStoryVariant(),
+    floors: {},
+    visitedRooms: {},
+    currentRoomId: null,
   };
 }
 
+function compactUndoStack(entries) {
+  if (!Array.isArray(entries)) return [];
+  return entries.slice(-8).map((entry) => {
+    const snapshot = entry?.snapshot && typeof entry.snapshot === "object"
+      ? { ...entry.snapshot }
+      : {};
+    const floorData = snapshot.floorData ?? snapshot.floors?.[String(snapshot.floor)];
+    delete snapshot.floors;
+    if (validDungeonData(floorData)) snapshot.floorData = floorData;
+    else delete snapshot.floorData;
+    return { ...entry, snapshot };
+  });
+}
+
+function floorKey(floor = state.floor) {
+  return String(floor);
+}
+
+function validDungeonData(candidate) {
+  return Boolean(
+    candidate && Number(candidate.width) > 0 && Number(candidate.height) > 0 &&
+      Array.isArray(candidate.grid) && candidate.grid.length === Number(candidate.height) &&
+      candidate.grid.every((row) => Array.isArray(row) && row.length === Number(candidate.width)) &&
+      Array.isArray(candidate.rooms) && candidate.rooms.length >= 4 &&
+      Array.isArray(candidate.steps) && candidate.steps.length > 0,
+  );
+}
+
+function ensureCurrentFloor() {
+  const key = floorKey();
+  const candidate = state.floors[key];
+  if (!validDungeonData(candidate)) {
+    state.floors[key] = generateDungeon(
+      candidate?.seed ?? seedForDungeonFloor(state.floor),
+      undefined,
+      undefined,
+      dungeonGenerationOptions(),
+    );
+  }
+  const stored = state.floors[key];
+  const template = generateDungeon(stored.seed, undefined, undefined, dungeonGenerationOptions());
+  if (stored.themeSignature !== template.themeSignature) {
+    if (state.initiative?.themeSignature === stored.themeSignature) {
+      state.initiative.themeSignature = template.themeSignature;
+    }
+    stored.theme = template.theme;
+    stored.themeSignature = template.themeSignature;
+    stored.restriction = template.restriction;
+  }
+  state.seed = stored.seed;
+  state.currentRoomId = stored.rooms.some((room) => room.id === state.currentRoomId)
+    ? state.currentRoomId
+    : (stored.rooms.find((room) => room.role === "entry") ?? stored.rooms[0])?.id;
+  state.visitedRooms[key] ??= state.currentRoomId ? [state.currentRoomId] : [];
+  return stored;
+}
+
+function persistDungeon(next = dungeon) {
+  dungeon = next;
+  state.floors[floorKey()] = dungeon;
+}
+
 function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (error) {
+    if (error?.name !== "QuotaExceededError") throw error;
+    state.undoStack = compactUndoStack(state.undoStack).slice(-3);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (retryError) {
+      console.error(
+        "Session storage is full; continuing without persisting this change",
+        retryError,
+      );
+    }
+  }
   $("#undo-action")?.toggleAttribute("disabled", !state.undoStack.length);
 }
 
@@ -183,14 +271,17 @@ function checkpoint(label) {
       claimedLoot: state.claimedLoot,
       pendingRestEncounter: state.pendingRestEncounter,
       initiative: state.initiative,
-      roomMoves: state.roomMoves,
       forecastChanges: state.forecastChanges,
       themeOrder: state.themeOrder,
       storyVariant: state.storyVariant,
       encounterBaseline: state.encounterBaseline,
+      dungeonSeed: state.dungeonSeed,
+      floorData: state.floors?.[floorKey()],
+      visitedRooms: state.visitedRooms,
+      currentRoomId: state.currentRoomId,
     }),
   });
-  state.undoStack = state.undoStack.slice(-30);
+  state.undoStack = compactUndoStack(state.undoStack);
 }
 
 function logEvent(type, title, detail = "") {
@@ -214,6 +305,7 @@ function modelState() {
     awareness: state.awareness,
     themeOrder: state.themeOrder,
     storyVariant: state.storyVariant,
+    dungeonSeed: state.dungeonSeed,
   };
 }
 
@@ -234,13 +326,16 @@ function dungeonGenerationOptions(overrides = {}) {
   const configuredTheme = state.settings?.dungeonTheme;
   return {
     floor: state.floor,
-    roomMoves: state.roomMoves,
     themeMode: state.settings?.themeMode ?? "arcs",
     dungeonTheme: configuredTheme && configuredTheme !== "random"
       ? configuredTheme
       : state.themeOrder?.[0],
     themeOrder: state.themeOrder,
     storyVariant: state.storyVariant,
+    dungeonSeed: state.dungeonSeed,
+    floorSize: state.settings?.floorSize ?? "medium",
+    roomCount: state.settings?.roomCount ?? 11,
+    biomeOptions: state.settings?.biomeOptions ?? DEFAULT_SETTINGS.biomeOptions,
     ...overrides,
   };
 }
@@ -254,6 +349,10 @@ function randomSeed() {
   const second = ["vault", "spire", "deep", "reliquary", "warren", "crypt"];
   const pick = (list) => list[Math.floor(Math.random() * list.length)];
   return `${pick(first)}-${pick(second)}-${Math.floor(10 + Math.random() * 89)}`;
+}
+
+function seedForDungeonFloor(floor) {
+  return floor === 1 ? state.dungeonSeed : `${state.dungeonSeed}-floor-${floor}`;
 }
 
 function initials(name) {
@@ -295,6 +394,88 @@ function restoreResources(member, amount) {
   };
 }
 
+function renderPartyProfile(profile) {
+  const container = $("#party-profile-overview");
+  if (!profile) {
+    container.innerHTML = "<p>Add an adventurer to see party strengths and weaknesses.</p>";
+    return;
+  }
+  const capabilityLabels = {
+    singleTarget: "Single target",
+    aoe: "Area damage",
+    damage: "Damage",
+    tank: "Defense",
+    support: "Support",
+    melee: "Melee",
+    ranged: "Ranged",
+    control: "Control",
+    healing: "Healing",
+  };
+  const capabilities = Object.entries(profile.capabilities).map(([key, value]) => ({
+    key,
+    label: capabilityLabels[key] ?? key,
+    value: Number(value),
+  }));
+  const strongest = [...capabilities].sort((a, b) => b.value - a.value).slice(0, 2);
+  const weakest = [...capabilities].sort((a, b) => a.value - b.value).slice(0, 2);
+  const tracked = [
+    ["Vitality", `${Math.round(profile.hpRatio * 100)}%`],
+    ...(state.settings.trackResources
+      ? [["Resources", `${Math.round(profile.measuredResourceRatio * 100)}%`]]
+      : []),
+    ["Average AC", profile.defense.toFixed(1)],
+    ["Readiness", `${Math.round(profile.readiness * 100)}%`],
+    ["Wounded", String(profile.wounded)],
+    ["Critical", String(profile.critical)],
+    ...(state.settings.trackAfflictions
+      ? [["Affliction load", `${Math.round(profile.afflictionLoad * 100)}%`]]
+      : []),
+  ];
+  const feedbackLabels = {
+    easier: "Easier than expected",
+    accurate: "As expected",
+    harder: "Harder than expected",
+  };
+  const resolvedLocks = Object.values(state.encounterLocks ?? {}).filter((encounter) =>
+    encounter?.resolved
+  );
+  const recentOutcomes = (state.learningSamples ?? []).map((sample) => {
+    const encounter = resolvedLocks.find((candidate) => candidate.id === sample.encounterId);
+    const name = sample.roomName ?? encounter?.room?.name ?? sample.encounterTitle ??
+      encounter?.title;
+    return name && sample.feedback
+      ? { name, feedback: sample.feedback, at: sample.at ?? "" }
+      : null;
+  }).filter(Boolean).sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 5);
+  container.innerHTML = `<header><span>Party profile</span><b>Strengths and weaknesses</b></header>
+    <div class="party-profile-summary"><p><b>Strong</b>${
+    strongest.map((item) => escapeHtml(item.label)).join(" · ")
+  }</p><p><b>Weak</b>${weakest.map((item) => escapeHtml(item.label)).join(" · ")}</p></div>
+    <div class="party-profile-capabilities">${
+    capabilities.map((item) => {
+      const level = item.value >= 3.5 ? "strong" : item.value <= 2.25 ? "weak" : "steady";
+      return `<div class="${level}"><span>${escapeHtml(item.label)}</span><b>${
+        item.value.toFixed(1)
+      } / 5</b><i style="--score:${Math.max(0, Math.min(100, item.value / 5 * 100))}%"></i></div>`;
+    }).join("")
+  }</div>
+    <dl>${
+    tracked.map(([label, value]) =>
+      `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`
+    ).join("")
+  }</dl>${
+    recentOutcomes.length
+      ? `<section class="party-room-outcomes"><b>Previous resolved rooms</b>${
+        recentOutcomes.map((outcome) =>
+          `<p class="outcome-${outcome.feedback}"><span>${escapeHtml(outcome.name)}</span><strong>${
+            escapeHtml(feedbackLabels[outcome.feedback] ?? outcome.feedback)
+          }</strong></p>`
+        ).join("")
+      }</section>`
+      : ""
+  }`;
+}
+
 function renderParty() {
   const living = state.party.filter((member) => !member.dead);
   const profile = living.length ? analyzeParty(state.party, state.settings) : null;
@@ -303,6 +484,7 @@ function renderParty() {
   $("#party-level").textContent = profile ? profile.averageLevel.toFixed(1) : "—";
   $("#party-hp").textContent = profile ? `${Math.round(profile.hpRatio * 100)}%` : "0%";
   $("#party-size").textContent = living.length;
+  renderPartyProfile(profile);
   $("#party-list").innerHTML = state.party.map((member) => `
     <article class="member-card ${
     healthClass(member)
@@ -328,13 +510,13 @@ function renderParty() {
         <div class="member-hp-controls"><span class="control-label">HP</span>
           <button type="button" data-member-hp-delta="-1" data-member-id="${member.id}" ${
     member.dead || member.hp <= 0 ? "disabled" : ""
-  }>−</button>
+  } title="Decrease HP by 1">-1</button>
           <input class="member-hp-input" data-member-hp-input data-member-id="${member.id}" type="number" min="0" max="${member.maxHp}" value="${member.hp}" aria-label="Current HP for ${
     escapeHtml(member.name)
   }">
           <button type="button" data-member-hp-delta="1" data-member-id="${member.id}" ${
     member.dead || member.hp >= member.maxHp ? "disabled" : ""
-  }>+</button>
+  } title="Increase HP by 1">+1</button>
           <input class="member-hp-slider" data-member-hp-slider data-member-id="${member.id}" type="range" min="0" max="${member.maxHp}" value="${member.hp}" aria-label="Quick HP for ${
     escapeHtml(member.name)
   }">
@@ -345,10 +527,10 @@ function renderParty() {
   }/${member.maxResource ?? 0}</span>
           <button type="button" data-quick-action="resource" data-resource-delta="-1" data-member-id="${member.id}" ${
     member.dead ? "disabled" : ""
-  }>−</button>
+  } title="Decrease resources by 1">-1</button>
           <button type="button" data-quick-action="resource" data-resource-delta="1" data-member-id="${member.id}" ${
     member.dead ? "disabled" : ""
-  }>+</button>
+  } title="Increase resources by 1">+1</button>
           <button class="kill-member ${
     member.dead ? "revive-member" : ""
   }" type="button" data-quick-action="kill" data-member-id="${member.id}" aria-label="${
@@ -497,7 +679,7 @@ function setMemberHp(id, value) {
   member.hp = next;
   saveState();
   renderParty();
-  queueQuickForecast(`${member.name}: ${previous} → ${next} HP`);
+  queueQuickForecast(`${member.name}: ${previous} to ${next} HP`);
 }
 
 function previewMemberHp(id, value) {
@@ -701,16 +883,72 @@ function formatMonsterSpeed(speed) {
   return Object.entries(speed).map(([mode, value]) => `${mode} ${value}`).join(" · ");
 }
 
+function renderMonsterFeatures(items, emptyText) {
+  if (!items?.length) return `<p class="monster-feature-empty">${escapeHtml(emptyText)}</p>`;
+  return `<div class="monster-feature-list">${
+    items.map((item) => {
+      const attack = item.attackBonus === null || item.attackBonus === undefined
+        ? ""
+        : `Attack ${Number(item.attackBonus) >= 0 ? "+" : ""}${item.attackBonus}`;
+      const damage = (item.damages ?? []).map((part) => `${part.dice} ${part.type}`).join(" + ");
+      const save = item.dc ? `${item.dc.ability} save DC ${item.dc.value}` : "";
+      const mechanics = [attack, damage, save].filter(Boolean).join(" · ");
+      return `<article><b>${escapeHtml(item.name)}</b>${
+        mechanics ? `<small>${escapeHtml(mechanics)}</small>` : ""
+      }<p>${escapeHtml(item.description)}</p></article>`;
+    }).join("")
+  }</div>`;
+}
+
+function renderMonsterAbilities(scores) {
+  if (!scores) return "";
+  return `<dl class="monster-abilities">${
+    ["STR", "DEX", "CON", "INT", "WIS", "CHA"].map(
+      (ability) => {
+        const score = Number(scores[ability] ?? 10);
+        const modifier = Math.floor((score - 10) / 2);
+        return `<div><dt>${ability}</dt><dd>${score} (${
+          modifier >= 0 ? "+" : ""
+        }${modifier})</dd></div>`;
+      },
+    ).join("")
+  }</dl>`;
+}
+
+function randomDie(sides) {
+  const value = new Uint32Array(1);
+  crypto.getRandomValues(value);
+  return value[0] % sides + 1;
+}
+
+function rollDiceExpression(expression) {
+  const match = String(expression).trim().match(/^(\d+)d(\d+)(?:\s*([+-])\s*(\d+))?$/i);
+  if (!match) return null;
+  const count = Math.max(1, Math.min(100, Number(match[1])));
+  const sides = Math.max(2, Math.min(1000, Number(match[2])));
+  const modifier = match[4] ? Number(match[4]) * (match[3] === "-" ? -1 : 1) : 0;
+  const rolls = Array.from({ length: count }, () => randomDie(sides));
+  return { rolls, modifier, total: rolls.reduce((sum, roll) => sum + roll, modifier) };
+}
+
 function buildMapCells() {
   const map = $("#ascii-map");
   map.style.gridTemplateColumns = `repeat(${dungeon.width}, var(--cell-width, 9px))`;
   map.innerHTML = dungeon.grid.flatMap((row, y) =>
     row.map((tile, x) => {
       const info = TILE_INFO[tile] ?? TILE_INFO[" "];
+      const trap = dungeon.traps?.find((candidate) => candidate.x === x && candidate.y === y);
+      const title = trap
+        ? `${trap.name}: ${trap.trigger}. Detect ${trap.detection.method} DC ${trap.detection.dc}. ${trap.effect}`
+        : info.name;
       const jitterX = (((x * 17 + y * 11) % 5) - 2) * 0.16;
       const jitterY = (((x * 7 + y * 19) % 5) - 2) * 0.12;
       const jitterRotation = (((x * 13 + y * 23) % 7) - 3) * 0.28;
-      return `<button class="map-cell ${info.kind}" data-x="${x}" data-y="${y}" data-tile="${tile}" data-title="${info.name}" title="${info.name}" tabindex="-1" style="--jitter-x:${jitterX}px;--jitter-y:${jitterY}px;--jitter-r:${jitterRotation}deg">${tile}</button>`;
+      return `<button class="map-cell ${info.kind}" data-x="${x}" data-y="${y}" data-tile="${tile}" data-title="${
+        escapeHtml(title)
+      }" title="${
+        escapeHtml(title)
+      }" tabindex="-1" style="--jitter-x:${jitterX}px;--jitter-y:${jitterY}px;--jitter-r:${jitterRotation}deg">${tile}</button>`;
     })
   ).join("");
   for (const room of dungeon.rooms) {
@@ -725,132 +963,52 @@ function buildMapCells() {
     const cell = document.querySelector(`.map-cell[data-x="${room.cx}"][data-y="${room.cy}"]`);
     if (cell) {
       cell.dataset.roomCenter = "true";
-      cell.setAttribute(
-        "aria-label",
-        `${room.name}. ${roomEditMode ? "Drag to move or swap" : "Room"}`,
-      );
+      cell.setAttribute("aria-label", room.name);
     }
     if (!state.clearedRooms[coordinates]) continue;
     cell?.classList.add("cleared-room");
   }
   renderDungeonLedger();
   renderSafeRoomToggle();
-  bindRoomEditor();
+  bindMapTerrainInteractions();
 }
 
-function bindRoomEditor() {
-  const button = $("#edit-rooms");
-  const map = $("#ascii-map");
-  button.classList.toggle("active", roomEditMode);
-  button.textContent = roomEditMode ? "Finish moving" : "Move rooms";
-  $("#map-frame").classList.toggle("room-editing", roomEditMode);
-  document.querySelectorAll(".map-cell").forEach((cell) => {
-    cell.tabIndex = roomEditMode && cell.dataset.roomCenter ? 0 : -1;
-  });
-  map.onpointerdown = (event) => {
-    if (!roomEditMode) return;
-    const cell = event.target.closest(".map-cell[data-room-index]");
-    if (!cell) return;
-    event.preventDefault();
-    const index = Number(cell.dataset.roomIndex);
-    roomDrag = { index, pointerId: event.pointerId };
-    selectedRoomIndex = index;
-    map.setPointerCapture(event.pointerId);
-    setRoomDragClass(index, "dragging-room");
-  };
-  map.onpointermove = (event) => {
-    if (!roomDrag) return;
-    document.querySelectorAll(".map-cell.drop-room").forEach((cell) =>
-      cell.classList.remove("drop-room")
-    );
-    const target = document.elementFromPoint(event.clientX, event.clientY)?.closest(".map-cell");
-    if (!target) return;
-    const targetIndex = target.dataset.roomIndex;
-    if (targetIndex !== undefined && Number(targetIndex) !== roomDrag.index) {
-      setRoomDragClass(Number(targetIndex), "drop-room");
-    } else target.classList.add("drop-room");
-  };
-  map.onpointerup = (event) => {
-    if (!roomDrag) return;
-    const target = document.elementFromPoint(event.clientX, event.clientY)?.closest(".map-cell");
-    const sourceIndex = roomDrag.index;
-    roomDrag = null;
-    suppressMapClickUntil = performance.now() + 250;
-    document.querySelectorAll(".map-cell.dragging-room, .map-cell.drop-room").forEach((cell) =>
-      cell.classList.remove("dragging-room", "drop-room")
-    );
-    if (!target) return;
-    moveSelectedRoom(
-      Number(target.dataset.x),
-      Number(target.dataset.y),
-      target.dataset.roomIndex === undefined ? null : Number(target.dataset.roomIndex),
-      sourceIndex,
-    );
-  };
-  map.onpointercancel = () => {
-    roomDrag = null;
-    document.querySelectorAll(".map-cell.dragging-room, .map-cell.drop-room").forEach((cell) =>
-      cell.classList.remove("dragging-room", "drop-room")
-    );
+function bindMapTerrainInteractions() {
+  $("#ascii-map").onclick = (event) => {
+    const cell = event.target.closest(".map-cell.bush[data-room-index]");
+    if (!cell || !globalThis.confirm("Cut down this bush and clear the tile?")) return;
+    const room = dungeon.rooms[Number(cell.dataset.roomIndex)];
+    if (!room) return;
+    checkpoint(`Cut down a bush in ${room.name}`);
+    persistDungeon(removeTerrainFeature(
+      dungeon,
+      room.id,
+      Number(cell.dataset.x) - room.x,
+      Number(cell.dataset.y) - room.y,
+    ));
+    saveState();
+    buildMapCells();
+    showToast("Bush cut down");
   };
 }
 
-function setRoomDragClass(roomIndex, className) {
-  document.querySelectorAll(`.map-cell[data-room-index="${roomIndex}"]`).forEach((cell) =>
-    cell.classList.add(className)
-  );
-}
-
-function moveSelectedRoom(
-  centerX,
-  centerY,
-  targetRoomIndex = null,
-  sourceIndex = selectedRoomIndex,
-) {
-  const room = dungeon.rooms[sourceIndex];
-  if (!room) return;
-  const targetRoom = targetRoomIndex === null ? null : dungeon.rooms[targetRoomIndex];
-  if (targetRoomIndex === sourceIndex) return;
-  checkpoint(targetRoom ? `Swap ${room.name} and ${targetRoom.name}` : `Move ${room.name}`);
-  state.roomMoves ??= {};
-  const previousMoves = clone(state.roomMoves);
-  state.roomMoves[sourceIndex] = {
-    x: (targetRoom?.cx ?? centerX) - Math.floor(room.w / 2),
-    y: (targetRoom?.cy ?? centerY) - Math.floor(room.h / 2),
-  };
-  if (targetRoom) {
-    state.roomMoves[targetRoomIndex] = {
-      x: room.cx - Math.floor(targetRoom.w / 2),
-      y: room.cy - Math.floor(targetRoom.h / 2),
-    };
-  }
-  const previousCenter = `${room.cx}:${room.cy}`;
-  const next = generateDungeon(
-    state.seed,
-    dungeon.width,
-    dungeon.height,
-    dungeonGenerationOptions({ roomMoves: state.roomMoves }),
-  );
-  const moved = next.rooms[sourceIndex];
-  const swapped = !targetRoom ||
-    `${next.rooms[targetRoomIndex].cx}:${next.rooms[targetRoomIndex].cy}` ===
-      `${room.cx}:${room.cy}`;
-  if (`${moved.cx}:${moved.cy}` === previousCenter || !swapped) {
-    state.roomMoves = previousMoves;
-    state.undoStack.pop();
-    showToast("That drop would overlap another room or the map edge");
+function navigateFloor(delta) {
+  const target = state.floor + delta;
+  if (target < 1) return;
+  if (delta > 0 && !state.floors[floorKey(target)]) {
+    newExpedition();
     return;
   }
-  dungeon = next;
-  selectedRoomIndex = null;
+  checkpoint(`Navigate to floor ${target}`);
+  state.floor = target;
+  dungeon = ensureCurrentFloor();
+  state.inSafeRoom = false;
+  forecast = null;
   saveState();
+  renderMeta();
   buildMapCells();
   playCollapse();
-  updateForecast(
-    targetRoom
-      ? "Rooms swapped · corridors and markers updated"
-      : "Room moved · corridors and markers updated",
-  );
+  updateForecast(`Returned to stored floor ${target}`);
 }
 
 function renderClearedRooms() {
@@ -892,7 +1050,9 @@ function toggleSafeRoom() {
 }
 
 function renderDungeonLedger() {
-  $("#room-count").textContent = `${dungeon.rooms.length} rooms · floor ${state.floor}`;
+  $("#room-count").textContent = dungeon.layout === "open-region"
+    ? `${dungeon.rooms.length} zones · floor ${state.floor}`
+    : `${dungeon.rooms.length} rooms · floor ${state.floor}`;
   const counts = dungeon.rooms.reduce((result, room) => {
     result[room.condition] = (result[room.condition] ?? 0) + 1;
     return result;
@@ -902,16 +1062,30 @@ function renderDungeonLedger() {
   ).join("");
   $("#theme-restriction").innerHTML = `<b>${escapeHtml(dungeon.theme.name)}</b><span>${
     escapeHtml(dungeon.restriction)
-  }</span><small>Exit distance ${dungeon.exitDistance} · ${dungeon.lootCount} cache${
+  }</span>${
+    dungeon.layout === "open-region"
+      ? `<p><strong>${escapeHtml(dungeon.regionName)}${
+        dungeon.noveltyOpenRegion ? " · Rare super-massive floor" : ""
+      }</strong>One continuous biome. Each marked section functions as a room for encounters, objectives, loot, and clearing progress.</p>`
+      : ""
+  }${
+    (dungeon.theme.activeModifiers ?? []).map((modifier) =>
+      `<p><strong>${escapeHtml(modifier.name)}</strong>${escapeHtml(modifier.rule)}</p>`
+    ).join("")
+  }<small>Exit distance ${dungeon.exitDistance} · ${dungeon.lootCount} cache${
     dungeon.lootCount === 1 ? "" : "s"
-  }; loot increases with distance from the entrance.</small>`;
+  }; loot increases with distance from the entrance. ${
+    dungeon.traps?.length ?? 0
+  } structured traps (${
+    dungeon.traps?.filter((trap) => trap.locationType === "hallway").length ?? 0
+  } hallway).</small>`;
   const lootEntries = forecast?.loot?.length ? forecast.loot : dungeon.loot;
   $("#loot-table").innerHTML = lootEntries.length
     ? lootEntries.map((loot) =>
       loot.name
         ? `<p class="api-loot"><b>${escapeHtml(loot.rarity)}</b><span><a href="${
           escapeHtml(loot.source)
-        }" target="_blank" rel="noreferrer">${escapeHtml(loot.name)} ↗</a><small>${
+        }" target="_blank" rel="noreferrer">${escapeHtml(loot.name)}</a><small>${
           escapeHtml(loot.description)
         }</small></span><button class="claim-loot" data-loot-name="${escapeHtml(loot.name)}" ${
           state.claimedLoot.includes(loot.name) ? "disabled" : ""
@@ -975,7 +1149,7 @@ function playCollapse() {
   cells.forEach((cell) => cell.classList.remove("resolved"));
   $("#collapse-status").classList.remove("done");
   let index = 0;
-  const batch = Math.max(3, Math.ceil(dungeon.steps.length / 170));
+  const batch = Math.max(20, Math.ceil(dungeon.steps.length / 18));
   const tick = () => {
     for (let n = 0; n < batch && index < dungeon.steps.length; n++, index++) {
       const step = dungeon.steps[index];
@@ -985,7 +1159,7 @@ function playCollapse() {
     }
     $("#collapse-count").textContent = `${index} / ${dungeon.steps.length} marks drawn`;
     if (index < dungeon.steps.length) animationFrame = requestAnimationFrame(tick);
-    else setTimeout(() => $("#collapse-status").classList.add("done"), 650);
+    else setTimeout(() => $("#collapse-status").classList.add("done"), 70);
   };
   animationFrame = requestAnimationFrame(tick);
 }
@@ -1077,8 +1251,58 @@ async function updateForecast(message = "Forecast updated") {
       combat: state.pendingRestEncounter.kind === "combat" ? existing.combat : undefined,
     };
   }
+  if (synchronizeInitiativeMonsters()) saveState();
   renderForecast();
   if (message) showToast(message);
+}
+
+function synchronizeInitiativeMonsters() {
+  if (!state.initiative || !forecast?.encounters?.length) return false;
+  const [initiativeFloor, initiativeCompleted, encounterIndex] = String(
+    state.initiative.encounterKey,
+  ).split(":").map(Number);
+  if (initiativeFloor !== state.floor || initiativeCompleted !== state.completed) return false;
+  const encounter = forecast.encounters[encounterIndex];
+  const groups = encounter?.combat?.groups?.length
+    ? encounter.combat.groups
+    : encounter?.combat?.monster
+    ? [{ count: encounter.combat.count, monster: encounter.combat.monster }]
+    : [];
+  const roster = groups.filter((group) => !group.spawned).flatMap((group) =>
+    Array.from({ length: Math.max(1, Number(group.count) || 1) }, (_, index) => ({
+      monster: group.monster,
+      name: Number(group.count) > 1 ? `${group.monster.name} ${index + 1}` : group.monster.name,
+    }))
+  );
+  const entries = state.initiative.entries.filter((entry) => entry.side === "monster");
+  let changed = false;
+  entries.forEach((entry, index) => {
+    const replacement = roster[index];
+    if (!replacement) return;
+    const { monster, name } = replacement;
+    const wasPlaceholder = !entry.monsterIndex || Number(entry.maxHp ?? 1) <= 1;
+    if (wasPlaceholder) {
+      entry.name = name;
+      entry.hp = Number(monster.hp ?? entry.hp);
+      entry.maxHp = Number(monster.hp ?? entry.maxHp);
+      entry.monsterIndex = monster.index;
+      changed = true;
+    }
+    if (!entry.actionDetails?.length && monster.actionDetails?.length) {
+      entry.actionDetails = clone(monster.actionDetails);
+      changed = true;
+    }
+    if (!Object.keys(entry.savingThrows ?? {}).length && monster.savingThrows) {
+      entry.savingThrows = clone(monster.savingThrows);
+      changed = true;
+    }
+  });
+  const minionGroup = groups.find((group) => group.spawned);
+  if (minionGroup && state.initiative.minionPool && !state.initiative.minionPool.monster?.index) {
+    state.initiative.minionPool.monster = clone(minionGroup.monster);
+    changed = true;
+  }
+  return changed;
 }
 
 function forecastControls() {
@@ -1175,9 +1399,13 @@ function renderForecast() {
     )
   }</span><b>${escapeHtml(displayTheme.hook)}</b><small>${
     escapeHtml(displayProgress ?? displayTheme.tagline)
-  }</small></div><p>${escapeHtml(displayTheme.restriction)}</p><ul>${
-    (displayTheme.rules ?? []).map((rule) => `<li>${escapeHtml(rule)}</li>`).join("")
-  }</ul>`;
+  }</small></div><p>${escapeHtml(displayTheme.restriction)}</p>${
+    (displayTheme.activeModifiers ?? []).map((modifier) =>
+      `<section class="biome-modifier"><b>${escapeHtml(modifier.name)}</b><span>${
+        escapeHtml(modifier.rule)
+      }</span></section>`
+    ).join("")
+  }<ul>${(displayTheme.rules ?? []).map((rule) => `<li>${escapeHtml(rule)}</li>`).join("")}</ul>`;
   const changes = state.forecastChanges ?? [];
   $("#forecast-changes").innerHTML = changes.length
     ? `<b>CHANGED SINCE THE LAST ENCOUNTER</b>${
@@ -1218,15 +1446,22 @@ function renderForecast() {
               <div><b>AC ${group.monster.ac}</b><b>HP ${group.monster.hp} (${
             escapeHtml(group.monster.hitDice ?? "—")
           })</b><b>Speed ${escapeHtml(formatMonsterSpeed(group.monster.speed))}</b></div>
-              <p><strong>Traits</strong> ${
-            escapeHtml(group.monster.traits.join(" · ") || "None listed")
-          }</p>
-              <p><strong>Actions</strong> ${
-            escapeHtml(group.monster.actions.join(" · ") || "See full SRD entry")
-          }</p>
+              ${renderMonsterAbilities(group.monster.abilityScores)}
+              <section><strong>Traits</strong>${
+            renderMonsterFeatures(
+              group.monster.traitDetails,
+              "None listed",
+            )
+          }</section>
+              <section><strong>Actions</strong>${
+            renderMonsterFeatures(
+              group.monster.actionDetails,
+              "See the full SRD entry",
+            )
+          }</section>
             </details><a href="${
             escapeHtml(group.monster.source)
-          }" target="_blank" rel="noreferrer">Stat block ↗</a></div>`
+          }" target="_blank" rel="noreferrer">Stat block</a></div>`
         ).join("")
       }</div>
           ${
@@ -1253,6 +1488,16 @@ function renderForecast() {
         combat.analysis
           ? `<div class="combat-analysis risk-${combat.analysis.risk}"><b>${combat.analysis.risk.toUpperCase()} TACTICAL RISK</b>${
             combat.analysis.signals.map((signal) => `<span>${escapeHtml(signal)}</span>`).join("")
+          }${
+            combat.analysis.details?.length
+              ? `<details><summary>Why these abilities matter</summary>${
+                combat.analysis.details.map((detail) =>
+                  `<article><b>${escapeHtml(detail.monster)} · ${escapeHtml(detail.kind)} · ${
+                    escapeHtml(detail.name)
+                  }</b><p>${escapeHtml(detail.description)}</p></article>`
+                ).join("")
+              }</details>`
+              : ""
           }</div>`
           : ""
       }
@@ -1298,7 +1543,7 @@ function renderForecast() {
         <div class="encounter-meta"><span>${encounter.tone}</span><span>${
       combat ? "Adjusted XP" : "Pressure"
     } ${encounter.budget}</span><span>~${encounter.rounds} rounds</span></div>
-        ${encounter.recovery ? `<p class="recovery-note">✦ ${encounter.recovery}</p>` : ""}
+        ${encounter.recovery ? `<p class="recovery-note">${encounter.recovery}</p>` : ""}
         ${
       encounter.resolved
         ? `<div class="resolved-banner"><b>✓ RESOLVED</b><span>${
@@ -1427,6 +1672,8 @@ function beginInitiative(event) {
         hp: monsterHp,
         maxHp: monsterHp,
         monsterIndex: group.monster.index,
+        actionDetails: clone(group.monster.actionDetails ?? []),
+        savingThrows: clone(group.monster.savingThrows ?? {}),
       });
     }
   }
@@ -1462,8 +1709,16 @@ function renderInitiativeTracker() {
     spawnButton.textContent = `Spawn ${minionPool.monster.name} (${minionPool.remaining})`;
   }
   if (state.initiative.position) {
-    tracker.style.left = `${state.initiative.position.x}px`;
-    tracker.style.top = `${state.initiative.position.y}px`;
+    const x = Math.max(
+      8,
+      Math.min(globalThis.innerWidth - tracker.offsetWidth - 8, state.initiative.position.x),
+    );
+    const y = Math.max(
+      8,
+      Math.min(globalThis.innerHeight - tracker.offsetHeight - 8, state.initiative.position.y),
+    );
+    tracker.style.left = `${x}px`;
+    tracker.style.top = `${y}px`;
     tracker.style.right = "auto";
   }
   $("#initiative-entries").innerHTML = state.initiative.entries.map((entry, index) =>
@@ -1477,15 +1732,17 @@ function renderInitiativeTracker() {
       <input class="initiative-score" type="number" min="-10" max="99" value="${entry.initiative}" aria-label="Initiative score">
       ${
       entry.side === "monster"
-        ? `<div class="initiative-hp"><button type="button" data-init-hp-delta="-1" aria-label="Remove one HP">−</button><input class="initiative-hp-number" type="number" min="0" max="${
+        ? `<div class="initiative-hp"><span>HP</span><button type="button" data-init-hp-delta="-1" aria-label="Remove one HP" title="Decrease HP by 1">-1</button><input class="initiative-hp-number" type="number" min="0" max="${
           Number(entry.maxHp ?? entry.hp ?? 1)
         }" value="${Number(entry.hp ?? entry.maxHp ?? 1)}" aria-label="Current HP for ${
           escapeHtml(entry.name)
-        }"><button type="button" data-init-hp-delta="1" aria-label="Add one HP">+</button><input class="initiative-hp-slider" type="range" min="0" max="${
+        }"><small>/ ${
+          Number(entry.maxHp ?? entry.hp ?? 1)
+        }</small><button type="button" data-init-hp-delta="1" aria-label="Add one HP" title="Increase HP by 1">+1</button><input class="initiative-hp-slider" type="range" min="0" max="${
           Number(entry.maxHp ?? entry.hp ?? 1)
         }" value="${Number(entry.hp ?? entry.maxHp ?? 1)}" aria-label="Quick HP for ${
           escapeHtml(entry.name)
-        }"><small>/ ${Number(entry.maxHp ?? entry.hp ?? 1)}</small></div>`
+        }"></div>`
         : `<span class="initiative-hp-empty">—</span>`
     }
       <span class="initiative-roll">${
@@ -1495,11 +1752,40 @@ function renderInitiativeTracker() {
         ? `d20 ${entry.roll ?? "—"} ${Number(entry.modifier) >= 0 ? "+" : ""}${entry.modifier ?? 0}`
         : "PLAYER"
     }</span>
-      <button data-init-move="up" title="Move up">↑</button><button data-init-move="down" title="Move down">↓</button><button data-init-remove title="Remove">×</button>
+      <button data-init-move="up" title="Move up">Up</button><button data-init-move="down" title="Move down">Down</button><button data-init-remove title="Remove">Remove</button>
       ${
       entry.side === "lair"
         ? `<div class="initiative-lair-options">${
           (entry.actions ?? []).map((action) => `<span>${escapeHtml(action)}</span>`).join("")
+        }</div>`
+        : ""
+    }
+      ${
+      entry.side === "monster" &&
+        (entry.actionDetails?.length || Object.keys(entry.savingThrows ?? {}).length)
+        ? `<div class="initiative-monster-actions">${
+          entry.actionDetails?.length
+            ? `<span>Attacks</span><div>${
+              entry.actionDetails.map((action, actionIndex) => {
+                const damage = (action.damages ?? []).map((part) => part.dice).join(" + ");
+                return `<button type="button" data-init-action="${actionIndex}" title="Roll damage for ${
+                  escapeHtml(action.name)
+                }">${escapeHtml(action.name)}${damage ? ` · ${escapeHtml(damage)}` : ""}</button>`;
+              }).join("")
+            }</div>`
+            : ""
+        }${entry.lastActionResult ? `<output>${escapeHtml(entry.lastActionResult)}</output>` : ""}${
+          Object.keys(entry.savingThrows ?? {}).length
+            ? `<div class="initiative-monster-save"><label>Monster saving throw<select data-init-save>${
+              Object.entries(entry.savingThrows).map(([ability, modifier]) =>
+                `<option value="${ability}" ${
+                  (entry.selectedSave ?? "DEX") === ability ? "selected" : ""
+                }>${ability} ${Number(modifier) >= 0 ? "+" : ""}${modifier}</option>`
+              ).join("")
+            }</select></label><button type="button" data-roll-init-save>Roll d20</button></div>${
+              entry.lastSaveResult ? `<output>${escapeHtml(entry.lastSaveResult)}</output>` : ""
+            }`
+            : ""
         }</div>`
         : ""
     }
@@ -1529,6 +1815,22 @@ function renderInitiativeTracker() {
         if (entry) setInitiativeHp(id, Number(entry.hp) + Number(button.dataset.initHpDelta));
       })
     );
+    row.querySelectorAll("[data-init-action]").forEach((button) =>
+      button.addEventListener(
+        "click",
+        () => rollInitiativeAction(id, Number(button.dataset.initAction)),
+      )
+    );
+    row.querySelector("[data-init-save]")?.addEventListener("change", (event) => {
+      const entry = state.initiative?.entries.find((candidate) => candidate.id === id);
+      if (!entry) return;
+      entry.selectedSave = event.target.value;
+      saveState();
+    });
+    row.querySelector("[data-roll-init-save]")?.addEventListener(
+      "click",
+      () => rollInitiativeSave(id),
+    );
     row.querySelectorAll("[data-init-move]").forEach((button) =>
       button.addEventListener("click", () => moveInitiativeEntry(id, button.dataset.initMove))
     );
@@ -1537,6 +1839,44 @@ function renderInitiativeTracker() {
       () => removeInitiativeEntry(id),
     );
   });
+}
+
+function rollInitiativeAction(id, actionIndex) {
+  const entry = state.initiative?.entries.find((candidate) => candidate.id === id);
+  const action = entry?.actionDetails?.[actionIndex];
+  if (!entry || !action) return;
+  const results = (action.damages ?? []).map((damage) => ({
+    ...damage,
+    result: rollDiceExpression(damage.dice),
+  })).filter((damage) => damage.result);
+  entry.lastActionResult = results.length
+    ? `${action.name}: ${
+      results.map((damage) =>
+        `${damage.result.total} ${damage.type} (${damage.dice}: ${damage.result.rolls.join(", ")}${
+          damage.result.modifier
+            ? `${damage.result.modifier > 0 ? " + " : " - "}${Math.abs(damage.result.modifier)}`
+            : ""
+        })`
+      ).join(" + ")
+    }`
+    : `${action.name}: no damage dice listed`;
+  saveState();
+  renderInitiativeTracker();
+}
+
+function rollInitiativeSave(id) {
+  const entry = state.initiative?.entries.find((candidate) => candidate.id === id);
+  if (!entry?.savingThrows) return;
+  const ability = entry.selectedSave ?? "DEX";
+  const modifier = Number(entry.savingThrows[ability] ?? 0);
+  const natural = rollD20();
+  const total = natural + modifier;
+  entry.selectedSave = ability;
+  entry.lastSaveResult = `${ability} save: ${natural} ${modifier >= 0 ? "+" : "-"} ${
+    Math.abs(modifier)
+  } = ${total}`;
+  saveState();
+  renderInitiativeTracker();
 }
 
 function setInitiativeHp(id, value, rerender = true) {
@@ -1615,6 +1955,8 @@ function spawnInitiativeMinion() {
     hp: Number(pool.monster.hp),
     maxHp: Number(pool.monster.hp),
     monsterIndex: pool.monster.index,
+    actionDetails: clone(pool.monster.actionDetails ?? []),
+    savingThrows: clone(pool.monster.savingThrows ?? {}),
   });
   state.initiative.entries.sort((a, b) => Number(b.initiative) - Number(a.initiative));
   saveState();
@@ -1671,7 +2013,6 @@ function renderEncounterMarkers() {
     marker.dataset.encounter = encounter.marker;
     marker.tabIndex = 0;
     marker.onclick = () => {
-      if (performance.now() < suppressMapClickUntil) return;
       focusEncounter(encounter.marker, "card");
     };
   });
@@ -1840,6 +2181,10 @@ function resolveEncounter(event) {
     return changes;
   });
   const sample = outcomeSample(encounter, beforeParty, report);
+  sample.encounterTitle = encounter.title;
+  sample.roomName = encounter.room?.name ?? null;
+  sample.floor = state.floor;
+  sample.rating = encounter.rating;
   state.learningSamples.push(sample);
   state.learningSamples = state.learningSamples.slice(-24);
   logEvent(
@@ -1877,6 +2222,7 @@ function resolveEncounter(event) {
     resolution: {
       outcome: data.outcome,
       rounds: Number(data.rounds),
+      feedback: data.feedback,
       objectiveCompleted: report.objectiveCompleted,
       withoutCombat: report.withoutCombat,
     },
@@ -2208,7 +2554,7 @@ function maybeCreateRestEncounter(type, interrupted, safe) {
       title: type === "long" ? "Raid upon the sleeping camp" : "The watchman's sudden alarm",
       kind: "combat",
       rating: type === "long" && state.awareness >= 4 ? "Hard" : "Moderate",
-      icon: "⚔",
+      icon: "C",
       tone: "Interruption",
       intent: "Wandering threat",
       objective: "Protect the resting party and secure the camp before recovery can continue.",
@@ -2222,7 +2568,7 @@ function maybeCreateRestEncounter(type, interrupted, safe) {
       title: safe ? "A visitor at the sanctuary" : "Whispers during the watch",
       kind: "social",
       rating: "Low",
-      icon: "♜",
+      icon: "S",
       tone: "Rest event",
       intent: "Camp complication",
       objective: "Decide whether the nocturnal visitor is a warning, an opportunity, or a threat.",
@@ -2244,7 +2590,7 @@ function maybeReoccupyRoom() {
     title: `New occupants in ${room.name}`,
     kind: "combat",
     rating: state.awareness >= 4 ? "Hard" : "Moderate",
-    icon: "⚔",
+    icon: "C",
     tone: "Reoccupation",
     intent: "Dungeon response",
     objective: `Reclaim ${room.name}, which changed hands while the party rested.`,
@@ -2260,7 +2606,63 @@ function openSettings() {
     if (form.elements[key].type === "checkbox") form.elements[key].checked = Boolean(value);
     else form.elements[key].value = value;
   }
+  renderBiomeModifierSettings();
   $("#settings-dialog").showModal();
+}
+
+function normalizedBiomeSelections(value) {
+  if (Array.isArray(value)) return value;
+  if (!value || value === "none") return [];
+  return [value];
+}
+
+function renderBiomeModifierSettings() {
+  const names = {
+    "moss-forest": "Moss Forest",
+    "drowned-grotto": "Drowned Grotto",
+    ossuary: "Ossuary",
+    "infernal-foundry": "Infernal Foundry",
+  };
+  const container = $("#biome-modifier-settings");
+  container.innerHTML = Object.entries(BIOME_MODIFIERS).map(([biome, modifiers]) => {
+    const selected = normalizedBiomeSelections(state.settings.biomeOptions?.[biome]);
+    const random = selected.includes("random");
+    return `<fieldset data-biome="${biome}"><legend>${escapeHtml(names[biome])} modifiers</legend>
+      <small>Base biome rules always apply. Choose several extras, or one random extra that persists for the complete arc or ten-floor dungeon.</small>
+      <label class="modifier-random"><input type="checkbox" data-random ${
+      random ? "checked" : ""
+    }> Random for this biome run</label>
+      <div>${
+      modifiers.map((modifier) =>
+        `<label><input type="checkbox" data-modifier="${modifier.id}" ${
+          selected.includes(modifier.id) ? "checked" : ""
+        } ${random ? "disabled" : ""}><span><b>${escapeHtml(modifier.name)}</b><small>${
+          escapeHtml(modifier.rule)
+        }</small></span></label>`
+      ).join("")
+    }</div>
+    </fieldset>`;
+  }).join("");
+  container.querySelectorAll("[data-random]").forEach((input) => {
+    input.addEventListener("change", () => {
+      input.closest("fieldset").querySelectorAll("[data-modifier]").forEach((modifier) => {
+        modifier.disabled = input.checked;
+      });
+    });
+  });
+}
+
+function collectBiomeModifierSettings() {
+  return Object.fromEntries(
+    [...document.querySelectorAll("#biome-modifier-settings fieldset")].map((fieldset) => {
+      const selected = fieldset.querySelector("[data-random]").checked
+        ? ["random"]
+        : [...fieldset.querySelectorAll("[data-modifier]:checked")].map((input) =>
+          input.dataset.modifier
+        );
+      return [fieldset.dataset.biome, selected];
+    }),
+  );
 }
 
 function saveSettings(event) {
@@ -2269,22 +2671,43 @@ function saveSettings(event) {
   const form = $("#settings-form");
   const previousThemeMode = state.settings.themeMode;
   const previousDungeonTheme = state.settings.dungeonTheme;
+  const previousFloorSize = state.settings.floorSize;
+  const previousRoomCount = state.settings.roomCount;
+  const previousBiomeOptions = JSON.stringify(state.settings.biomeOptions ?? {});
   state.settings = {
     trackResources: form.elements.trackResources.checked,
     trackAfflictions: form.elements.trackAfflictions.checked,
     safeRestRules: form.elements.safeRestRules.checked,
     themeMode: form.elements.themeMode.value,
     dungeonTheme: form.elements.dungeonTheme.value,
+    floorSize: form.elements.floorSize.value,
+    roomCount: Math.max(4, Math.min(30, Number(form.elements.roomCount.value) || 11)),
+    biomeOptions: collectBiomeModifierSettings(),
   };
-  const themeChanged = previousThemeMode !== state.settings.themeMode ||
-    previousDungeonTheme !== state.settings.dungeonTheme;
+  const geometryChanged = previousThemeMode !== state.settings.themeMode ||
+    previousDungeonTheme !== state.settings.dungeonTheme ||
+    previousFloorSize !== state.settings.floorSize ||
+    previousRoomCount !== state.settings.roomCount;
+  const biomeChanged = previousBiomeOptions !== JSON.stringify(state.settings.biomeOptions);
+  const themeChanged = geometryChanged || biomeChanged;
   if (themeChanged) {
-    state.roomMoves = {};
     state.encounterLocks = {};
     state.encounterControls = { rerolls: {}, ratings: {}, kinds: {} };
     state.pendingRestEncounter = null;
     state.inSafeRoom = false;
-    dungeon = generateDungeon(state.seed, 55, 31, dungeonGenerationOptions({ roomMoves: {} }));
+    const generated = generateDungeon(
+      state.seed,
+      undefined,
+      undefined,
+      dungeonGenerationOptions(),
+    );
+    if (geometryChanged) persistDungeon(generated);
+    else {
+      dungeon.theme = generated.theme;
+      dungeon.themeSignature = generated.themeSignature;
+      dungeon.restriction = generated.restriction;
+      persistDungeon(dungeon);
+    }
   }
   logEvent("settings", "Tracking settings changed");
   saveState();
@@ -2349,9 +2772,14 @@ function printJournal() {
 function undoLastAction() {
   const entry = state.undoStack.pop();
   if (!entry) return;
-  Object.assign(state, clone(entry.snapshot));
+  const snapshot = clone(entry.snapshot);
+  const floorData = snapshot.floorData;
+  delete snapshot.floorData;
+  Object.assign(state, snapshot);
+  state.floors ??= {};
+  if (validDungeonData(floorData)) state.floors[floorKey(state.floor)] = floorData;
+  dungeon = ensureCurrentFloor();
   saveState();
-  dungeon = generateDungeon(state.seed, 55, 31, dungeonGenerationOptions());
   renderMeta();
   renderParty();
   buildMapCells();
@@ -2360,17 +2788,17 @@ function undoLastAction() {
 
 function newExpedition() {
   checkpoint("Descend a floor");
-  state.seed = randomSeed();
+  const targetFloor = state.floor + 1;
+  state.seed = state.floors?.[floorKey(targetFloor)]?.seed ?? seedForDungeonFloor(targetFloor);
   state.completed = 0;
-  state.floor += 1;
+  state.floor = targetFloor;
   state.inSafeRoom = false;
   state.encounterControls = { rerolls: {}, ratings: {}, kinds: {} };
   state.encounterLocks = {};
   state.pendingRestEncounter = null;
   state.initiative = null;
-  state.roomMoves = {};
   state.forecastChanges = [];
-  dungeon = generateDungeon(state.seed, 55, 31, dungeonGenerationOptions({ roomMoves: {} }));
+  dungeon = ensureCurrentFloor();
   logEvent("dungeon", `Descended to floor ${state.floor}`, `New seed ${state.seed}`);
   saveState();
   renderMeta();
@@ -2386,6 +2814,7 @@ function resetDungeon() {
   if (!confirmed) return;
   checkpoint("Reset dungeon");
   state.seed = randomSeed();
+  state.dungeonSeed = state.seed;
   state.completed = 0;
   state.floor = 1;
   state.expedition += 1;
@@ -2396,10 +2825,12 @@ function resetDungeon() {
   state.inSafeRoom = false;
   state.pendingRestEncounter = null;
   state.initiative = null;
-  state.roomMoves = {};
   state.forecastChanges = [];
   state.themeOrder = randomThemeOrder();
   state.storyVariant = randomStoryVariant();
+  state.floors = {};
+  state.visitedRooms = {};
+  state.currentRoomId = null;
   state.party = takeLongRest(state.party).map((member) => {
     if (!member.dead) return member;
     const hitDice = hitDiceState(member);
@@ -2421,7 +2852,7 @@ function resetDungeon() {
   state.history = [];
   state.clearedRooms = {};
   state.claimedLoot = [];
-  dungeon = generateDungeon(state.seed, 55, 31, dungeonGenerationOptions({ roomMoves: {} }));
+  dungeon = ensureCurrentFloor();
   saveState();
   renderMeta();
   buildMapCells();
@@ -2435,7 +2866,6 @@ function renderMeta() {
   $("#floor-number").textContent = state.floor;
   $("#floor-theme-name").textContent = dungeon.theme.name;
   $("#floor-folio").textContent = `Folio ${state.floor}`;
-  $("#print-theme-name").textContent = dungeon.theme.name;
   document.body.dataset.floorTheme = dungeon.theme.id;
 }
 
@@ -2501,14 +2931,72 @@ function normalizeImportedSession(data) {
   const importedThemeOrder = Array.isArray(data.themeOrder)
     ? data.themeOrder.filter((theme) => knownThemes.includes(theme))
     : [];
-  const settings = { ...DEFAULT_SETTINGS, ...(data.settings ?? {}) };
+  const settings = {
+    ...DEFAULT_SETTINGS,
+    ...(data.settings ?? {}),
+    biomeOptions: {
+      ...DEFAULT_SETTINGS.biomeOptions,
+      ...(data.settings?.biomeOptions ?? {}),
+    },
+  };
   if (!["arcs", "full-dungeon"].includes(settings.themeMode)) settings.themeMode = "arcs";
   if (!["random", ...knownThemes].includes(settings.dungeonTheme)) {
     settings.dungeonTheme = "random";
   }
+  if (!["small", "medium", "large", "massive"].includes(settings.floorSize)) {
+    settings.floorSize = "medium";
+  }
+  settings.roomCount = Math.max(4, Math.min(30, Number(settings.roomCount) || 11));
+  const biomeOptionIds = {
+    "moss-forest": [
+      "random",
+      "none",
+      "malicious-roots",
+      "from-up-high",
+      "tea-or-poison",
+      "wild-urges",
+    ],
+    "drowned-grotto": [
+      "random",
+      "none",
+      "sea-stirs",
+      "feeding-frenzy",
+      "crushing-weight",
+      "siren-song",
+      "seas-toll",
+    ],
+    ossuary: [
+      "random",
+      "none",
+      "illusionary-hallways",
+      "grave-call",
+      "soul-drag",
+      "undying-fortitude",
+      "no-hope",
+      "realm-damned",
+    ],
+    "infernal-foundry": [
+      "random",
+      "none",
+      "allure-depravity",
+      "gift-endurance",
+      "spells-change",
+      "promise-strength",
+      "survival-desperate",
+    ],
+  };
+  for (const [biome, allowed] of Object.entries(biomeOptionIds)) {
+    const selected = normalizedBiomeSelections(settings.biomeOptions[biome]).filter((id) =>
+      allowed.includes(id)
+    );
+    settings.biomeOptions[biome] = selected.includes("random") ? ["random"] : selected;
+  }
   return {
     party,
     seed: data.seed.trim().slice(0, 128),
+    dungeonSeed: typeof data.dungeonSeed === "string" && data.dungeonSeed
+      ? data.dungeonSeed.slice(0, 128)
+      : data.seed.trim().slice(0, 128),
     completed: Math.max(0, Number(data.completed) || 0),
     expedition: Math.max(1, Number(data.expedition) || 1),
     floor: Math.max(1, Math.min(999, Number(data.floor) || 1)),
@@ -2531,7 +3019,6 @@ function normalizeImportedSession(data) {
     claimedLoot: Array.isArray(data.claimedLoot) ? data.claimedLoot : [],
     pendingRestEncounter: data.pendingRestEncounter ?? null,
     initiative: data.initiative ?? null,
-    roomMoves: data.roomMoves ?? {},
     forecastChanges: Array.isArray(data.forecastChanges) ? data.forecastChanges : [],
     themeOrder: importedThemeOrder.length === knownThemes.length
       ? importedThemeOrder
@@ -2540,6 +3027,11 @@ function normalizeImportedSession(data) {
       ? Number(data.storyVariant)
       : randomStoryVariant(),
     encounterBaseline,
+    floors: data.floors && typeof data.floors === "object" ? data.floors : {},
+    visitedRooms: data.visitedRooms && typeof data.visitedRooms === "object"
+      ? data.visitedRooms
+      : {},
+    currentRoomId: typeof data.currentRoomId === "string" ? data.currentRoomId : null,
   };
 }
 
@@ -2557,11 +3049,7 @@ async function importSession(event) {
     for (const key of Object.keys(state)) delete state[key];
     Object.assign(state, imported);
     forecast = null;
-    selectedRoomIndex = null;
-    roomEditMode = false;
-    roomDrag = null;
-    dungeon = generateDungeon(state.seed, 55, 31, dungeonGenerationOptions());
-    bindRoomEditor();
+    dungeon = ensureCurrentFloor();
     saveState();
     renderMeta();
     renderParty();
@@ -2576,23 +3064,72 @@ async function importSession(event) {
   }
 }
 
-function printMap() {
+function playerPrintableGrid(floorDungeon) {
+  const hiddenMarkers = new Set(["@", ">", "!", "$", "^", "S", "†", "?", "B"]);
+  const printable = floorDungeon.grid.map((row) =>
+    row.map((tile) => hiddenMarkers.has(tile) ? "·" : tile)
+  );
+  const start = floorDungeon.rooms.find((room) => room.role === "entry") ??
+    floorDungeon.rooms[0];
+  if (start) printable[start.cy][start.cx] = "@";
+  return printable.map((row) => row.join("")).join("\n");
+}
+
+function dungeonFloorForPrint(floor) {
+  return state.floors?.[floorKey(floor)] ?? generateDungeon(
+    seedForDungeonFloor(floor),
+    undefined,
+    undefined,
+    dungeonGenerationOptions({ floor }),
+  );
+}
+
+function printFloorPage(floorDungeon, floor) {
+  const fontSize = Math.max(
+    5.5,
+    Math.min(
+      9.5,
+      140 / (floorDungeon.height * .3528 * 1.05),
+      250 / (floorDungeon.width * .3528 * .68),
+    ),
+  );
+  const areaLabel = floorDungeon.layout === "open-region" ? "zones" : "floor";
+  return `<article class="print-floor-sheet" style="--print-map-font:${fontSize.toFixed(2)}pt">
+    <header class="print-header">
+      <div><span>DELVEWRIGHT PLAYER ATLAS</span><h1>${
+    escapeHtml(floorDungeon.theme.name)
+  }</h1></div>
+      <dl><div><dt>Floor</dt><dd>${floor}</dd></div><div><dt>Map</dt><dd>${
+    escapeHtml(areaLabel)
+  }</dd></div></dl>
+    </header>
+    <div class="print-map-frame"><pre class="print-map-content">${
+    escapeHtml(
+      playerPrintableGrid(floorDungeon),
+    )
+  }</pre></div>
+    <div class="print-key"><span><b>@</b> start</span><span><b>+</b> door</span><span><b>╬</b> locked</span><span><b>~</b> water</span><span><b>*</b> fire</span><span><b>O</b> chasm</span><span><b>=</b> bridge</span><span><b>_</b> ice</span><span><b>w</b> webs</span><span><b>&amp;</b> bushes</span><span><b>%</b> rough</span></div>
+    <footer class="print-footer"><span>Player map · obstacles shown</span><span>Floor ${floor}</span></footer>
+  </article>`;
+}
+
+function printDungeonFloors(floors) {
   document.body.classList.remove("print-journal");
-  if (!forecast) {
-    forecast = buildEncounterForecast(state.party, state.seed, state.completed, state.floor);
-    forecast.encounters = placeEncounters(forecast.encounters, dungeon, state.completed);
-  }
-  const printable = dungeon.grid.map((row) => [...row]);
-  forecast.encounters.forEach((encounter) => {
-    printable[encounter.room.y][encounter.room.x] = String(encounter.marker);
-  });
-  $("#print-map-content").textContent = printable.map((row) => row.join("")).join("\n");
-  $("#print-floor").textContent = state.floor;
-  $("#print-seed").textContent = state.seed.toUpperCase();
-  $("#print-rooms").textContent =
-    `${dungeon.rooms.length} rooms · ${dungeon.steps.length} drawn tiles`;
+  $("#print-sheet").innerHTML = floors.map((floor) =>
+    printFloorPage(dungeonFloorForPrint(floor), floor)
+  ).join("");
   $("#print-sheet").setAttribute("aria-hidden", "false");
   requestAnimationFrame(() => globalThis.print());
+}
+
+function printMap() {
+  printDungeonFloors([state.floor]);
+}
+
+function printEntireDungeon() {
+  const storedFloors = Object.keys(state.floors ?? {}).map(Number).filter(Number.isFinite);
+  const lastFloor = Math.max(10, state.floor, ...storedFloors);
+  printDungeonFloors(Array.from({ length: lastFloor }, (_, index) => index + 1));
 }
 
 function setupInitiativeDrag() {
@@ -2648,6 +3185,14 @@ $("#sort-initiative").addEventListener("click", sortInitiative);
 $("#next-initiative-turn").addEventListener("click", nextInitiativeTurn);
 $("#open-settings").addEventListener("click", openSettings);
 $("#settings-form").addEventListener("submit", saveSettings);
+document.querySelectorAll("[data-setting-step]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const input = $("#settings-form").elements.roomCount;
+    const next = Number(input.value || 11) + Number(button.dataset.settingStep);
+    input.value = Math.max(Number(input.min), Math.min(Number(input.max), next));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+});
 $("#open-journal").addEventListener("click", openJournal);
 $("#print-journal").addEventListener("click", printJournal);
 $("#undo-action").addEventListener("click", undoLastAction);
@@ -2663,17 +3208,10 @@ for (const field of ["class", "level", "conModifier"]) {
   });
 }
 $("#calculate-average-hp").addEventListener("click", () => updateAverageHpPreview(true));
-$("#new-expedition").addEventListener("click", newExpedition);
+$("#new-expedition").addEventListener("click", () => navigateFloor(1));
 $("#reset-dungeon").addEventListener("click", resetDungeon);
 $("#replay-collapse").addEventListener("click", playCollapse);
-$("#edit-rooms").addEventListener("click", () => {
-  roomEditMode = !roomEditMode;
-  selectedRoomIndex = null;
-  bindRoomEditor();
-  showToast(
-    roomEditMode ? "Drag a full room onto empty space or another room" : "Room layout locked",
-  );
-});
+$("#floor-up").addEventListener("click", () => navigateFloor(-1));
 $("#refresh-forecast").addEventListener("click", () => {
   checkpoint("Read the party again");
   saveState();
@@ -2687,6 +3225,7 @@ $("#export-button").addEventListener("click", exportSession);
 $("#import-button").addEventListener("click", () => $("#import-session-file").click());
 $("#import-session-file").addEventListener("change", importSession);
 $("#print-map").addEventListener("click", printMap);
+$("#print-dungeon").addEventListener("click", printEntireDungeon);
 $("#theme-toggle").addEventListener("click", () => document.body.classList.toggle("high-contrast"));
 globalThis.addEventListener("afterprint", () => document.body.classList.remove("print-journal"));
 $("#model-toggle").addEventListener("click", () => {

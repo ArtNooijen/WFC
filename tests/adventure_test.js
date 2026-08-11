@@ -81,6 +81,98 @@ Deno.test("dungeon geometry is deterministic", () => {
   if (first.rooms.length < 4) throw new Error("not enough rooms generated");
 });
 
+Deno.test("floor size and requested room count independently shape generation", () => {
+  const small = generateDungeon("sized-floor", 55, 31, {
+    floorSize: "small",
+    roomCount: 15,
+    noveltyOpenRegions: false,
+  });
+  const large = generateDungeon("sized-floor", 55, 31, {
+    floorSize: "large",
+    roomCount: 15,
+    noveltyOpenRegions: false,
+  });
+  if (small.rooms.length !== 15 || large.rooms.length !== 15) {
+    throw new Error("requested room count was not produced");
+  }
+  if (small.width >= large.width || small.height >= large.height) {
+    throw new Error("floor size did not change generation dimensions");
+  }
+  const massive = generateDungeon("sized-floor", 55, 31, {
+    floorSize: "massive",
+    roomCount: 12,
+  });
+  const zonedArea = massive.rooms.reduce((sum, room) => sum + room.w * room.h, 0);
+  if (
+    massive.layout !== "open-region" || massive.rooms.length !== 12 ||
+    massive.rooms.some((room) => !room.openRegionZone) ||
+    zonedArea !== (massive.width - 6) * (massive.height - 6) ||
+    massive.rooms.filter((room) => room.role === "entry").length !== 1 ||
+    massive.rooms.filter((room) => room.role === "exit").length !== 1
+  ) {
+    throw new Error("massive floors were not generated as one completely zoned open region");
+  }
+  const novelty = generateDungeon("novelty-5", 55, 31, {
+    floorSize: "medium",
+    roomCount: 8,
+  });
+  const ordinary = generateDungeon("novelty-0", 55, 31, {
+    floorSize: "medium",
+    roomCount: 8,
+  });
+  if (
+    !novelty.noveltyOpenRegion || novelty.floorSize !== "super-massive" ||
+    ordinary.noveltyOpenRegion
+  ) {
+    throw new Error("normal layouts do not occasionally produce a super-massive novelty floor");
+  }
+});
+
+Deno.test("terrain and trap systems store gameplay data", () => {
+  let chasm = false;
+  let bridgedChasms = 0;
+  let unbridgedChasms = 0;
+  let forestFeatures = new Set();
+  for (let index = 0; index < 12; index++) {
+    const floor = generateDungeon(`terrain-${index}`, 55, 31, { floor: 1 });
+    chasm ||= floor.rooms.some((room) => room.terrain.some((feature) => feature.tile === "O"));
+    for (const room of floor.rooms) {
+      const divide = room.terrain.filter((feature) => ["O", "="].includes(feature.tile));
+      if (divide.length) {
+        const sameX = new Set(divide.map((feature) => feature.x)).size === 1;
+        const sameY = new Set(divide.map((feature) => feature.y)).size === 1;
+        const expectedSpan = sameX ? room.h - 2 : room.w - 2;
+        if ((!sameX && !sameY) || divide.length !== expectedSpan) {
+          throw new Error("a chasm did not span its complete room");
+        }
+        if (divide.some((feature) => feature.tile === "=")) bridgedChasms += 1;
+        else unbridgedChasms += 1;
+      }
+      for (const feature of room.terrain) {
+        forestFeatures.add(feature.tile);
+        if (!["_", "&"].includes(feature.tile)) continue;
+        const connected = room.terrain.some((neighbor) =>
+          neighbor !== feature && neighbor.tile === feature.tile &&
+          Math.abs(neighbor.x - feature.x) + Math.abs(neighbor.y - feature.y) === 1
+        );
+        if (!connected) throw new Error("ice or bush terrain generated as an isolated symbol");
+      }
+    }
+    if (
+      !floor.traps.some((trap) => trap.locationType === "hallway") ||
+      !floor.traps.some((trap) => trap.locationType === "room")
+    ) {
+      throw new Error("traps were not independently placed in rooms and hallways");
+    }
+  }
+  if (!chasm || !["_", "w", "&"].every((tile) => forestFeatures.has(tile))) {
+    throw new Error("structured chasm or forest terrain was not generated");
+  }
+  if (unbridgedChasms <= bridgedChasms) {
+    throw new Error("most chasms should not contain a bridge");
+  }
+});
+
 Deno.test("encounters react to party state without touching geometry", () => {
   const fresh = buildEncounterForecast(PARTY, "vault-13", 0);
   const tired = buildEncounterForecast(
@@ -162,6 +254,91 @@ Deno.test("floors carry coherent themes, restrictions, and themed encounters", (
     )
   ) {
     throw new Error("infernal forecast included an off-theme encounter");
+  }
+});
+
+Deno.test("every biome exposes selectable feedback modifiers", () => {
+  const cases = [
+    ["moss-forest", 1, "wild-urges", "Wild Urges"],
+    ["drowned-grotto", 5, "siren-song", "Siren Song"],
+    ["ossuary", 8, "grave-call", "Grave Call"],
+    ["infernal-foundry", 13, "spells-change", "Spells of Change"],
+  ];
+  for (const [biome, floor, selected, expectedName] of cases) {
+    const theme = floorTheme(floor, {
+      themeMode: "full-dungeon",
+      dungeonTheme: biome,
+      biomeOptions: { [biome]: selected },
+    });
+    if (theme.activeModifier?.name !== expectedName || !theme.activeModifier.rule) {
+      throw new Error(`${biome} did not apply ${expectedName}`);
+    }
+  }
+  const disabled = floorTheme(1, {
+    themeMode: "full-dungeon",
+    dungeonTheme: "moss-forest",
+    biomeOptions: { "moss-forest": "none" },
+  });
+  if (disabled.activeModifier !== null) throw new Error("biome modifier could not be disabled");
+
+  const combined = floorTheme(1, {
+    themeMode: "full-dungeon",
+    dungeonTheme: "moss-forest",
+    biomeOptions: { "moss-forest": ["malicious-roots", "wild-urges"] },
+  });
+  if (
+    combined.activeModifiers.map((modifier) => modifier.id).join(",") !==
+      "malicious-roots,wild-urges" || combined.rules.length < 3
+  ) {
+    throw new Error("multiple modifiers replaced each other or removed base biome rules");
+  }
+});
+
+Deno.test("random biome modifiers persist for a full dungeon or biome arc", () => {
+  const fullContext = {
+    themeMode: "full-dungeon",
+    dungeonTheme: "moss-forest",
+    dungeonSeed: "one-expedition",
+    biomeOptions: { "moss-forest": ["random"] },
+  };
+  const fullModifiers = Array.from(
+    { length: 10 },
+    (_, index) => floorTheme(index + 1, fullContext).activeModifier.id,
+  );
+  if (new Set(fullModifiers).size !== 1) {
+    throw new Error("a ten-floor biome changed its random modifier between floors");
+  }
+
+  const arcContext = {
+    dungeonSeed: "arc-expedition",
+    themeOrder: ["moss-forest", "drowned-grotto", "ossuary", "infernal-foundry"],
+    biomeOptions: { "moss-forest": ["random"] },
+  };
+  const arcModifiers = [1, 2, 3, 4].map((floor) => floorTheme(floor, arcContext).activeModifier.id);
+  if (new Set(arcModifiers).size !== 1) {
+    throw new Error("a biome modifier changed during its arc");
+  }
+
+  const forecastContext = {
+    dungeonSeed: "arc-expedition",
+    themeOrder: arcContext.themeOrder,
+    settings: { biomeOptions: arcContext.biomeOptions },
+  };
+  const firstForecast = buildEncounterForecast(PARTY, "floor-seed-a", 0, 1, forecastContext);
+  const secondForecast = buildEncounterForecast(PARTY, "floor-seed-b", 0, 2, forecastContext);
+  if (firstForecast.themeSignature !== secondForecast.themeSignature) {
+    throw new Error("forecast modifiers used the changing floor seed instead of the dungeon seed");
+  }
+
+  const expeditionChoices = new Set(
+    Array.from(
+      { length: 12 },
+      (_, index) =>
+        floorTheme(1, { ...fullContext, dungeonSeed: `expedition-${index}` }).activeModifier.id,
+    ),
+  );
+  if (expeditionChoices.size < 2) {
+    throw new Error("new dungeons cannot receive new random biome modifiers");
   }
 });
 
@@ -275,55 +452,6 @@ Deno.test("a full ten-floor biome keeps one story and uses three themed bosses",
   if (!finalMap.rooms.some((room) => room.dedicatedBoss) || finalMap.grid.flat().includes("~")) {
     throw new Error("full-dungeon boss map broke biome rules");
   }
-});
-
-Deno.test("saved room moves rebuild geometry deterministically", () => {
-  const original = generateDungeon("moving-vault");
-  const room = original.rooms[1];
-  let moved = null;
-  for (let y = 2; y < original.height - room.h - 2 && !moved; y++) {
-    for (let x = 2; x < original.width - room.w - 2; x++) {
-      const candidate = generateDungeon("moving-vault", 55, 31, {
-        roomMoves: { 1: { x, y } },
-      });
-      if (candidate.rooms[1].x !== room.x || candidate.rooms[1].y !== room.y) {
-        moved = candidate;
-        break;
-      }
-    }
-  }
-  if (!moved) throw new Error("could not move a room");
-  const repeated = generateDungeon("moving-vault", 55, 31, {
-    roomMoves: { 1: { x: moved.rooms[1].x, y: moved.rooms[1].y } },
-  });
-  if (JSON.stringify(moved.grid) !== JSON.stringify(repeated.grid)) {
-    throw new Error("edited room geometry is not deterministic");
-  }
-});
-
-Deno.test("two complete rooms can swap positions in one generation pass", () => {
-  const original = generateDungeon("swap-vault");
-  let swapped = null;
-  for (let first = 0; first < original.rooms.length && !swapped; first++) {
-    for (let second = first + 1; second < original.rooms.length; second++) {
-      const a = original.rooms[first];
-      const b = original.rooms[second];
-      const candidate = generateDungeon("swap-vault", 55, 31, {
-        roomMoves: {
-          [first]: { x: b.cx - Math.floor(a.w / 2), y: b.cy - Math.floor(a.h / 2) },
-          [second]: { x: a.cx - Math.floor(b.w / 2), y: a.cy - Math.floor(b.h / 2) },
-        },
-      });
-      if (
-        candidate.rooms[first].cx === b.cx && candidate.rooms[first].cy === b.cy &&
-        candidate.rooms[second].cx === a.cx && candidate.rooms[second].cy === a.cy
-      ) {
-        swapped = candidate;
-        break;
-      }
-    }
-  }
-  if (!swapped) throw new Error("no complete room pair could be swapped");
 });
 
 Deno.test("forecasts draw from a varied encounter library", () => {
@@ -565,6 +693,20 @@ Deno.test("class capabilities and tracking settings work without spell bookkeepi
   const ignored = analyzeParty(afflicted, { trackAfflictions: false });
   if (tracked.readiness >= ignored.readiness) {
     throw new Error("afflictions did not affect readiness");
+  }
+});
+
+Deno.test("adventure class profiles match class_proficiencies.json", () => {
+  const artificer = classCapability({ class: "Artificer", level: 1 });
+  if (
+    artificer.singleTarget !== 4 || artificer.aoe !== 3 || artificer.damage !== 3 ||
+    artificer.tank !== 4 || artificer.support !== 4 || artificer.melee !== 3 ||
+    artificer.ranged !== 4 || classResourceDependency("Artificer") !== .6
+  ) {
+    throw new Error("Artificer proficiency values do not match the JSON source");
+  }
+  if (classResourceDependency("Wizard") !== 1 || classResourceDependency("Rogue") !== 0) {
+    throw new Error("resource dependency values do not match the JSON 0–5 scale");
   }
 });
 

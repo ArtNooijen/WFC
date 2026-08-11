@@ -401,6 +401,139 @@ export const FLOOR_THEMES = [
   },
 ];
 
+export const BIOME_MODIFIERS = {
+  "moss-forest": [
+    {
+      id: "malicious-roots",
+      name: "Malicious Roots",
+      rule: "At the start of a turn beside a tree, its roots attempt to grapple that creature.",
+    },
+    {
+      id: "from-up-high",
+      name: "From Up High",
+      rule:
+        "Each round, mark 1d6 random tiles. Falling acorns strike those tiles at the end of the round.",
+    },
+    {
+      id: "tea-or-poison",
+      name: "Delectable Tea or Poison?",
+      rule:
+        "A tree grows 1d6 fruits that either deal poison damage or restore health. A Survival check identifies them.",
+    },
+    {
+      id: "wild-urges",
+      name: "Wild Urges",
+      rule: "An enemy below half hit points gains one additional attack from bestial rage.",
+    },
+  ],
+  "drowned-grotto": [
+    {
+      id: "sea-stirs",
+      name: "The Sea Stirs",
+      rule:
+        "As a combat lair action, there is a 5% chance the floor shakes; creatures make a DEX save or fall prone.",
+    },
+    {
+      id: "feeding-frenzy",
+      name: "Feeding Frenzy",
+      rule:
+        "When a creature falls below half hit points, an adjacent creature can use its reaction to make a melee attack against it.",
+    },
+    {
+      id: "crushing-weight",
+      name: "Crushing Weight of the Dark Below",
+      rule:
+        "On entering the floor, each creature makes a WIS save or remains frightened until it leaves.",
+    },
+    {
+      id: "siren-song",
+      name: "Siren Song",
+      rule:
+        "The exit direction is always known. Moving away from it requires a WIS save; failure prevents that movement.",
+    },
+    {
+      id: "seas-toll",
+      name: "The Sea's Toll",
+      rule: "A ghost pirate joins monsters in combat unless the party bribes it with gold.",
+    },
+  ],
+  ossuary: [
+    {
+      id: "illusionary-hallways",
+      name: "Illusionary Hallways",
+      rule: "Doors, walls, and passages can appear false or seem to close behind the party.",
+    },
+    { id: "grave-call", name: "Grave Call", rule: "All healing on this floor is reduced by 50%." },
+    {
+      id: "soul-drag",
+      name: "Soul Drag",
+      rule:
+        "When a character falls unconscious, they make a CON save or gain one exhaustion level.",
+    },
+    {
+      id: "undying-fortitude",
+      name: "Undying Fortitude",
+      rule: "When a monster would die, it makes a CON save; on success it remains alive.",
+    },
+    { id: "no-hope", name: "There Is No Hope", rule: "Visibility is limited to 15 feet." },
+    {
+      id: "realm-damned",
+      name: "Realm of the Damned",
+      rule: "Necrotic damage is increased and radiant damage is reduced.",
+    },
+  ],
+  "infernal-foundry": [
+    {
+      id: "allure-depravity",
+      name: "Allure of Depravity",
+      rule:
+        "Once per creature per floor, a combat lair action forces a WIS save or charms the target until an enemy damages it.",
+    },
+    {
+      id: "gift-endurance",
+      name: "Gift of Endurance",
+      rule:
+        "Once per creature per floor, dropping to 0 HP instead restores 10% maximum HP and poisons the creature for the floor.",
+    },
+    {
+      id: "spells-change",
+      name: "Spells of Change",
+      rule: "Whenever a spell is cast, a d20 result of 4 or lower triggers a Wild Magic roll.",
+    },
+    {
+      id: "promise-strength",
+      name: "Promise of Strength",
+      rule: "Any creature can choose to make an attack using the Barbarian Reckless Attack rules.",
+    },
+    {
+      id: "survival-desperate",
+      name: "Survival of the Desperate",
+      rule:
+        "When damaged, a creature can use its reaction to make an ally within 5 feet take all of that damage.",
+    },
+  ],
+};
+
+function resolveBiomeModifiers(themeId, scope, context) {
+  const options = BIOME_MODIFIERS[themeId] ?? [];
+  const configured = context.biomeOptions?.[themeId] ?? ["random"];
+  const selected = Array.isArray(configured)
+    ? configured
+    : configured === "none"
+    ? []
+    : [configured];
+  if (selected.includes("random")) {
+    const rng = createRng(
+      `biome-modifier:${context.dungeonSeed ?? "dungeon"}:${themeId}:${scope}:${
+        context.storyVariant ?? 0
+      }`,
+    );
+    const choice = options[Math.floor(rng() * options.length)];
+    return choice ? [choice] : [];
+  }
+  return selected.map((id) => options.find((option) => option.id === id)).filter(Boolean);
+}
+
 const THEMED_ARCHETYPES = {
   "moss-forest": [
     {
@@ -811,6 +944,7 @@ export function floorTheme(floor = 1, context = {}) {
     const bossFloors = [3, 6, 10];
     const bossStage = bossFloors.indexOf(dungeonFloor);
     const story = BIOME_STORIES[selected.id][storyIndex];
+    const activeModifiers = resolveBiomeModifiers(selected.id, `full:${cycle}`, context);
     return {
       ...selected,
       ...story,
@@ -822,6 +956,8 @@ export function floorTheme(floor = 1, context = {}) {
       arcFloor: dungeonFloor,
       bossFloor: bossStage >= 0,
       bossStage,
+      activeModifiers,
+      activeModifier: activeModifiers[0] ?? null,
     };
   }
   const cycleLength = orderedThemes.reduce((sum, theme) => sum + theme.arcLength, 0);
@@ -833,6 +969,7 @@ export function floorTheme(floor = 1, context = {}) {
     const arcEnd = arcStart + theme.arcLength - 1;
     if (cycleFloor < cursor + theme.arcLength) {
       const story = BIOME_STORIES[theme.id][storyIndex];
+      const activeModifiers = resolveBiomeModifiers(theme.id, `arc:${arcStart}`, context);
       return {
         ...theme,
         ...story,
@@ -842,6 +979,8 @@ export function floorTheme(floor = 1, context = {}) {
         arcFloor: normalizedFloor - arcStart + 1,
         bossFloor: normalizedFloor === arcEnd,
         bossStage: 2,
+        activeModifiers,
+        activeModifier: activeModifiers[0] ?? null,
       };
     }
     cursor += theme.arcLength;
@@ -861,6 +1000,7 @@ function themeSignature(theme) {
     theme.fullDungeon ? "full" : "arcs",
     theme.arcStart,
     theme.arcEnd,
+    (theme.activeModifiers ?? []).map((modifier) => modifier.id).join(",") || "no-modifier",
   ].join(":");
 }
 
@@ -881,6 +1021,7 @@ const CLASS_HIT_DIE = {
   Warlock: 8,
   Sorcerer: 6,
   Wizard: 6,
+  Artificer: 8,
 };
 
 export function hitDiceState(member) {
@@ -978,38 +1119,186 @@ export function takeShortRest(party, selections = {}, rng = Math.random) {
   return { party: restedParty, healing, resourcesRecovered };
 }
 
+// Mirrors class_proficiencies.json. Keeping the browser-side index local makes
+// party analysis synchronous while the JSON remains the editable source data.
 const CLASS_CAPABILITIES = {
-  Barbarian: { aoe: 1, control: 2, healing: 1, ranged: 1 },
-  Bard: { aoe: 3, control: 5, healing: 3, ranged: 3 },
-  Cleric: { aoe: 4, control: 3, healing: 5, ranged: 3 },
-  Druid: { aoe: 4, control: 5, healing: 4, ranged: 3 },
-  Fighter: { aoe: 2, control: 2, healing: 1, ranged: 3 },
-  Monk: { aoe: 2, control: 3, healing: 1, ranged: 2 },
-  Paladin: { aoe: 2, control: 2, healing: 3, ranged: 1 },
-  Ranger: { aoe: 3, control: 3, healing: 2, ranged: 5 },
-  Rogue: { aoe: 1, control: 2, healing: 1, ranged: 4 },
-  Sorcerer: { aoe: 5, control: 4, healing: 1, ranged: 4 },
-  Warlock: { aoe: 3, control: 4, healing: 1, ranged: 5 },
-  Wizard: { aoe: 5, control: 5, healing: 1, ranged: 5 },
+  Barbarian: {
+    singleTarget: 5,
+    aoe: 1,
+    damage: 5,
+    tank: 5,
+    support: 1,
+    melee: 5,
+    ranged: 1,
+    resourceDependency: 2,
+    control: 2,
+    healing: 1,
+  },
+  Bard: {
+    singleTarget: 2,
+    aoe: 3,
+    damage: 2,
+    tank: 1,
+    support: 5,
+    melee: 2,
+    ranged: 4,
+    resourceDependency: 4,
+    control: 5,
+    healing: 3,
+  },
+  Cleric: {
+    singleTarget: 4,
+    aoe: 4,
+    damage: 4,
+    tank: 4,
+    support: 5,
+    melee: 4,
+    ranged: 3,
+    resourceDependency: 4,
+    control: 3,
+    healing: 5,
+  },
+  Artificer: {
+    singleTarget: 4,
+    aoe: 3,
+    damage: 3,
+    tank: 4,
+    support: 4,
+    melee: 3,
+    ranged: 4,
+    resourceDependency: 3,
+    control: 4,
+    healing: 3,
+  },
+  Druid: {
+    singleTarget: 3,
+    aoe: 5,
+    damage: 3,
+    tank: 2,
+    support: 5,
+    melee: 2,
+    ranged: 5,
+    resourceDependency: 4,
+    control: 5,
+    healing: 4,
+  },
+  Fighter: {
+    singleTarget: 5,
+    aoe: 1,
+    damage: 4,
+    tank: 5,
+    support: 1,
+    melee: 5,
+    ranged: 4,
+    resourceDependency: 1,
+    control: 2,
+    healing: 1,
+  },
+  Monk: {
+    singleTarget: 5,
+    aoe: 1,
+    damage: 3,
+    tank: 2,
+    support: 1,
+    melee: 5,
+    ranged: 1,
+    resourceDependency: 2,
+    control: 3,
+    healing: 1,
+  },
+  Paladin: {
+    singleTarget: 5,
+    aoe: 1,
+    damage: 5,
+    tank: 5,
+    support: 4,
+    melee: 5,
+    ranged: 1,
+    resourceDependency: 2,
+    control: 2,
+    healing: 3,
+  },
+  Sorcerer: {
+    singleTarget: 3,
+    aoe: 5,
+    damage: 5,
+    tank: 1,
+    support: 3,
+    melee: 1,
+    ranged: 5,
+    resourceDependency: 5,
+    control: 4,
+    healing: 1,
+  },
+  Wizard: {
+    singleTarget: 3,
+    aoe: 5,
+    damage: 5,
+    tank: 1,
+    support: 3,
+    melee: 1,
+    ranged: 5,
+    resourceDependency: 5,
+    control: 5,
+    healing: 1,
+  },
+  Warlock: {
+    singleTarget: 5,
+    aoe: 3,
+    damage: 5,
+    tank: 2,
+    support: 2,
+    melee: 3,
+    ranged: 5,
+    resourceDependency: 3,
+    control: 4,
+    healing: 1,
+  },
+  Rogue: {
+    singleTarget: 5,
+    aoe: 1,
+    damage: 4,
+    tank: 1,
+    support: 1,
+    melee: 4,
+    ranged: 4,
+    resourceDependency: 0,
+    control: 2,
+    healing: 1,
+  },
+  Ranger: {
+    singleTarget: 5,
+    aoe: 2,
+    damage: 4,
+    tank: 2,
+    support: 3,
+    melee: 4,
+    ranged: 5,
+    resourceDependency: 2,
+    control: 3,
+    healing: 2,
+  },
 };
 
 const CLASS_RESOURCE_DEPENDENCY = {
-  Wizard: .82,
-  Sorcerer: .82,
-  Cleric: .76,
-  Druid: .76,
-  Bard: .72,
-  Warlock: .72,
-  Monk: .55,
-  Paladin: .48,
-  Ranger: .45,
-  Barbarian: .34,
+  Wizard: 1,
+  Sorcerer: 1,
+  Cleric: .8,
+  Druid: .8,
+  Bard: .8,
+  Warlock: .6,
+  Artificer: .6,
+  Monk: .4,
+  Paladin: .4,
+  Ranger: .4,
+  Barbarian: .4,
   Fighter: .2,
-  Rogue: .14,
+  Rogue: 0,
 };
 
 export function classResourceDependency(className) {
-  return CLASS_RESOURCE_DEPENDENCY[className] ?? .35;
+  return CLASS_RESOURCE_DEPENDENCY[className] ??
+    ((CLASS_CAPABILITIES[className]?.resourceDependency ?? 2) / 5);
 }
 
 export function memberResourceState(member) {
@@ -1026,15 +1315,28 @@ export function memberResourceState(member) {
     maximum,
     ratio,
     dependency,
-    operational: clamp(1 - dependency * (1 - ratio), 0, 1),
+    // Even the most resource-dependent class retains cantrips and basic actions.
+    operational: clamp(1 - dependency * (1 - ratio), .08, 1),
   };
 }
 
 export function classCapability(member) {
-  const base = CLASS_CAPABILITIES[member.class] ?? { aoe: 2, control: 2, healing: 1, ranged: 2 };
+  const base = CLASS_CAPABILITIES[member.class] ??
+    {
+      singleTarget: 3,
+      aoe: 2,
+      damage: 3,
+      tank: 2,
+      support: 1,
+      melee: 3,
+      ranged: 2,
+      control: 2,
+      healing: 1,
+    };
   const levelBonus = Number(member.level) >= 5 ? .5 : Number(member.level) >= 3 ? .25 : 0;
   return Object.fromEntries(
-    Object.entries(base).map(([key, value]) => [key, clamp(value + levelBonus, 1, 5)]),
+    Object.entries(base).filter(([key]) => key !== "resourceDependency")
+      .map(([key, value]) => [key, clamp(value + levelBonus, 0, 5)]),
   );
 }
 
@@ -1088,7 +1390,17 @@ export function analyzeParty(party, options = {}) {
     const capabilityScale = .2 + resource.operational * .8;
     for (const key of Object.keys(totals)) totals[key] += profile[key] * capabilityScale;
     return totals;
-  }, { aoe: 0, control: 0, healing: 0, ranged: 0 });
+  }, {
+    singleTarget: 0,
+    aoe: 0,
+    damage: 0,
+    tank: 0,
+    support: 0,
+    melee: 0,
+    ranged: 0,
+    control: 0,
+    healing: 0,
+  });
   for (const key of Object.keys(capabilities)) capabilities[key] /= members.length;
   const capacity = members.reduce((sum, member) => {
     const memberDefense = clamp((Number(member.ac || 10) - 10) / 12, 0, 1);
@@ -1145,7 +1457,11 @@ export function buildEncounterForecast(
       Math.round(profile.resourceRatio * 20)
     }`,
   );
-  const theme = floorTheme(floor, { ...modelContext, ...(modelContext.settings ?? {}) });
+  const theme = floorTheme(floor, {
+    ...modelContext,
+    ...(modelContext.settings ?? {}),
+    dungeonSeed: modelContext.dungeonSeed ?? seed,
+  });
   const milestoneFloor = theme.bossFloor;
   const tier = planningReadiness < 0.35
     ? "Shelter"
@@ -1205,7 +1521,7 @@ export function buildEncounterForecast(
       order: completed + index + 1,
       title: archetype.name,
       kind: archetype.kind,
-      icon: archetype.icon,
+      icon: archetype.kind.slice(0, 1).toUpperCase(),
       tone: archetype.tone,
       objective: archetype.objective,
       twist: archetype.twist,
@@ -1240,7 +1556,7 @@ export function buildEncounterForecast(
     Object.assign(encounters[hardestIndex], {
       title: archetype.name,
       kind: archetype.kind,
-      icon: archetype.icon,
+      icon: archetype.kind.slice(0, 1).toUpperCase(),
       tone: archetype.tone,
       objective: archetype.objective,
       twist: archetype.twist,
@@ -1251,7 +1567,7 @@ export function buildEncounterForecast(
     Object.assign(encounters[2], {
       title: boss.name,
       kind: "combat",
-      icon: "♛",
+      icon: "B",
       tone: "Dedicated boss",
       intent: "Floor boss",
       objective: boss.objective,
@@ -1346,6 +1662,11 @@ const TILE = {
   SECRET: "?",
   FIRE: "*",
   BOSS: "B",
+  CHASM: "O",
+  BRIDGE: "=",
+  ICE: "_",
+  WEB: "w",
+  BUSH: "&",
 };
 
 export const TILE_INFO = {
@@ -1365,8 +1686,85 @@ export const TILE_INFO = {
   "?": { name: "Secret passage", kind: "secret" },
   "*": { name: "Open flame", kind: "fire" },
   "B": { name: "Boss arena", kind: "boss" },
+  "O": { name: "Bottomless chasm (impassable)", kind: "chasm" },
+  "=": { name: "Bridge", kind: "bridge" },
+  "_": { name: "Slippery ice", kind: "ice" },
+  "w": { name: "Restraining webbing", kind: "web" },
+  "&": { name: "Bush (can be cut down)", kind: "bush" },
   " ": { name: "Unknown", kind: "void" },
 };
+
+export const FLOOR_SIZE_PRESETS = {
+  small: { width: 43, height: 25, minRoom: 4, maxRoom: 8, defaultRooms: 8 },
+  medium: { width: 55, height: 31, minRoom: 5, maxRoom: 10, defaultRooms: 11 },
+  large: { width: 69, height: 39, minRoom: 6, maxRoom: 13, defaultRooms: 15 },
+  massive: {
+    width: 85,
+    height: 49,
+    minRoom: 8,
+    maxRoom: 18,
+    defaultRooms: 12,
+    openRegion: true,
+  },
+};
+
+export const TRAP_CATALOG = [
+  {
+    id: "needle-lock",
+    name: "Poison Needle",
+    description: "A needle snaps from a handled fitting.",
+    trigger: "Open or manipulate the fitting",
+    locationTypes: ["room"],
+    detection: { method: "Investigation", dc: 13 },
+    save: { ability: "CON", dc: 13 },
+    effect: "2d6 poison damage and poisoned until the next turn",
+    biomes: [],
+  },
+  {
+    id: "scything-wire",
+    name: "Scything Wire",
+    description: "A concealed wire releases a waist-high blade.",
+    trigger: "Cross the wire",
+    locationTypes: ["hallway", "room"],
+    detection: { method: "Perception", dc: 14 },
+    save: { ability: "DEX", dc: 14 },
+    effect: "2d8 slashing damage, half on success",
+    biomes: [],
+  },
+  {
+    id: "root-snare",
+    name: "Root Snare",
+    description: "Living roots tighten around the trespasser.",
+    trigger: "Step into the marked growth",
+    locationTypes: ["hallway", "room"],
+    detection: { method: "Nature", dc: 13 },
+    save: { ability: "STR", dc: 13 },
+    effect: "Restrained; repeat the save at the end of each turn",
+    biomes: ["moss-forest"],
+  },
+  {
+    id: "grave-sigh",
+    name: "Grave Sigh",
+    description: "A pressure stone exhales despairing grave dust.",
+    trigger: "Depress the stone",
+    locationTypes: ["hallway", "room"],
+    detection: { method: "Religion", dc: 15 },
+    save: { ability: "WIS", dc: 14 },
+    effect: "Frightened for 1 minute; repeat the save each turn",
+    biomes: ["ossuary"],
+  },
+  {
+    id: "boiling-vent",
+    name: "Boiling Vent",
+    description: "A hairline vent erupts with steam.",
+    trigger: "End a turn over the vent",
+    locationTypes: ["hallway", "room"],
+    detection: { method: "Perception", dc: 14 },
+    save: { ability: "DEX", dc: 14 },
+    effect: "3d6 fire damage, half on success",
+    biomes: ["drowned-grotto", "infernal-foundry"],
+  },
+];
 
 const ROOM_ROLES = [
   "entry",
@@ -1385,7 +1783,68 @@ const ROOM_ROLES = [
 const ROOM_NAMES = {
   entry: ["The Broken Vestibule", "Pilgrim's Threshold"],
   encounter: ["The Long Hall", "Hall of Old Footsteps", "The Guarded Crossing"],
-  safe: ["The Quiet Vestry", "Wayfarer's Nook"],
+  safe: [
+    "The Quiet Vestry",
+    "Wayfarer's Nook",
+    "The Resting Alcove",
+    "Saint Orra's",
+    "Three Candles",
+    "Last Stop",
+    "Good Company",
+    "Moss & Mortar",
+    "Pilgrim's Due",
+    "Seven Stools",
+    "Warmstone",
+    "Dead Man's Supper",
+    "Second Bell",
+    "Candle's End",
+    "Noonday",
+    "Little Mercy",
+    "Last Hearth",
+    "Bread & Salt",
+    "Old Nan's",
+    "Three Nails",
+    "Home Below",
+    "Good Rest",
+    "Safe Enough",
+    "Nobody's Room",
+    "One More Night",
+    "Yesterday's Camp",
+    "Saint's Corner",
+    "Miller's Rest",
+    "Understone",
+    "Deepwell",
+    "Hearthside",
+    "Halfway Down",
+    "Four Corners",
+    "Last Light",
+    "Nine Steps",
+    "Below the Bell",
+    "Under the Stairs",
+    "Behind the Chapel",
+    "Where They Waited",
+    "Where the Fire Was",
+    "Where Water Runs",
+    "Where Pilgrims Slept",
+    "Room Forty-Two",
+    "Cell Seven",
+    "Third Landing",
+    "Lower Landing",
+    "West Watch",
+    "Old Number Nine",
+    "Saint Orra's Kitchen",
+    "Marta's Place",
+    "Brother Willem's",
+    "Keeper Harl's",
+    "Widow's Rest",
+    "Pilgrim's Folly",
+    "Smuggler's Rest",
+    "Ratcatcher's Corner",
+    "Mason's Hide",
+    "Gravedigger's Lunch",
+    "Last Man's Camp",
+    "Nobody Knocks Here",
+  ],
   loot: ["The Sealed Treasury", "Tithe-Keeper's Cache"],
   hazard: ["The Crooked Gallery", "Chamber of Warnings"],
   shrine: ["The Nameless Chapel", "Altar of Small Mercies"],
@@ -1414,17 +1873,35 @@ const LOOT_TABLE = [
  */
 export function generateDungeon(seed, width = 55, height = 31, options = {}) {
   const floor = Number(options.floor ?? 1);
-  const theme = floorTheme(floor, options);
+  const theme = floorTheme(floor, { ...options, dungeonSeed: options.dungeonSeed ?? seed });
   const floorBoss = bossForTheme(theme);
-  const rng = createRng(`${seed}:geometry`);
+  const requestedFloorSize = options.floorSize ?? "medium";
+  const noveltyOpenRegion = requestedFloorSize !== "massive" && Boolean(options.floorSize) &&
+    options.noveltyOpenRegions !== false &&
+    createRng(`${seed}:super-massive-novelty:${floor}`)() < .06;
+  const effectiveFloorSize = noveltyOpenRegion ? "massive" : requestedFloorSize;
+  const size = FLOOR_SIZE_PRESETS[effectiveFloorSize] ?? FLOOR_SIZE_PRESETS.medium;
+  if (options.floorSize) {
+    width = size.width;
+    height = size.height;
+  }
+  const rng = createRng(
+    `${seed}:geometry:${effectiveFloorSize}:${options.roomCount ?? "auto"}`,
+  );
   const grid = Array.from({ length: height }, () => Array(width).fill(TILE.VOID));
   const steps = [];
   const rooms = [];
   const bossFloor = theme.bossFloor;
-  const regularRoomTarget = bossFloor ? 7 + Math.floor(rng() * 3) : 10 + Math.floor(rng() * 3);
+  const requestedRoomCount = clamp(Math.round(Number(options.roomCount) || 0), 0, 30);
+  const regularRoomTarget = requestedRoomCount
+    ? Math.max(4, requestedRoomCount - (bossFloor ? 1 : 0))
+    : bossFloor
+    ? Math.max(5, size.defaultRooms - 3)
+    : size.defaultRooms;
   const roomTarget = regularRoomTarget + (bossFloor ? 1 : 0);
+  const openRegion = Boolean(size.openRegion);
 
-  if (bossFloor) {
+  if (bossFloor && !openRegion) {
     const variant = BOSS_ROOM_VARIANTS[Math.floor(rng() * BOSS_ROOM_VARIANTS.length)];
     const w = Math.min(14 + Math.floor(rng() * 5), width - 8);
     const h = Math.min(8 + Math.floor(rng() * 4), height - 8);
@@ -1444,47 +1921,75 @@ export function generateDungeon(seed, width = 55, height = 31, options = {}) {
     });
   }
 
-  for (let attempt = 0; attempt < 180 && rooms.length < roomTarget; attempt++) {
-    const w = 5 + Math.floor(rng() * 6);
-    const h = 4 + Math.floor(rng() * 4);
-    const x = 2 + Math.floor(rng() * Math.max(1, width - w - 4));
-    const y = 2 + Math.floor(rng() * Math.max(1, height - h - 4));
-    const overlaps = rooms.some((room) =>
-      x < room.x + room.w + 2 && x + w + 2 > room.x && y < room.y + room.h + 2 && y + h + 2 > room.y
-    );
-    if (overlaps) continue;
-    const room = {
-      x,
-      y,
-      w,
-      h,
-      cx: Math.floor(x + w / 2),
-      cy: Math.floor(y + h / 2),
-      role: "ordinary",
-      condition: "Dry",
-    };
-    rooms.push(room);
+  if (openRegion) {
+    const region = { x: 3, y: 3, w: width - 6, h: height - 6 };
+    const aspect = region.w / region.h;
+    const rowCount = clamp(Math.round(Math.sqrt(roomTarget / aspect)), 2, 6);
+    const basePerRow = Math.floor(roomTarget / rowCount);
+    let extra = roomTarget % rowCount;
+    let created = 0;
+    for (let row = 0; row < rowCount; row++) {
+      const zonesInRow = basePerRow + (extra-- > 0 ? 1 : 0);
+      const y = region.y + Math.floor(row * region.h / rowCount);
+      const nextY = region.y + Math.floor((row + 1) * region.h / rowCount);
+      for (let column = 0; column < zonesInRow; column++) {
+        const x = region.x + Math.floor(column * region.w / zonesInRow);
+        const nextX = region.x + Math.floor((column + 1) * region.w / zonesInRow);
+        const dedicatedBoss = bossFloor && created === roomTarget - 1;
+        rooms.push({
+          x,
+          y,
+          w: nextX - x,
+          h: nextY - y,
+          cx: Math.floor((x + nextX) / 2),
+          cy: Math.floor((y + nextY) / 2),
+          role: dedicatedBoss ? "boss" : "ordinary",
+          condition: dedicatedBoss ? theme.conditions[0] : "Dry",
+          dedicatedBoss,
+          arenaVariant: dedicatedBoss
+            ? BOSS_ROOM_VARIANTS.find((variant) => variant.id === "four-altars")
+            : undefined,
+          openRegionZone: true,
+        });
+        created += 1;
+      }
+    }
+  } else {
+    const roomGap = regularRoomTarget > size.defaultRooms ? 0 : 1;
+    for (let attempt = 0; attempt < 1200 && rooms.length < roomTarget; attempt++) {
+      const density = regularRoomTarget / size.defaultRooms;
+      const minimumRoom = Math.max(4, size.minRoom - Math.floor(Math.max(0, density - 1) * 2));
+      const maximumRoom = Math.max(minimumRoom + 1, size.maxRoom - Math.max(0, density - 1) * 3);
+      const w = minimumRoom + Math.floor(rng() * Math.max(2, maximumRoom - minimumRoom + 1));
+      const h = Math.max(4, minimumRoom - 1) +
+        Math.floor(rng() * Math.max(2, maximumRoom - minimumRoom));
+      const x = 2 + Math.floor(rng() * Math.max(1, width - w - 4));
+      const y = 2 + Math.floor(rng() * Math.max(1, height - h - 4));
+      const overlaps = rooms.some((room) =>
+        x < room.x + room.w + roomGap && x + w + roomGap > room.x &&
+        y < room.y + room.h + roomGap && y + h + roomGap > room.y
+      );
+      if (overlaps) continue;
+      const room = {
+        x,
+        y,
+        w,
+        h,
+        cx: Math.floor(x + w / 2),
+        cy: Math.floor(y + h / 2),
+        role: "ordinary",
+        condition: "Dry",
+      };
+      rooms.push(room);
+    }
   }
 
   rooms.sort((a, b) => a.cx - b.cx);
-  const moves = options.roomMoves ?? {};
-  const proposedRooms = rooms.map((room, index) => {
-    const move = moves[index];
-    if (!move) return { ...room };
-    const x = clamp(Math.round(Number(move.x)), 2, width - room.w - 2);
-    const y = clamp(Math.round(Number(move.y)), 2, height - room.h - 2);
-    return { ...room, x, y, cx: Math.floor(x + room.w / 2), cy: Math.floor(y + room.h / 2) };
+  rooms.forEach((room, index) => {
+    room.id = `room-${hashSeed(`${seed}:${floor}:${index}:${room.x}:${room.y}`)}`;
+    room.terrain = [];
   });
-  proposedRooms.forEach((proposed, index) => {
-    if (!moves[index]) return;
-    const overlaps = proposedRooms.some((other, otherIndex) =>
-      otherIndex !== index &&
-      proposed.x < other.x + other.w + 1 && proposed.x + proposed.w + 1 > other.x &&
-      proposed.y < other.y + other.h + 1 && proposed.y + proposed.h + 1 > other.y
-    );
-    if (!overlaps) Object.assign(rooms[index], proposed);
-  });
-  // Rebuild room floors after applying persisted room edits.
+  // Collapse the generated room floors before carving passages.
   grid.forEach((row) => row.fill(TILE.VOID));
   rooms.forEach((room) => {
     for (let py = room.y; py < room.y + room.h; py++) {
@@ -1502,6 +2007,9 @@ export function generateDungeon(seed, width = 55, height = 31, options = {}) {
     }
   });
   let roleIndex = 0;
+  const roleSequence = openRegion
+    ? ROOM_ROLES.filter((role) => !["entry", "exit"].includes(role))
+    : ROOM_ROLES;
   rooms.forEach((room) => {
     if (room.dedicatedBoss) {
       room.role = "boss";
@@ -1512,7 +2020,7 @@ export function generateDungeon(seed, width = 55, height = 31, options = {}) {
       room.name = `${room.arenaVariant.name}: ${floorBoss.name}`;
       return;
     }
-    room.role = ROOM_ROLES[roleIndex % ROOM_ROLES.length];
+    room.role = roleSequence[roleIndex % roleSequence.length];
     roleIndex += 1;
     if (theme.forbiddenRoles.includes(room.role)) room.role = theme.terrainRole;
     room.condition = theme.conditions[Math.floor(rng() * theme.conditions.length)];
@@ -1555,10 +2063,16 @@ export function generateDungeon(seed, width = 55, height = 31, options = {}) {
   }
   const bossRoom = rooms.find((room) => room.dedicatedBoss);
   const connectionOrder = [...ordinaryRooms, ...(bossRoom ? [bossRoom] : [])];
+  const connections = [];
   for (let index = 1; index < connectionOrder.length; index++) {
     let x = connectionOrder[index - 1].cx;
     let y = connectionOrder[index - 1].cy;
     const target = connectionOrder[index];
+    connections.push({
+      id: `connection-${connectionOrder[index - 1].id}-${target.id}`,
+      from: connectionOrder[index - 1].id,
+      to: target.id,
+    });
     const horizontalFirst = rng() > 0.5;
     const moveX = () => {
       while (x !== target.cx) {
@@ -1583,7 +2097,7 @@ export function generateDungeon(seed, width = 55, height = 31, options = {}) {
   }
 
   // Doors collapse on room thresholds: a floor on a perimeter with passage beyond it.
-  rooms.filter((room) => room !== entry).forEach((room) => {
+  rooms.filter((room) => room !== entry && !openRegion).forEach((room) => {
     const candidates = [];
     for (let x = room.x; x < room.x + room.w; x++) {
       if (grid[room.y - 1]?.[x] === TILE.FLOOR) candidates.push([x, room.y]);
@@ -1658,11 +2172,150 @@ export function generateDungeon(seed, width = 55, height = 31, options = {}) {
           const density = room.role === "boss" ? .12 : theme.terrainDensity;
           if ((bossPattern || rng() < density) && grid[y][x] === TILE.FLOOR) {
             grid[y][x] = conditionTile;
+            room.terrain.push({
+              x: x - room.x,
+              y: y - room.y,
+              tile: conditionTile,
+              removable: false,
+            });
           }
         }
       }
     }
   });
+
+  // Chasms cut from one inner wall to the opposite wall. Most have no bridge.
+  const chasmRooms = rooms.filter((room) =>
+    !["entry", "safe"].includes(room.role) && room.w >= 7 && room.h >= 5
+  );
+  if (chasmRooms.length && rng() < .72) {
+    const room = chasmRooms[Math.floor(rng() * chasmRooms.length)];
+    const vertical = room.w >= room.h;
+    const span = vertical ? room.h - 2 : room.w - 2;
+    const lineCandidates = Array.from(
+      { length: (vertical ? room.w : room.h) - 2 },
+      (_, index) => (vertical ? room.x : room.y) + index + 1,
+    ).filter((position) => position !== (vertical ? room.cx : room.cy));
+    const line = lineCandidates[Math.floor(rng() * lineCandidates.length)] ??
+      (vertical ? room.cx : room.cy);
+    const bridges = new Set();
+    if (rng() < .18) bridges.add(1 + Math.floor(rng() * span));
+    if (span >= 10 && rng() < .04) bridges.add(1 + Math.floor(rng() * span));
+    for (let offset = 1; offset <= span; offset++) {
+      const x = vertical ? line : room.x + offset;
+      const y = vertical ? room.y + offset : line;
+      const tile = bridges.has(offset) ? TILE.BRIDGE : TILE.CHASM;
+      if (
+        grid[y]?.[x] === TILE.FLOOR ||
+        room.terrain.some((item) => item.x === x - room.x && item.y === y - room.y)
+      ) {
+        grid[y][x] = tile;
+        room.terrain = room.terrain.filter((item) =>
+          item.x !== x - room.x || item.y !== y - room.y
+        );
+        room.terrain.push({ x: x - room.x, y: y - room.y, tile, removable: false });
+      }
+    }
+  }
+
+  // Forest terrain grows in connected patches. Bushes remain explicitly removable.
+  if (theme.id === "moss-forest") {
+    for (const room of rooms.filter((candidate) => candidate.role !== "entry")) {
+      const area = room.w * room.h;
+      const patchTiles = [TILE.ICE, TILE.BUSH];
+      const extraPatches = Math.min(3, Math.floor(area / 90) + (rng() < .55 ? 1 : 0));
+      for (let index = 0; index < extraPatches; index++) {
+        patchTiles.push([TILE.ICE, TILE.BUSH, TILE.BUSH, TILE.WEB][Math.floor(rng() * 4)]);
+      }
+      const canPaint = (x, y) =>
+        x > room.x && x < room.x + room.w - 1 && y > room.y && y < room.y + room.h - 1 &&
+        (x !== room.cx || y !== room.cy) && [TILE.FLOOR, TILE.RUBBLE].includes(grid[y]?.[x]);
+      const paint = (x, y, tile) => {
+        grid[y][x] = tile;
+        room.terrain = room.terrain.filter((item) =>
+          item.x !== x - room.x || item.y !== y - room.y
+        );
+        room.terrain.push({
+          x: x - room.x,
+          y: y - room.y,
+          tile,
+          removable: tile === TILE.BUSH,
+        });
+      };
+      for (const tile of patchTiles) {
+        const starts = [];
+        for (let y = room.y + 1; y < room.y + room.h - 1; y++) {
+          for (let x = room.x + 1; x < room.x + room.w - 1; x++) {
+            if (
+              canPaint(x, y) &&
+              [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => canPaint(x + dx, y + dy))
+            ) starts.push({ x, y });
+          }
+        }
+        if (!starts.length) continue;
+        const start = starts[Math.floor(rng() * starts.length)];
+        const target = Math.min(starts.length, 4 + Math.floor(rng() * Math.max(2, area / 28)));
+        const frontier = [start];
+        const queued = new Set([`${start.x}:${start.y}`]);
+        let painted = 0;
+        while (frontier.length && painted < target) {
+          const frontierIndex = Math.floor(rng() * frontier.length);
+          const current = frontier.splice(frontierIndex, 1)[0];
+          if (!canPaint(current.x, current.y)) continue;
+          paint(current.x, current.y, tile);
+          painted += 1;
+          const neighbors = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => ({
+            x: current.x + dx,
+            y: current.y + dy,
+          })).filter((candidate) => {
+            const key = `${candidate.x}:${candidate.y}`;
+            if (queued.has(key) || !canPaint(candidate.x, candidate.y)) return false;
+            queued.add(key);
+            return true;
+          });
+          frontier.push(...neighbors);
+        }
+      }
+    }
+  }
+
+  const traps = [];
+  const roomAt = (x, y) =>
+    rooms.find((room) => x >= room.x && x < room.x + room.w && y >= room.y && y < room.y + room.h);
+  const trapCandidates = [];
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      if (grid[y][x] !== TILE.FLOOR) continue;
+      trapCandidates.push({ x, y, room: roomAt(x, y) });
+    }
+  }
+  const hallwayCandidate = trapCandidates.find((candidate) => !candidate.room);
+  const roomCandidate = trapCandidates.find((candidate) => candidate.room?.role === "hazard") ??
+    trapCandidates.find((candidate) => candidate.room && candidate.room.role !== "entry");
+  for (
+    const [candidate, locationType] of [[hallwayCandidate, "hallway"], [roomCandidate, "room"]]
+  ) {
+    if (!candidate) continue;
+    const available = TRAP_CATALOG.filter((trap) =>
+      trap.locationTypes.includes(locationType) &&
+      (!trap.biomes.length || trap.biomes.includes(theme.id))
+    );
+    const definition = available[Math.floor(rng() * available.length)];
+    if (!definition) continue;
+    grid[candidate.y][candidate.x] = TILE.TRAP;
+    traps.push({
+      id: `trap-${hashSeed(`${seed}:${floor}:${candidate.x}:${candidate.y}`)}`,
+      definitionId: definition.id,
+      ...definition,
+      locationType,
+      x: candidate.x,
+      y: candidate.y,
+      roomId: candidate.room?.id ?? null,
+      offsetX: candidate.room ? candidate.x - candidate.room.x : null,
+      offsetY: candidate.room ? candidate.y - candidate.room.y : null,
+      armed: true,
+    });
+  }
 
   const loot = rooms.filter((room) => room.role === "loot").map((room, index) => ({
     room: `Cache ${index + 1}`,
@@ -1694,6 +2347,8 @@ export function generateDungeon(seed, width = 55, height = 31, options = {}) {
     height,
     grid,
     rooms,
+    connections,
+    traps,
     steps,
     loot,
     tiles: TILE,
@@ -1702,7 +2357,122 @@ export function generateDungeon(seed, width = 55, height = 31, options = {}) {
     restriction: theme.restriction,
     exitDistance,
     lootCount,
+    floorSize: noveltyOpenRegion ? "super-massive" : requestedFloorSize,
+    requestedFloorSize,
+    noveltyOpenRegion,
+    requestedRoomCount: requestedRoomCount || null,
+    layout: openRegion ? "open-region" : "rooms-and-corridors",
+    regionName: openRegion
+      ? theme.id === "moss-forest"
+        ? "Great forest expanse"
+        : theme.id === "drowned-grotto"
+        ? "Great flooded cavern"
+        : theme.id === "ossuary"
+        ? "Great burial hollow"
+        : "Great foundry chamber"
+      : null,
   };
+}
+
+/** Rebuild only layout tiles from persistent dungeon data; no room content is generated. */
+export function rebuildDungeonData(source) {
+  const dungeon = structuredClone(source);
+  const { width, height, rooms } = dungeon;
+  const grid = Array.from({ length: height }, () => Array(width).fill(TILE.VOID));
+  const carve = (x, y) => {
+    if (x > 0 && y > 0 && x < width - 1 && y < height - 1) grid[y][x] = TILE.FLOOR;
+  };
+  for (const room of rooms) {
+    room.cx = Math.floor(room.x + room.w / 2);
+    room.cy = Math.floor(room.y + room.h / 2);
+    for (let y = room.y; y < room.y + room.h; y++) {
+      for (let x = room.x; x < room.x + room.w; x++) carve(x, y);
+    }
+  }
+  const roomById = new Map(rooms.map((room) => [room.id, room]));
+  for (const connection of dungeon.connections ?? []) {
+    const from = roomById.get(connection.from);
+    const to = roomById.get(connection.to);
+    if (!from || !to) continue;
+    let x = from.cx;
+    let y = from.cy;
+    while (x !== to.cx) {
+      carve(x, y);
+      x += Math.sign(to.cx - x);
+    }
+    while (y !== to.cy) {
+      carve(x, y);
+      y += Math.sign(to.cy - y);
+    }
+    carve(x, y);
+  }
+  const floorSnapshot = grid.map((row) => [...row]);
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      if (floorSnapshot[y][x] !== TILE.FLOOR) continue;
+      for (let oy = -1; oy <= 1; oy++) {
+        for (let ox = -1; ox <= 1; ox++) {
+          if (grid[y + oy][x + ox] === TILE.VOID) grid[y + oy][x + ox] = TILE.WALL;
+        }
+      }
+    }
+  }
+  for (const room of rooms) {
+    for (const feature of room.terrain ?? []) {
+      const x = room.x + feature.x;
+      const y = room.y + feature.y;
+      if (grid[y]?.[x] !== undefined) grid[y][x] = feature.tile;
+    }
+  }
+  const roleTiles = {
+    entry: TILE.ENTRY,
+    exit: TILE.EXIT,
+    safe: TILE.SAFE,
+    loot: TILE.LOOT,
+    hazard: TILE.TRAP,
+    shrine: TILE.SHRINE,
+    secret: TILE.SECRET,
+    boss: TILE.BOSS,
+  };
+  for (const room of rooms) if (roleTiles[room.role]) grid[room.cy][room.cx] = roleTiles[room.role];
+  dungeon.traps = (dungeon.traps ?? []).filter((trap) => {
+    if (trap.roomId) {
+      const room = roomById.get(trap.roomId);
+      if (!room) return false;
+      trap.x = room.x + Number(trap.offsetX ?? trap.x - room.x);
+      trap.y = room.y + Number(trap.offsetY ?? trap.y - room.y);
+    }
+    if (grid[trap.y]?.[trap.x] !== TILE.FLOOR && grid[trap.y]?.[trap.x] !== TILE.TRAP) return false;
+    if (trap.armed) grid[trap.y][trap.x] = TILE.TRAP;
+    return true;
+  });
+  dungeon.grid = grid;
+  const origin = rooms.find((room) => room.role === "entry") ?? rooms[0] ?? { cx: 0, cy: 0 };
+  dungeon.steps = [];
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (grid[y][x] !== TILE.VOID) {
+        dungeon.steps.push({
+          x,
+          y,
+          tile: grid[y][x],
+          rank: Math.abs(x - origin.cx) + Math.abs(y - origin.cy),
+        });
+      }
+    }
+  }
+  dungeon.steps.sort((a, b) => a.rank - b.rank);
+  return dungeon;
+}
+
+export function removeTerrainFeature(source, roomId, x, y) {
+  const dungeon = structuredClone(source);
+  const room = dungeon.rooms.find((candidate) => candidate.id === roomId);
+  if (!room) return dungeon;
+  room.terrain = (room.terrain ?? []).filter((feature) =>
+    !(feature.x === x && feature.y === y && feature.removable)
+  );
+  return rebuildDungeonData(dungeon);
 }
 
 /** Bind changing encounter content to stable rooms without mutating dungeon geometry. */

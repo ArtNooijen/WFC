@@ -21,13 +21,16 @@ deno task check
 
 - A responsive party editor inspired by the compact density of initiative trackers.
 - HP, maximum HP, AC, level, class, and expendable-resource tracking.
-- Seeded dungeon geometry that stays stable for the life of an expedition.
+- Serialized floors that stay exact when navigating between rooms or returning upstairs.
+- Independent Small, Medium, and Large floor dimensions plus a selectable 4–30 room count.
 - A constraint-propagated room/corridor generator with an animated hand-drawn reveal.
-- Eleven map conditions including doors, locks, traps, loot, safe rooms, shrines, water, rubble, and
-  secret passages.
+- Structured room and hallway traps, chasms with bridges, and removable forest bushes alongside ice,
+  webbing, doors, locks, loot, safe rooms, shrines, water, rubble, and secret passages.
 - Three adaptive encounter forecasts with pressure, budget, and expected-round estimates.
 - Shuffled three-to-five-floor biome arcs plus a selectable single-biome ten-floor campaign mode,
   with persistent stories and themed bosses on floors 3, 6, and 10.
+- Per-biome optional floor modifiers from the Gijs feedback list. Several can be selected together,
+  or one can be chosen deterministically for the full ten-floor biome or the complete 3–5 floor arc.
 - A library of 32 varied combat, social, puzzle, hazard, discovery, rescue, and bargain scenarios;
   each includes a concrete objective and a twist.
 - Numbered `1–3` map markers that bind each forecast card to a named room and atlas coordinate.
@@ -40,8 +43,9 @@ deno task check
 - DM-only encounter resolution with HP loss, resource expenditure, downed/killed characters,
   objective completion, no-combat completion, rounds, notes, and a table difficulty assessment.
 - A bounded per-party learning calibration trained from the most recent 24 resolved encounters.
-- Per-class AoE, control, healing, and ranged capability ratings plus action-economy, flight, and
-  monster-trait risk notes.
+- Per-class single-target, AoE, damage, tank, support, melee, ranged, and resource-dependency values
+  synchronized with `class_proficiencies.json`, plus action-economy, flight, and monster-trait risk
+  notes.
 - Encounter reroll, lock, difficulty, scene-type, and resolve controls.
 - Resolved encounter cards remain pinned to their rooms until the DM descends; unresolved cards can
   continue adapting to party state.
@@ -61,9 +65,9 @@ deno task check
 ```text
 party editor ──POST /api/forecast──> readiness model ──> 3 encounter budgets
      │
-     └── expedition seed ──────────> dungeon generator ──> persistent geometry
-                                                │
-party state update ─────────────────────────────┴──> replace encounters only
+     └── expedition seed ──> generator ──> serialized floor data ──> renderer/editor
+                                      │
+party state update ───────────────────┴────────────────────> replace encounters only
 ```
 
 `public/lib/adventure.js` is shared by the Deno server and browser. Dungeon geometry uses
@@ -101,12 +105,11 @@ form now captures a compact outcome row after every encounter:
 ```
 
 The application immediately uses a bounded, recency-weighted per-party calibration so it can learn
-with small amounts of data without producing extreme forecasts. Once there are a few hundred
-diverse encounters, train a gradient-boosted model first (it is usually
-stronger and easier to explain on small tabular datasets). Export it to ONNX and replace
-`buildEncounterForecast` behind the existing API. An LLM is most useful after budgeting: turn the
-structured budget and room context into evocative creatures, clues, hazards, and treasure. It should
-not be the only difficulty judge.
+with small amounts of data without producing extreme forecasts. Once there are a few hundred diverse
+encounters, train a gradient-boosted model first (it is usually stronger and easier to explain on
+small tabular datasets). Export it to ONNX and replace `buildEncounterForecast` behind the existing
+API. An LLM is most useful after budgeting: turn the structured budget and room context into
+evocative creatures, clues, hazards, and treasure. It should not be the only difficulty judge.
 
 ## 2014 SRD and 5e-bits integration
 
@@ -128,8 +131,8 @@ Combat uses the official 2014 encounter procedure:
 2. Let the attrition planner choose the desired band from current party condition and dungeon pace.
 3. Search valid CR/count combinations inside that XP band.
 4. Apply the official multiple-monster multiplier, including small/large party adjustments.
-5. Fetch an actual monster for the chosen CR and expose its XP, AC, HP, type, actions, and
-   stat-block source.
+5. Weight a local mechanics index toward natural save/control options for unusually high-AC parties,
+   then fetch the selected monster's XP, AC, HP, type, actions, and stat-block source.
 6. Apply the Basic Rules CR caution so non-deadly creatures do not exceed average party level.
 
 Every forecast includes at least one combat encounter. Non-combat puzzles and negotiations do not
@@ -145,4 +148,8 @@ not exposed by this SRD API).
 3. Add D&D ruleset-specific encounter math and monster data under an appropriate license.
 4. Export accumulated outcome rows into an offline training/evaluation pipeline.
 5. Add an LLM content adapter with schema validation, caching, and a GM approval step.
-6. Add map editing and room notes while keeping the application DM-only.
+6. Rebuild room-layout editing from a simpler interaction model, then add room notes.
+
+Rebuild the checked-in monster mechanics index after changing data sources with
+`deno task index-monsters`. Encounter generation reads that file rather than rescanning every SRD
+monster.

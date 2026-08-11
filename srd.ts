@@ -1,4 +1,5 @@
 import { createRng, hashSeed } from "./public/lib/adventure.js";
+import MONSTER_INDEX from "./monster_index.json" with { type: "json" };
 
 const API_BASE = "https://www.dnd5eapi.co/api/2014";
 const CACHE_TTL = 1000 * 60 * 60;
@@ -137,6 +138,8 @@ type PartyCondition = {
   criticalMembers?: number;
   aoeRating?: number;
   rangedRating?: number;
+  defense?: number;
+  weakSaves?: string[];
 };
 
 function clamp(value: number, minimum: number, maximum: number) {
@@ -534,8 +537,23 @@ const THEME_MONSTER_PREFERENCES: Record<string, string[]> = {
   ],
 };
 
-async function getMonsterForCr(cr: number, seed: string, encounter: any, excluded: string[] = []) {
-  const list = await api<any>(`/monsters?challenge_rating=${cr}`);
+async function getMonsterForCr(
+  cr: number,
+  seed: string,
+  encounter: any,
+  excluded: string[] = [],
+  condition: PartyCondition = {},
+) {
+  const mechanics = (MONSTER_INDEX.byCr as Record<string, any[]>)[String(cr)] ?? [];
+  const list = mechanics.length
+    ? {
+      results: mechanics.map((entry: any) => ({
+        index: entry.index,
+        name: entry.name,
+        url: `/api/2014/monsters/${entry.index}`,
+      })),
+    }
+    : await api<any>(`/monsters?challenge_rating=${cr}`);
   if (!list.results?.length) throw new Error(`No SRD monsters found for CR ${cr}`);
   const rng = createRng(seed);
   const preferences = [
@@ -548,7 +566,21 @@ async function getMonsterForCr(cr: number, seed: string, encounter: any, exclude
       term.includes("-") ? reference.index.includes(term) : tokens.includes(term)
     );
   });
-  const preferredPool = thematic.length ? thematic : list.results;
+  const mechanicsById = new Map(mechanics.map((entry: any) => [entry.index, entry]));
+  const highArmor = Number(condition.defense ?? 10) >= 18;
+  const weakSaves = condition.weakSaves ?? [];
+  const weightedReferences = list.results.flatMap((reference: any) => {
+    const entry = mechanicsById.get(reference.index);
+    let weight = 1;
+    if (highArmor && entry?.bypassesAc) weight += 3;
+    if (highArmor && entry?.saves?.some((save: string) => weakSaves.includes(save))) weight += 2;
+    if (entry?.control) weight += .5;
+    return Array.from({ length: Math.ceil(weight) }, () => reference);
+  });
+  const weightedThematic = weightedReferences.filter((reference: any) =>
+    thematic.some((item: any) => item.index === reference.index)
+  );
+  const preferredPool = weightedThematic.length ? weightedThematic : weightedReferences;
   let pool = preferredPool.filter((reference: any) => !excluded.includes(reference.index));
   if (!pool.length && thematic.length) {
     pool = list.results.filter((reference: any) => !excluded.includes(reference.index));
@@ -556,6 +588,46 @@ async function getMonsterForCr(cr: number, seed: string, encounter: any, exclude
   if (!pool.length) throw new Error(`No additional SRD monsters found for CR ${cr}`);
   const reference = pool[Math.floor(rng() * pool.length)];
   const monster = await api<any>(reference.url.replace("/api/2014", ""));
+  const indexedMechanics = mechanicsById.get(reference.index);
+  const abilityScores: Record<string, number> = {
+    STR: Number(monster.strength ?? 10),
+    DEX: Number(monster.dexterity ?? 10),
+    CON: Number(monster.constitution ?? 10),
+    INT: Number(monster.intelligence ?? 10),
+    WIS: Number(monster.wisdom ?? 10),
+    CHA: Number(monster.charisma ?? 10),
+  };
+  const savingThrows = Object.fromEntries(
+    Object.entries(abilityScores).map(([ability, score]) => {
+      const proficiency = (monster.proficiencies ?? []).find((entry: any) =>
+        entry.proficiency?.index === `saving-throw-${ability.toLowerCase()}` ||
+        entry.proficiency?.name === `Saving Throw: ${ability}`
+      );
+      return [ability, proficiency ? Number(proficiency.value) : Math.floor((score - 10) / 2)];
+    }),
+  );
+  const traitDetails = (monster.special_abilities ?? []).map((trait: any) => ({
+    name: trait.name,
+    description: trait.desc ?? "No description supplied by the SRD.",
+  }));
+  const actionDetails = (monster.actions ?? []).filter((action: any) =>
+    action.attack_bonus !== undefined || action.damage?.length || action.dc || action.desc
+  ).map((action: any) => ({
+    name: action.name,
+    description: action.desc ?? "No description supplied by the SRD.",
+    attackBonus: action.attack_bonus ?? null,
+    damages: (action.damage ?? []).map((damage: any) => ({
+      dice: damage.damage_dice,
+      type: damage.damage_type?.name ?? "damage",
+    })),
+    dc: action.dc
+      ? {
+        ability: action.dc.dc_type?.name ?? "Save",
+        value: action.dc.dc_value,
+        success: action.dc.success_type ?? "none",
+      }
+      : null,
+  }));
   return {
     index: monster.index,
     name: monster.name,
@@ -569,15 +641,19 @@ async function getMonsterForCr(cr: number, seed: string, encounter: any, exclude
       : monster.armor_class,
     hp: monster.hit_points,
     dexterity: monster.dexterity,
+    abilityScores,
+    savingThrows,
     initiativeModifier: Math.floor((Number(monster.dexterity) - 10) / 2),
     hitDice: monster.hit_dice,
     speed: monster.speed,
-    traits: (monster.special_abilities ?? []).slice(0, 2).map((trait: any) => trait.name),
-    actions: (monster.actions ?? []).filter((action: any) =>
-      action.attack_bonus || action.damage?.length
-    ).slice(0, 2).map((action: any) => action.name),
+    traits: traitDetails.map((trait: any) => trait.name),
+    traitDetails,
+    actions: actionDetails.map((action: any) => action.name),
+    actionDetails,
     source: `${API_BASE}/monsters/${monster.index}`,
     themeMatched: thematic.some((candidate: any) => candidate.index === reference.index),
+    mechanics: indexedMechanics ?? null,
+    armorCounter: highArmor && Boolean(indexedMechanics?.bypassesAc),
   };
 }
 
@@ -627,7 +703,7 @@ async function buildMonsterEncounter(
       regularComposition
     : regularComposition;
   let monster: any = applyEncounterMonsterTheme(
-    await getMonsterForCr(composition.cr, seed, encounter),
+    await getMonsterForCr(composition.cr, seed, encounter, [], condition),
     encounter,
   );
   let secondaryMonster: any = null;
@@ -639,6 +715,7 @@ async function buildMonsterEncounter(
           `${seed}:spawned-minion`,
           encounter,
           [monster.index],
+          condition,
         ),
         encounter,
       );
@@ -653,6 +730,7 @@ async function buildMonsterEncounter(
           `${seed}:secondary`,
           encounter,
           [monster.index],
+          condition,
         ),
         encounter,
       );
@@ -685,6 +763,29 @@ async function buildMonsterEncounter(
   const actionRatio = composition.count / Math.max(1, party.length);
   const flying = groups.some((group) => Object.keys(group.monster.speed ?? {}).includes("fly"));
   const groupTraits = [...new Set(groups.flatMap((group) => group.monster.traits ?? []))];
+  const riskDetails = groups.flatMap((group) => [
+    ...(group.monster.traitDetails ?? []).map((trait: any) => ({
+      monster: group.monster.name,
+      kind: "Trait",
+      name: trait.name,
+      description: trait.description,
+    })),
+    ...(group.monster.actionDetails ?? []).filter((action: any) =>
+      action.dc || group.monster.armorCounter || /grapple|restrain|poison|swallow|paraly/i.test(
+        `${action.name} ${action.description}`,
+      )
+    ).map((action: any) => ({
+      monster: group.monster.name,
+      kind: "Action",
+      name: action.name,
+      description: action.description,
+    })),
+  ]).filter((detail, index, all) =>
+    all.findIndex((candidate) =>
+      candidate.monster === detail.monster && candidate.kind === detail.kind &&
+      candidate.name === detail.name
+    ) === index
+  ).slice(0, 6);
   const riskSignals = [
     actionRatio >= 1.5
       ? aoeRating >= 4
@@ -725,6 +826,7 @@ async function buildMonsterEncounter(
       actionRatio,
       risk: actionRatio >= 1.5 && aoeRating < 3 ? "high" : actionRatio > 1 ? "watch" : "controlled",
       signals: riskSignals,
+      details: riskDetails,
     },
     rule: `${composition.count} creature${
       composition.count === 1 ? "" : "s"
@@ -855,6 +957,22 @@ export async function enrichWithSrd(
         criticalMembers: forecast.profile?.critical,
         aoeRating: forecast.profile?.capabilities?.aoe,
         rangedRating: forecast.profile?.capabilities?.ranged,
+        defense: forecast.profile?.defense,
+        weakSaves: (() => {
+          const abilities = ["STR", "DEX", "CON", "INT", "WIS", "CHA"];
+          const averages = abilities.map((ability) => ({
+            ability,
+            value: activeParty.reduce((sum, member) =>
+              sum + Number(member.saves?.[ability.toLowerCase()] ?? 0), 0) /
+              Math.max(1, activeParty.length),
+          }));
+          const minimum = Math.min(...averages.map((entry) =>
+            entry.value
+          ));
+          return averages.filter((entry) =>
+            entry.value === minimum
+          ).map((entry) => entry.ability);
+        })(),
       },
     );
     return {
