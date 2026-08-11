@@ -28,11 +28,9 @@ the excalidraw draw stile above the cards so it dos not apeear behind the cards.
 
 ![image](image-2.png) with all these lair/boss/floor mechanics how can we make sure that the difficulty is actualy what the party can handle even if the encounter is at deadly.
 
+when i click on resolve encounter and want to exit it, to go back it resolves the encounter what i dont want.
+
+locked doors(show the dc needed higher if party level is higher).
 # big changes
 i want the code to be beter documented like how proffesionals would do it. further i want all the values that would be needed to tweak the difficulty and algorithms and player proficiencie presets in one file so it can be easily tweaked and changed.
 
-i dont like the piss yellow scheme i want a more neutral color scheme that is easier on the eyes. something like the new dwarf forest. 
-
-i want better visual hierarchy and better visual cues for the user to know what is going on. i want the user to be able to see what is going on and what is happening with the monsters and players. 
-
-the me
