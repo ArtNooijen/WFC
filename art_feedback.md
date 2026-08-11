@@ -11,6 +11,22 @@ before i came in i had shortrested wich made my hp go back up it created when i 
 combat hard near deadly- social hard, hazard, medium. 
 i locked the battle for the fight and as the party took damge and used resources the 2 non combat encounters changed to combat encounter that where easier because of the fight but i would like the encounters to stay the same type upon first generation of decending the floor if possible. (only to be altered if the dm selects to change them.) 
 
+i want to be able to scoll on the right or left colm to make sure i can have what i want on my screen.
+
+add a lock the next encounter for combat btn.
+
+maybe i want to add a button that goes into complete mode and you can select the rooms/hallways that are completed and then it visualy changes on the map.
+
+
+one thing i was thinkin about. ![image](image-1.png) says that you can rest after room 2 but. you would have to backtrac to the safe room to rest would it be smart maybe to do a*pathfinding to determene if the party can get back to the safe room and if they can then they can rest. if not then they cant rest. etc etc if 
+
+if it is as expeected dont increase the difficulty. 
+
+what do shrines do?
+
+the excalidraw draw stile above the cards so it dos not apeear behind the cards.
+
+![image](image-2.png) with all these lair/boss/floor mechanics how can we make sure that the difficulty is actualy what the party can handle even if the encounter is at deadly.
 
 # big changes
 i want the code to be beter documented like how proffesionals would do it. further i want all the values that would be needed to tweak the difficulty and algorithms and player proficiencie presets in one file so it can be easily tweaked and changed.
