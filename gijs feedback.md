@@ -15,6 +15,15 @@ change armor. /moster generation if there are people with high armor . (maybe a 
 
 place traps in halways. create a list of traps that can be placed in hallways and rooms. 
 
+
+
+reverse rooms for the massive rooms biome for a road/map / ruins or interest in the architecture
+
+split the dmg into consistent dmg, resource dependent dmg, 
+dependent:paladin wizard, sorcerer, bard, cleric
+not: fighter, barbarian, rogue, ranger,
+apply resources to damage of players,
+
 # biome ideas
 
 ## Ossuary

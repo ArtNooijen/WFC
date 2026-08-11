@@ -1129,8 +1129,8 @@ const CLASS_CAPABILITIES = {
     melee: 5,
     ranged: 1,
     resourceDependency: 2,
-    control: 2,
-    healing: 1,
+    control: 1,
+    healing: 0,
   },
   Bard: {
     singleTarget: 2,
@@ -1165,7 +1165,7 @@ const CLASS_CAPABILITIES = {
     melee: 3,
     ranged: 4,
     resourceDependency: 3,
-    control: 4,
+    control: 3,
     healing: 3,
   },
   Druid: {
@@ -1190,7 +1190,7 @@ const CLASS_CAPABILITIES = {
     ranged: 4,
     resourceDependency: 1,
     control: 2,
-    healing: 1,
+    healing: 0,
   },
   Monk: {
     singleTarget: 5,
@@ -1202,7 +1202,7 @@ const CLASS_CAPABILITIES = {
     ranged: 1,
     resourceDependency: 2,
     control: 3,
-    healing: 1,
+    healing: 0,
   },
   Paladin: {
     singleTarget: 5,
@@ -1214,7 +1214,7 @@ const CLASS_CAPABILITIES = {
     ranged: 1,
     resourceDependency: 2,
     control: 2,
-    healing: 3,
+    healing: 4,
   },
   Sorcerer: {
     singleTarget: 3,
@@ -1226,7 +1226,7 @@ const CLASS_CAPABILITIES = {
     ranged: 5,
     resourceDependency: 5,
     control: 4,
-    healing: 1,
+    healing: 0,
   },
   Wizard: {
     singleTarget: 3,
@@ -1238,7 +1238,7 @@ const CLASS_CAPABILITIES = {
     ranged: 5,
     resourceDependency: 5,
     control: 5,
-    healing: 1,
+    healing: 0,
   },
   Warlock: {
     singleTarget: 5,
@@ -1249,8 +1249,8 @@ const CLASS_CAPABILITIES = {
     melee: 3,
     ranged: 5,
     resourceDependency: 3,
-    control: 4,
-    healing: 1,
+    control: 3,
+    healing: 0,
   },
   Rogue: {
     singleTarget: 5,
@@ -1261,8 +1261,8 @@ const CLASS_CAPABILITIES = {
     melee: 4,
     ranged: 4,
     resourceDependency: 0,
-    control: 2,
-    healing: 1,
+    control: 0,
+    healing: 0,
   },
   Ranger: {
     singleTarget: 5,
@@ -1273,7 +1273,7 @@ const CLASS_CAPABILITIES = {
     melee: 4,
     ranged: 5,
     resourceDependency: 2,
-    control: 3,
+    control: 2,
     healing: 2,
   },
 };
@@ -1288,7 +1288,7 @@ const CLASS_RESOURCE_DEPENDENCY = {
   Artificer: .6,
   Monk: .4,
   Paladin: .4,
-  Ranger: .4,
+  Ranger: .3,
   Barbarian: .4,
   Fighter: .2,
   Rogue: 0,
