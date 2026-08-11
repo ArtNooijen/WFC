@@ -18,7 +18,9 @@ import {
   chooseComposition,
   classifyAdjustedXp,
   conditionBudgetBand,
+  desiredCreatureCount,
   encounterMultiplier,
+  monsterPreferenceWeight,
   normalizeClassLevel,
   partyThresholds,
   splitEncounterCount,
@@ -45,7 +47,7 @@ Deno.test("average character HP uses class Hit Die and CON at every level", () =
   }
 });
 
-Deno.test("visual condition reaches 100% when HP and supplies are full", () => {
+Deno.test("fresh party condition and planning readiness reach 100%", () => {
   const rested = PARTY.map((member) => ({
     ...member,
     hp: member.maxHp,
@@ -53,9 +55,79 @@ Deno.test("visual condition reaches 100% when HP and supplies are full", () => {
   }));
   const profile = analyzeParty(rested);
   if (profile.displayCondition !== 1) throw new Error("rested visual condition is not 100%");
-  if (profile.readiness >= 1) {
-    throw new Error("detailed model unexpectedly discarded armour context");
+  if (profile.readiness !== 1) {
+    throw new Error("fresh party readiness was reduced by fixed capabilities");
   }
+  const forecast = buildEncounterForecast(rested, "fresh-party", 0, 1, { calibration: 1 });
+  if (forecast.profile.planningReadiness !== 1) {
+    throw new Error("fresh party planning score was not 100%");
+  }
+});
+
+Deno.test("AoE capability softly shifts group size without banning groups", () => {
+  const lowAoe = desiredCreatureCount(4, .65, 1);
+  const highAoe = desiredCreatureCount(4, .65, 5);
+  if (lowAoe < 2) throw new Error("low AoE removed group encounters");
+  if (highAoe <= lowAoe) throw new Error("AoE capability did not influence group preference");
+});
+
+Deno.test("limited AoE only attracts larger groups while its providers have resources", () => {
+  const providers = Array.from({ length: 4 }, (_, index) => ({
+    id: `cleric-${index}`,
+    name: `Cleric ${index}`,
+    class: "Cleric",
+    level: 5,
+    hp: 35,
+    maxHp: 35,
+    ac: 18,
+    resource: 5,
+    maxResource: 5,
+  }));
+  const supplied = analyzeParty(providers);
+  const depleted = analyzeParty(providers.map((member) => ({ ...member, resource: 0 })));
+  if (supplied.capabilities.aoe < 4) {
+    throw new Error("supplied AoE providers were not recognized");
+  }
+  if (depleted.capabilities.aoe >= 3) {
+    throw new Error("depleted limited AoE still attracted high-AoE encounters");
+  }
+  const suppliedCount = desiredCreatureCount(4, .8, supplied.capabilities.aoe);
+  const depletedCount = desiredCreatureCount(4, .8, depleted.capabilities.aoe);
+  if (suppliedCount <= depletedCount) {
+    throw new Error("AoE resources did not affect the larger-group preference");
+  }
+  if (depletedCount < 2) throw new Error("depleted AoE incorrectly banned group encounters");
+});
+
+Deno.test("high armour favors player-save monsters without excluding attack rolls", () => {
+  const saveMonster = { saves: ["DEX"], bypassesAc: true, control: false };
+  const attackMonster = { saves: [], bypassesAc: false, control: false };
+  const normalWeight = monsterPreferenceWeight(saveMonster, { defense: 14, weakSaves: ["DEX"] });
+  const highArmorWeight = monsterPreferenceWeight(saveMonster, {
+    defense: 20,
+    weakSaves: ["DEX"],
+  });
+  const attackWeight = monsterPreferenceWeight(attackMonster, { defense: 20 });
+  const specialistWeight = monsterPreferenceWeight(saveMonster, {
+    defense: 14,
+    maximumDefense: 21,
+    weakSaves: ["DEX"],
+  });
+  const thresholdWeight = monsterPreferenceWeight(saveMonster, {
+    defense: 14,
+    maximumDefense: 20,
+    weakSaves: ["DEX"],
+  });
+  if (highArmorWeight <= normalWeight) {
+    throw new Error("high armour did not increase player-save monster preference");
+  }
+  if (specialistWeight <= normalWeight) {
+    throw new Error("an individual above AC 20 did not activate save pressure");
+  }
+  if (thresholdWeight !== normalWeight) {
+    throw new Error("individual armour pressure activated before exceeding AC 20");
+  }
+  if (attackWeight <= 0) throw new Error("high armour excluded ordinary attack-roll monsters");
 });
 
 Deno.test("fallen adventurers are excluded from readiness and XP thresholds", () => {

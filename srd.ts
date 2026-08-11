@@ -139,6 +139,7 @@ type PartyCondition = {
   aoeRating?: number;
   rangedRating?: number;
   defense?: number;
+  maximumDefense?: number;
   weakSaves?: string[];
 };
 
@@ -181,12 +182,10 @@ export function chooseComposition(
   condition: PartyCondition = {},
 ) {
   const band = conditionBudgetBand(difficulty, thresholds, condition);
-  const desiredCount = Math.max(
-    1,
-    Math.floor(
-      1 + band.conditionScore * (Math.min(6, partySize + 1) - 1) +
-        Math.max(0, Number(condition.aoeRating ?? 3) - 3) * .35,
-    ),
+  const desiredCount = desiredCreatureCount(
+    partySize,
+    band.conditionScore,
+    Number(condition.aoeRating ?? 3),
   );
   const options = [];
   for (let count = 1; count <= 8; count++) {
@@ -243,6 +242,18 @@ export function chooseComposition(
     band,
     desiredCount,
   };
+}
+
+export function desiredCreatureCount(
+  partySize: number,
+  conditionScore: number,
+  aoeRating = 3,
+) {
+  const baseline = 1 + clamp(conditionScore, 0, 1) * (Math.min(6, partySize + 1) - 1);
+  // AoE is a soft preference, never a ban on groups. Weak-AoE parties still target at least
+  // two creatures; strong-AoE parties are simply more likely to see larger groups.
+  const aoeShift = clamp((Number(aoeRating) - 3) * .35, -.7, .7);
+  return Math.max(partySize >= 2 ? 2 : 1, Math.floor(baseline + aoeShift));
 }
 
 export function chooseBossComposition(
@@ -567,14 +578,10 @@ async function getMonsterForCr(
     );
   });
   const mechanicsById = new Map(mechanics.map((entry: any) => [entry.index, entry]));
-  const highArmor = Number(condition.defense ?? 10) >= 18;
   const weakSaves = condition.weakSaves ?? [];
   const weightedReferences = list.results.flatMap((reference: any) => {
     const entry = mechanicsById.get(reference.index);
-    let weight = 1;
-    if (highArmor && entry?.bypassesAc) weight += 3;
-    if (highArmor && entry?.saves?.some((save: string) => weakSaves.includes(save))) weight += 2;
-    if (entry?.control) weight += .5;
+    const weight = monsterPreferenceWeight(entry, condition);
     return Array.from({ length: Math.ceil(weight) }, () => reference);
   });
   const weightedThematic = weightedReferences.filter((reference: any) =>
@@ -653,8 +660,32 @@ async function getMonsterForCr(
     source: `${API_BASE}/monsters/${monster.index}`,
     themeMatched: thematic.some((candidate: any) => candidate.index === reference.index),
     mechanics: indexedMechanics ?? null,
-    armorCounter: highArmor && Boolean(indexedMechanics?.bypassesAc),
+    forcesPlayerSave: Boolean(indexedMechanics?.saves?.length),
+    armorCounter: armorPressure(condition) > 0 &&
+      Boolean(indexedMechanics?.saves?.length || indexedMechanics?.bypassesAc),
   };
+}
+
+function armorPressure(condition: PartyCondition = {}) {
+  const averagePressure = clamp((Number(condition.defense ?? 10) - 16) / 4, 0, 1);
+  const specialistPressure = Number(condition.maximumDefense ?? 10) > 20
+    ? clamp((Number(condition.maximumDefense) - 20) / 4, 0, 1)
+    : 0;
+  return Math.max(averagePressure, specialistPressure);
+}
+
+export function monsterPreferenceWeight(entry: any, condition: PartyCondition = {}) {
+  let weight = 1;
+  const pressure = armorPressure(condition);
+  const saves = entry?.saves ?? [];
+  // High AC increases the odds of player-save attacks without excluding ordinary attack rolls.
+  if (saves.length) weight += pressure * 3;
+  if (entry?.bypassesAc) weight += pressure * 1.5;
+  if (saves.some((save: string) => (condition.weakSaves ?? []).includes(save))) {
+    weight += pressure * 2;
+  }
+  if (entry?.control) weight += .5;
+  return weight;
 }
 
 function applyEncounterMonsterTheme(monster: any, encounter: any) {
@@ -762,6 +793,7 @@ async function buildMonsterEncounter(
   const aoeRating = Number(condition.aoeRating ?? 3);
   const actionRatio = composition.count / Math.max(1, party.length);
   const flying = groups.some((group) => Object.keys(group.monster.speed ?? {}).includes("fly"));
+  const savePressure = groups.some((group) => group.monster.forcesPlayerSave);
   const groupTraits = [...new Set(groups.flatMap((group) => group.monster.traits ?? []))];
   const riskDetails = groups.flatMap((group) => [
     ...(group.monster.traitDetails ?? []).map((trait: any) => ({
@@ -796,6 +828,9 @@ async function buildMonsterEncounter(
       ? Number(condition.rangedRating ?? 3) >= 3.5
         ? "Flight covered by strong ranged capability"
         : "Flight may invalidate melee specialists"
+      : null,
+    savePressure && armorPressure(condition) > 0
+      ? `High armour counterplay: selected actions force player saving throws`
       : null,
     groupTraits.length ? `Traits: ${groupTraits.slice(0, 4).join(", ")}` : null,
   ].filter(Boolean);
@@ -958,6 +993,7 @@ export async function enrichWithSrd(
         aoeRating: forecast.profile?.capabilities?.aoe,
         rangedRating: forecast.profile?.capabilities?.ranged,
         defense: forecast.profile?.defense,
+        maximumDefense: forecast.profile?.maximumDefense,
         weakSaves: (() => {
           const abilities = ["STR", "DEX", "CON", "INT", "WIS", "CHA"];
           const averages = abilities.map((ability) => ({

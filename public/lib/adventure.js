@@ -1119,8 +1119,6 @@ export function takeShortRest(party, selections = {}, rng = Math.random) {
   return { party: restedParty, healing, resourcesRecovered };
 }
 
-// Mirrors class_proficiencies.json. Keeping the browser-side index local makes
-// party analysis synchronous while the JSON remains the editable source data.
 const CLASS_CAPABILITIES = {
   Barbarian: {
     singleTarget: 5,
@@ -1358,12 +1356,13 @@ export function analyzeParty(party, options = {}) {
   const resourceRatio = options.trackResources === false ? 1 : weightedResourceRatio;
   const defense = members.reduce((sum, member) => sum + Number(member.ac || 10), 0) /
     members.length;
+  const maximumDefense = Math.max(...members.map((member) => Number(member.ac || 10)));
   const wounded = members.filter((member) => Number(member.hp) / Number(member.maxHp) < 0.5).length;
   const critical =
     members.filter((member) => Number(member.hp) / Number(member.maxHp) < 0.25).length;
 
-  // Attrition is intentionally dominant: lowering HP must always lower readiness.
-  // Defense and level describe capacity, while HP/resources describe current condition.
+  // Readiness is relative to this party's own baseline. Armour, level, and class capabilities
+  // shape encounter selection separately; they do not make a fully rested party look depleted.
   const defenseFactor = clamp((defense - 10) / 12, 0, 1);
   const afflictionLoad = options.trackAfflictions === false ? 0 : members.reduce((sum, member) => {
     const conditions = member.conditions?.length ?? 0;
@@ -1371,24 +1370,28 @@ export function analyzeParty(party, options = {}) {
     return sum + conditions * .035 + exhaustion * .055 + (member.concentration ? .01 : 0);
   }, 0) / members.length;
   const fragilityPenalty = wounded / members.length * .04 + critical / members.length * .12;
-  const readiness = clamp(
-    hpRatio * 0.58 + resourceRatio * 0.27 + defenseFactor * 0.15 - afflictionLoad -
-      fragilityPenalty,
-    0,
-    1,
-  );
-  const displayCondition = clamp(
+  const rawCondition = clamp(
     options.trackResources === false ? hpRatio : hpRatio * .68 + measuredResourceRatio * .32,
     0,
     1,
   );
+  const readiness = clamp(rawCondition - afflictionLoad - fragilityPenalty, 0, 1);
+  const displayCondition = readiness;
   const capabilities = members.reduce((totals, member) => {
     const profile = classCapability(member);
     const resource = options.trackResources === false
       ? { operational: 1 }
       : memberResourceState(member);
     const capabilityScale = .2 + resource.operational * .8;
-    for (const key of Object.keys(totals)) totals[key] += profile[key] * capabilityScale;
+    for (const key of Object.keys(totals)) {
+      // Strong AoE is normally supplied by limited spells or class features. It may make
+      // larger groups more likely only while that character still has those resources.
+      // Other capabilities retain a small at-will floor for basic attacks and cantrips.
+      const scale = key === "aoe" && profile.aoe >= 4
+        ? options.trackResources === false ? 1 : resource.ratio
+        : capabilityScale;
+      totals[key] += profile[key] * scale;
+    }
     return totals;
   }, {
     singleTarget: 0,
@@ -1427,6 +1430,7 @@ export function analyzeParty(party, options = {}) {
     fragilityPenalty,
     capabilities,
     defense,
+    maximumDefense,
     readiness,
     displayCondition,
     wounded,
@@ -2030,7 +2034,7 @@ export function generateDungeon(seed, width = 55, height = 31, options = {}) {
   const ordinaryRooms = rooms.filter((room) => !room.dedicatedBoss);
   const entry = ordinaryRooms[0];
   if (entry) entry.role = "entry";
-  // The exit may loop close to the entrance. A shorter delve produces fewer caches.
+  // The exit may loop close to the entrance; its distance does not alter treasure.
   const exitCandidates = ordinaryRooms.slice(2).filter((room) =>
     ["encounter", "ordinary"].includes(room.role)
   );
@@ -2046,15 +2050,18 @@ export function generateDungeon(seed, width = 55, height = 31, options = {}) {
   const exitDistance = exit && entry
     ? Math.abs(exit.cx - entry.cx) + Math.abs(exit.cy - entry.cy)
     : maximumDistance;
-  const lootCount = clamp(Math.round(exitDistance / maximumDistance * 3), 1, 3);
   rooms.filter((room) => room !== entry && room !== exit && room.role === "loot").forEach(
     (room) => {
       room.role = "ordinary";
     },
   );
-  rooms.filter((room) =>
+  const lootCandidates = rooms.filter((room) =>
     room !== entry && room !== exit && ["encounter", "ordinary"].includes(room.role)
-  ).slice(0, lootCount).forEach((room) => {
+  );
+  // Cache count is seeded dungeon variety, not a reward for entrance-to-exit distance.
+  const lootRng = createRng(`${seed}:${floor}:loot-count`);
+  const lootCount = Math.min(lootCandidates.length, 1 + Math.floor(lootRng() * 3));
+  lootCandidates.slice(0, lootCount).forEach((room) => {
     room.role = "loot";
     room.name = ROOM_NAMES.loot[Math.floor(rng() * ROOM_NAMES.loot.length)];
   });

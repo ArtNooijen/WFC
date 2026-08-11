@@ -77,6 +77,7 @@ let classProfileTimer = null;
 let classProfileRequest = 0;
 let quickForecastTimer = null;
 let conditionRequest = null;
+let forecastRequest = 0;
 
 function loadState() {
   try {
@@ -244,6 +245,19 @@ function resetEncounterBaseline() {
   state.encounterBaseline = createEncounterBaseline();
 }
 
+function resetPartyLearning() {
+  const confirmed = globalThis.confirm(
+    "Reset learned party history? This clears resolved-encounter performance and rest calibration, so the model treats this as a new party. Characters, current encounters, dungeon progress, and the journal stay unchanged.",
+  );
+  if (!confirmed) return;
+  checkpoint("Reset learned party history");
+  state.learningSamples = [];
+  state.restStats = { short: 0, long: 0, interrupted: 0 };
+  saveState();
+  renderParty();
+  updateForecast("Party learning reset · calibration returned to baseline");
+}
+
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
@@ -365,6 +379,12 @@ function healthClass(member) {
   return ratio < 0.3 ? "critical" : ratio < 0.65 ? "wounded" : "";
 }
 
+function healthLabel(member) {
+  if (member.dead) return "Fallen";
+  const state = healthClass(member);
+  return state === "critical" ? "Critical" : state === "wounded" ? "Wounded" : "Healthy";
+}
+
 function resourceSummary(member) {
   if (!state.settings.trackResources) return "resource tracking off";
   if (!member.resources?.length) return `◈ ${member.resource}/${member.maxResource}`;
@@ -398,6 +418,7 @@ function renderPartyProfile(profile) {
   const container = $("#party-profile-overview");
   if (!profile) {
     container.innerHTML = "<p>Add an adventurer to see party strengths and weaknesses.</p>";
+    renderEncounterAugmenters(null);
     return;
   }
   const capabilityLabels = {
@@ -474,6 +495,107 @@ function renderPartyProfile(profile) {
       }</section>`
       : ""
   }`;
+  renderEncounterAugmenters(profile);
+}
+
+function renderEncounterAugmenters(profile) {
+  const container = $("#encounter-augmenters");
+  if (!container) return;
+  if (!profile) {
+    container.hidden = true;
+    container.innerHTML = "";
+    return;
+  }
+
+  const items = [];
+  const aoe = Number(profile.capabilities?.aoe ?? 3);
+  if (aoe > 3) {
+    items.push({
+      name: "Supplied area damage",
+      effect: "Larger enemy groups become more likely while those resources remain.",
+      value: `${aoe.toFixed(1)} / 5`,
+      tone: "opportunity",
+    });
+  } else if (aoe < 3) {
+    items.push({
+      name: "Limited area damage",
+      effect: "Smaller groups are preferred, but group encounters remain possible.",
+      value: `${aoe.toFixed(1)} / 5`,
+      tone: "caution",
+    });
+  }
+
+  const defense = Number(profile.defense ?? 10);
+  const maximumDefense = Number(profile.maximumDefense ?? defense);
+  if (defense > 16 || maximumDefense > 20) {
+    const specialistTrigger = defense <= 16 && maximumDefense > 20;
+    items.push({
+      name: "High armour",
+      effect: specialistTrigger
+        ? "One heavily armoured member makes monsters with player-saving-throw attacks more likely."
+        : "Monsters whose attacks force players to make saving throws are more likely.",
+      value: specialistTrigger ? `Peak AC ${maximumDefense}` : `Avg AC ${defense.toFixed(1)}`,
+      tone: "counter",
+    });
+  }
+
+  const learnedAdjustment = Number(forecast?.profile?.learnedAdjustment ?? 0);
+  const planningReadiness = Math.max(
+    0,
+    Math.min(1, Number(profile.readiness ?? 0) + learnedAdjustment),
+  );
+  if (planningReadiness >= .78) {
+    items.push({
+      name: "Strong current condition",
+      effect: "Encounters target the upper portion of their selected difficulty band.",
+      value: `${Math.round(planningReadiness * 100)}%`,
+      tone: "pressure",
+    });
+  } else if (planningReadiness < .58) {
+    items.push({
+      name: "Depleted condition",
+      effect: "Encounters target the lower portion of their selected difficulty band.",
+      value: `${Math.round(planningReadiness * 100)}%`,
+      tone: "relief",
+    });
+  }
+
+  if (Math.abs(learnedAdjustment) >= .005) {
+    const raisesPressure = learnedAdjustment > 0;
+    items.push({
+      name: "Learned performance",
+      effect: `Resolved encounters ${
+        raisesPressure ? "raise" : "lower"
+      } current planning pressure.`,
+      value: `${raisesPressure ? "+" : ""}${(learnedAdjustment * 100).toFixed(1)}%`,
+      tone: raisesPressure ? "pressure" : "relief",
+    });
+  }
+
+  const alertPressure = Math.min(.16, Math.max(0, Number(state.awareness ?? 0) * .025));
+  if (alertPressure > 0) {
+    items.push({
+      name: "Dungeon alert",
+      effect: "The dungeon's awareness adds pressure to upcoming encounters.",
+      value: `+${Math.round(alertPressure * 100)}%`,
+      tone: "counter",
+    });
+  }
+
+  container.hidden = false;
+  container.innerHTML =
+    `<header><span>Encounter augmenters</span><b>Currently in effect</b></header>
+    <div class="encounter-augmenter-list">${
+      items.length
+        ? items.map((item) =>
+          `<article class="${item.tone}">
+          <i aria-hidden="true"></i><div><b>${escapeHtml(item.name)}</b><p>${
+            escapeHtml(item.effect)
+          }</p></div><strong>${escapeHtml(item.value)}</strong>
+        </article>`
+        ).join("")
+        : `<p class="no-augmenters">No composition or pressure modifiers are active.</p>`
+    }</div>`;
 }
 
 function renderParty() {
@@ -490,13 +612,15 @@ function renderParty() {
     healthClass(member)
   }" data-member-id="${member.id}" tabindex="0" aria-label="Edit ${member.name}">
       <div class="member-main">
-        <div class="avatar">${member.dead ? "☠" : initials(member.name)}</div>
+        <div class="avatar">${member.dead ? "X" : initials(member.name)}</div>
         <div class="member-identity"><strong>${escapeHtml(member.name)}</strong><span>${
     member.dead
       ? "FALLEN · EXCLUDED FROM FORECAST"
       : `LV ${member.level} · ${escapeHtml(member.class)}`
   }</span></div>
-        <div class="hp-number"><b>${member.hp}</b><span> / ${member.maxHp}</span></div>
+        <div class="hp-number"><small>${
+    healthLabel(member)
+  }</small><b>${member.hp}</b><span> / ${member.maxHp}</span></div>
         <button class="remove-member" data-remove-member="${member.id}" type="button" aria-label="Remove ${
     escapeHtml(member.name)
   }" title="Remove party member">×</button>
@@ -539,7 +663,7 @@ function renderParty() {
     member.dead
       ? "Revive at 1 HP and include in difficulty"
       : "Mark dead and exclude from difficulty"
-  }">☠</button>
+  }">${member.dead ? "Revive" : "Fallen"}</button>
         </div>
       </div>
       <div class="member-statuses">${
@@ -550,7 +674,7 @@ function renderParty() {
     member.inspiration ? "<span>Inspiration</span>" : ""
   }${Number(member.exhaustion) > 0 ? `<span>Exhaustion ${member.exhaustion}</span>` : ""}${
     member.hp <= 0 && member.deathSaves
-      ? `<span>Death saves ${member.deathSaves.successes}✓/${member.deathSaves.failures}✕</span>`
+      ? `<span>Death saves · ${member.deathSaves.successes} success · ${member.deathSaves.failures} failure</span>`
       : ""
   }${
     state.settings.trackAfflictions
@@ -1050,35 +1174,6 @@ function toggleSafeRoom() {
 }
 
 function renderDungeonLedger() {
-  $("#room-count").textContent = dungeon.layout === "open-region"
-    ? `${dungeon.rooms.length} zones · floor ${state.floor}`
-    : `${dungeon.rooms.length} rooms · floor ${state.floor}`;
-  const counts = dungeon.rooms.reduce((result, room) => {
-    result[room.condition] = (result[room.condition] ?? 0) + 1;
-    return result;
-  }, {});
-  $("#room-conditions").innerHTML = Object.entries(counts).slice(0, 4).map(([name, count]) =>
-    `<span>${escapeHtml(name)} <b>${count}</b></span>`
-  ).join("");
-  $("#theme-restriction").innerHTML = `<b>${escapeHtml(dungeon.theme.name)}</b><span>${
-    escapeHtml(dungeon.restriction)
-  }</span>${
-    dungeon.layout === "open-region"
-      ? `<p><strong>${escapeHtml(dungeon.regionName)}${
-        dungeon.noveltyOpenRegion ? " · Rare super-massive floor" : ""
-      }</strong>One continuous biome. Each marked section functions as a room for encounters, objectives, loot, and clearing progress.</p>`
-      : ""
-  }${
-    (dungeon.theme.activeModifiers ?? []).map((modifier) =>
-      `<p><strong>${escapeHtml(modifier.name)}</strong>${escapeHtml(modifier.rule)}</p>`
-    ).join("")
-  }<small>Exit distance ${dungeon.exitDistance} · ${dungeon.lootCount} cache${
-    dungeon.lootCount === 1 ? "" : "s"
-  }; loot increases with distance from the entrance. ${
-    dungeon.traps?.length ?? 0
-  } structured traps (${
-    dungeon.traps?.filter((trap) => trap.locationType === "hallway").length ?? 0
-  } hallway).</small>`;
   const lootEntries = forecast?.loot?.length ? forecast.loot : dungeon.loot;
   $("#loot-table").innerHTML = lootEntries.length
     ? lootEntries.map((loot) =>
@@ -1165,6 +1260,7 @@ function playCollapse() {
 }
 
 async function updateForecast(message = "Forecast updated") {
+  const requestId = ++forecastRequest;
   const button = $("#refresh-forecast");
   const previousForecast = forecast ? clone(forecast) : null;
   if (!state.party.some((member) => !member.dead)) {
@@ -1181,6 +1277,7 @@ async function updateForecast(message = "Forecast updated") {
     return;
   }
   button.disabled = true;
+  let nextForecast;
   try {
     const response = await fetch("/api/forecast", {
       method: "POST",
@@ -1196,13 +1293,15 @@ async function updateForecast(message = "Forecast updated") {
       }),
     });
     if (!response.ok) throw new Error("Forecast API unavailable");
-    forecast = await response.json();
+    nextForecast = await response.json();
   } catch {
-    forecast = buildLocalForecastForCurrentTheme();
-    showToast("Running the local prediction model");
+    nextForecast = buildLocalForecastForCurrentTheme();
+    if (requestId === forecastRequest) showToast("Running the local prediction model");
   } finally {
-    button.disabled = false;
+    if (requestId === forecastRequest) button.disabled = false;
   }
+  if (requestId !== forecastRequest) return;
+  forecast = nextForecast;
   forecast = synchronizeForecastTheme(forecast);
   applyClassProfiles(forecast.classProfiles);
   forecast.encounters = placeEncounters(forecast.encounters, dungeon, state.completed);
@@ -1358,7 +1457,7 @@ function renderForecast() {
   const liveSrd = forecast.dataSource?.includes("dnd5eapi.co");
   $("#srd-status").classList.toggle("offline", !liveSrd);
   $("#srd-status").innerHTML = liveSrd
-    ? `<span>✓</span><div><b>Live 2014 SRD data</b><small>Official XP rules · 5e-bits monsters and items</small></div>`
+    ? `<span>LIVE</span><div><b>Live 2014 SRD data</b><small>Official XP rules · 5e-bits monsters and items</small></div>`
     : `<span>!</span><div><b>Local fallback active</b><small>${
       escapeHtml(forecast.warning ?? "SRD API data unavailable")
     }</small></div>`;
@@ -1382,10 +1481,10 @@ function renderForecast() {
   );
   const calibration = Number(forecast.profile.calibration ?? 1);
   $("#model-score-value").textContent = `${modelPercent}%`;
-  const learnedAdjustment = Math.round(Number(forecast.profile.learnedAdjustment ?? 0) * 100);
+  const learnedAdjustment = Number(forecast.profile.learnedAdjustment ?? 0) * 100;
   $("#model-score-context").textContent = `${forecast.learning?.samples ?? 0} outcomes · learned ${
     learnedAdjustment >= 0 ? "+" : ""
-  }${learnedAdjustment} · weighted supplies ${
+  }${learnedAdjustment.toFixed(1)} · weighted supplies ${
     Math.round(Number(forecast.profile.weightedResourceRatio ?? 1) * 100)
   }% · calibration ${calibration.toFixed(2)}`;
   $("#readiness-label").textContent = percent > 76
@@ -1393,6 +1492,10 @@ function renderForecast() {
     : percent > 55
     ? "Capable, with caution"
     : "Rest would be wise";
+  const currentProfile = state.party.some((member) => !member.dead)
+    ? analyzeParty(state.party, state.settings)
+    : null;
+  renderEncounterAugmenters(currentProfile);
   $("#adventure-premise").innerHTML = `<div><span>${
     escapeHtml(
       `${displayTheme.name} · ${displayTheme.story?.title ?? "Dungeon arc"}`,
@@ -1413,6 +1516,9 @@ function renderForecast() {
     }`
     : `<b>CHANGED SINCE THE LAST ENCOUNTER</b><span>No recorded changes yet.</span>`;
   $("#encounter-list").innerHTML = forecast.encounters.map((encounter, index) => {
+    const isLocked = Boolean(
+      state.encounterLocks[encounterKey(index)] && !encounter.resolved,
+    );
     const combat = encounter.combat;
     const combatGroups = combat?.groups?.length
       ? combat.groups
@@ -1433,13 +1539,15 @@ function renderForecast() {
       }</b></div>
           <div class="combat-groups">${
         combatGroups.map((group) =>
-          `<div class="${group.spawned ? "spawned-group" : ""}"><b>${group.count} × ${
+          `<div class="${
+            group.spawned ? "spawned-group" : ""
+          }"><b class="monster-name"><small class="monster-role">${
+            escapeHtml(group.role ?? (group.spawned ? "REINFORCEMENT" : "MONSTER"))
+          }</small>${group.count} × ${
             escapeHtml(group.monster.name)
-          }${
-            group.role ? ` · ${escapeHtml(group.role)}` : ""
-          }</b><span>CR ${group.monster.cr} · AC ${group.monster.ac} · HP ${group.monster.hp} each · ${
+          }</b><span class="monster-summary">CR ${group.monster.cr} · AC ${group.monster.ac} · HP ${group.monster.hp} each · ${
             escapeHtml(group.monster.size)
-          } ${escapeHtml(group.monster.type)}<small>${
+          } ${escapeHtml(group.monster.type)}<small class="monster-actions-summary">${
             escapeHtml(group.monster.actions.join(" · ") || "See stat block")
           }</small></span>
             <details class="monster-statblock"><summary>Show stat block</summary>
@@ -1477,13 +1585,13 @@ function renderForecast() {
         ).join("")
       }
           <div class="xp-proof"><span>${combat.baseXp.toLocaleString()} base XP</span><b>× ${combat.multiplier}</b><span>${combat.adjustedXp.toLocaleString()} adjusted XP</span></div>
-          <small>${
+          <details class="combat-math"><summary>How difficulty was calculated</summary><p>${
         escapeHtml(combat.scaling)
       } · target ${combat.conditionTargetXp.toLocaleString()} XP<br>${
         escapeHtml(combat.rule)
       } · ${displayedRating} threshold ${
         combat.thresholds[combat.difficulty].toLocaleString()
-      } XP<br>${escapeHtml(combat.safety)}</small>
+      } XP<br>${escapeHtml(combat.safety)}</p></details>
           ${
         combat.analysis
           ? `<div class="combat-analysis risk-${combat.analysis.risk}"><b>${combat.analysis.risk.toUpperCase()} TACTICAL RISK</b>${
@@ -1503,8 +1611,8 @@ function renderForecast() {
       }
         </div>`
       : "";
-    return `<article class="encounter-card ${
-      encounter.resolved ? "resolved-encounter" : ""
+    return `<article class="encounter-card ${encounter.resolved ? "resolved-encounter" : ""} ${
+      isLocked ? "locked-encounter" : ""
     }" id="encounter-${encounter.marker}" data-encounter="${encounter.marker}" style="animation-delay:${
       index * 80
     }ms">
@@ -1514,13 +1622,21 @@ function renderForecast() {
       <div>
         <div class="encounter-order"><span>0${
       index + 1
-    } · ${encounter.intent.toUpperCase()}</span><span class="rating ${displayedRating}">${displayedRating}</span></div>
+    } · ${encounter.intent.toUpperCase()}</span><div class="encounter-order-status">${
+      isLocked
+        ? `<span class="encounter-lock-badge"><svg aria-hidden="true" viewBox="0 0 16 16"><rect x="3" y="7" width="10" height="7" rx="1"></rect><path d="M5 7V5a3 3 0 0 1 6 0v2"></path></svg>Locked</span>`
+        : ""
+    }<span class="rating ${displayedRating}">${displayedRating}</span></div></div>
         <h3>${escapeHtml(encounter.title)}</h3>
         <button class="encounter-location locate-encounter" data-encounter="${encounter.marker}"><b>ROOM ${encounter.marker}</b> ${
       escapeHtml(encounter.room.name)
     } · ${encounter.room.coordinates}</button>
-        <p><b>Objective:</b> ${escapeHtml(encounter.objective)}</p>
-        <p class="encounter-twist"><b>Twist:</b> ${escapeHtml(encounter.twist)}</p>
+        <p class="encounter-objective"><b>Objective</b><span>${
+      escapeHtml(encounter.objective)
+    }</span></p>
+        <p class="encounter-twist"><b>Complication</b><span>${
+      escapeHtml(encounter.twist)
+    }</span></p>
         ${
       encounter.bossMechanic
         ? `<p class="boss-mechanic"><b>Boss room mechanic:</b> ${
@@ -1551,9 +1667,11 @@ function renderForecast() {
         } · ${encounter.resolution?.rounds ?? "—"} rounds</span></div>`
         : `<div class="encounter-controls">
           <button data-encounter-action="resolve" data-index="${index}">Resolve</button>
-          <button data-encounter-action="reroll" data-index="${index}">↻ Reroll</button>
-          <button data-encounter-action="lock" data-index="${index}">${
-          state.encounterLocks[encounterKey(index)] ? "Unlock" : "Lock"
+          <button data-encounter-action="reroll" data-index="${index}">Reroll</button>
+          <button class="${
+          isLocked ? "active-lock" : ""
+        }" data-encounter-action="lock" data-index="${index}" aria-pressed="${isLocked}"><svg aria-hidden="true" viewBox="0 0 16 16"><rect x="3" y="7" width="10" height="7" rx="1"></rect><path d="M5 7V5a3 3 0 0 1 6 0v2"></path></svg>${
+          isLocked ? "Unlock" : "Lock"
         }</button>
           <select data-encounter-action="rating" data-index="${index}" aria-label="Difficulty"><option value="">Model</option>${
           ["Low", "Moderate", "Hard", "Deadly"].map((rating) =>
@@ -3167,6 +3285,7 @@ function setupInitiativeDrag() {
 }
 
 $("#add-member").addEventListener("click", () => openMemberDialog());
+$("#reset-party").addEventListener("click", resetPartyLearning);
 $("#add-member-wide").addEventListener("click", () => openMemberDialog());
 $("#save-member").addEventListener("click", saveMember);
 $("#condition-form").addEventListener("submit", saveCondition);
